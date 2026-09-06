@@ -1,228 +1,121 @@
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: 'Segoe UI', 'Tahoma', sans-serif;
-    user-select: none;
-}
-body {
-    background: #0a0e17;
-    height: 100vh;
-    overflow: hidden;
-    color: #c8d6e5;
-    direction: rtl;
-}
+* { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI','Tahoma',sans-serif; user-select:none; }
+body { background:#0a0e17; height:100vh; overflow:hidden; color:#c8d6e5; direction:rtl; }
 
-/* ===== شاشة التمهيد (BIOS) ===== */
-#boot-screen {
-    position: fixed; inset:0; background: #05080f; z-index: 9999;
-    display: flex; align-items: center; justify-content: center;
-}
-.boot-container {
-    background: #0f1422; padding: 40px; border-radius: 16px;
-    border: 1px solid #2a3a5a; width: 90%; max-width: 600px;
-}
-.boot-header { font-size: 24px; color: #00ffcc; text-align: center; margin-bottom: 20px; }
-.boot-header i { margin-left: 10px; }
-.boot-log div { padding: 6px 0; font-family: monospace; font-size: 14px; border-bottom: 1px solid #1a1f2f; }
-.ok { color: #00ffcc; margin-right: 10px; }
-.boot-progress { width: 100%; height: 6px; background: #1a1f2f; margin-top: 20px; border-radius: 10px; overflow: hidden; }
-.boot-bar-fill { height: 100%; width: 0%; background: #00ffcc; transition: width 0.3s; }
+/* ===== شاشة التمهيد ===== */
+#boot-screen { position:fixed; inset:0; background:#05080f; z-index:9999; display:flex; align-items:center; justify-content:center; }
+.boot-container { background:#0f1422; padding:40px; border-radius:16px; border:1px solid #2a3a5a; width:90%; max-width:600px; }
+.boot-header { font-size:24px; color:#00ffcc; text-align:center; margin-bottom:20px; }
+.boot-header i { margin-left:10px; }
+.boot-log div { padding:6px 0; font-family:monospace; font-size:14px; border-bottom:1px solid #1a1f2f; }
+.ok { color:#00ffcc; margin-right:10px; }
+.boot-progress { width:100%; height:6px; background:#1a1f2f; margin-top:20px; border-radius:10px; overflow:hidden; }
+.boot-bar-fill { height:100%; width:0%; background:#00ffcc; transition:width 0.3s; }
+#bootContinueBtn { display:none; margin-top:20px; padding:10px 30px; background:#00ffcc; color:#000; border:none; border-radius:6px; font-weight:bold; cursor:pointer; }
 
-/* ===== شاشة تسجيل الدخول ===== */
-#login-screen {
-    position: fixed; inset:0; background: rgba(5,8,15,0.95); z-index: 9998;
-    display: flex; align-items: center; justify-content: center;
-}
-.login-box {
-    background: #0f1422; padding: 40px 30px; border-radius: 20px;
-    border: 1px solid #2a3a5a; width: 90%; max-width: 380px; text-align: center;
-}
-.login-icon { font-size: 60px; color: #00ffcc; margin-bottom: 10px; }
-.login-box h2 { margin-bottom: 5px; }
-.login-box input {
-    width: 100%; padding: 12px; margin: 10px 0; background: #1a1f2f;
-    border: 1px solid #2a3a5a; border-radius: 8px; color: #fff; font-size: 16px;
-    direction: ltr; text-align: left;
-}
-.login-box button {
-    width: 100%; padding: 12px; background: #00ffcc; color: #000;
-    border: none; border-radius: 8px; font-weight: bold; font-size: 16px;
-    cursor: pointer; transition: 0.2s;
-}
-.login-box button:hover { background: #00ddbb; }
-.login-hint { margin-top: 15px; font-size: 12px; color: #666; }
+/* ===== تسجيل الدخول ===== */
+#login-screen { position:fixed; inset:0; background:rgba(5,8,15,0.95); z-index:9998; display:flex; align-items:center; justify-content:center; }
+.login-box { background:#0f1422; padding:40px 30px; border-radius:20px; border:1px solid #2a3a5a; width:90%; max-width:380px; text-align:center; }
+.login-icon { font-size:60px; color:#00ffcc; margin-bottom:10px; }
+.login-box input { width:100%; padding:12px; margin:10px 0; background:#1a1f2f; border:1px solid #2a3a5a; border-radius:8px; color:#fff; font-size:16px; direction:ltr; text-align:left; }
+.login-box button { width:100%; padding:12px; background:#00ffcc; color:#000; border:none; border-radius:8px; font-weight:bold; font-size:16px; cursor:pointer; }
+.login-box button:hover { background:#00ddbb; }
+.login-hint { margin-top:15px; font-size:12px; color:#666; }
+#loginError { color:#ff5555; font-size:13px; margin-top:10px; }
 
 /* ===== سطح المكتب ===== */
-#desktop { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
-#wallpaper {
-    position: absolute; inset:0; background: radial-gradient(circle at 20% 30%, #1a2a3a, #0a0e17);
-    transition: background 0.5s; z-index: 0;
-}
+#desktop { position:relative; width:100vw; height:100vh; overflow:hidden; }
+#wallpaper { position:absolute; inset:0; background:radial-gradient(circle at 20% 30%, #1a2a3a, #0a0e17); transition:background 0.5s; z-index:0; }
 
 /* ===== أيقونات سطح المكتب ===== */
-#desktop-icons {
-    position: absolute; top: 20px; right: 20px;
-    display: flex; flex-direction: column; gap: 15px; z-index: 1;
-}
-.desk-icon {
-    display: flex; flex-direction: column; align-items: center;
-    width: 70px; padding: 8px 4px; border-radius: 10px;
-    color: #c8d6e5; cursor: pointer; transition: 0.2s; background: transparent;
-}
-.desk-icon:hover { background: rgba(255,255,255,0.08); transform: scale(1.05); }
-.desk-icon i { font-size: 30px; margin-bottom: 4px; color: #00ffcc; }
-.desk-icon span { font-size: 11px; text-align: center; text-shadow: 0 0 10px #000; }
+#desktop-icons { position:absolute; top:20px; right:20px; display:flex; flex-direction:column; gap:15px; z-index:1; }
+.desk-icon { display:flex; flex-direction:column; align-items:center; width:70px; padding:8px 4px; border-radius:10px; color:#c8d6e5; cursor:pointer; transition:0.2s; background:transparent; }
+.desk-icon:hover { background:rgba(255,255,255,0.08); transform:scale(1.05); }
+.desk-icon i { font-size:30px; margin-bottom:4px; color:#00ffcc; }
+.desk-icon span { font-size:11px; text-align:center; text-shadow:0 0 10px #000; }
 
 /* ===== النوافذ ===== */
-#windows-container {
-    position: absolute; inset:0; z-index: 10; pointer-events: none;
-}
-.window {
-    position: absolute; top: 8%; right: 8%; width: 84%; height: 80%;
-    background: #131b2b; border: 1px solid #2a3a5a; border-radius: 12px;
-    display: flex; flex-direction: column; pointer-events: all;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.9); animation: fadeIn 0.2s ease;
-    backdrop-filter: blur(5px); overflow: hidden; min-width: 280px;
-}
+#windows-container { position:absolute; inset:0; z-index:10; pointer-events:none; }
+.window { position:absolute; top:8%; right:8%; width:84%; height:80%; background:#131b2b; border:1px solid #2a3a5a; border-radius:12px; display:flex; flex-direction:column; pointer-events:all; box-shadow:0 20px 60px rgba(0,0,0,0.9); animation:fadeIn 0.2s ease; backdrop-filter:blur(5px); overflow:hidden; min-width:280px; }
 @keyframes fadeIn { from { opacity:0; transform:scale(0.95); } to { opacity:1; transform:scale(1); } }
+.window-header { display:flex; justify-content:space-between; align-items:center; padding:6px 15px; background:#0f172a; border-bottom:1px solid #1e2d4a; cursor:grab; direction:ltr; }
+.window-header h3 { font-size:14px; font-weight:normal; display:flex; align-items:center; gap:8px; }
+.window-header .win-close { background:#ff4757; border:none; color:#fff; width:26px; height:26px; border-radius:50%; cursor:pointer; font-size:14px; font-weight:bold; }
+.window-body { flex:1; padding:15px; overflow-y:auto; background:rgba(0,0,0,0.3); direction:rtl; }
 
-.window-header {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 6px 15px; background: #0f172a; border-bottom: 1px solid #1e2d4a;
-    cursor: grab; direction: ltr;
-}
-.window-header h3 { font-size: 14px; font-weight: normal; display: flex; align-items: center; gap: 8px; }
-.window-header .win-close {
-    background: #ff4757; border: none; color: #fff; width: 26px; height: 26px;
-    border-radius: 50%; cursor: pointer; font-size: 14px; font-weight: bold;
-}
-.window-body {
-    flex:1; padding:15px; overflow-y: auto; background: rgba(0,0,0,0.3);
-    direction: rtl;
-}
+/* ===== الطرفية ===== */
+.terminal-body { background:#0a0e17; font-family:'Fira Code','Courier New',monospace; padding:10px; height:100%; overflow-y:auto; display:flex; flex-direction:column; direction:ltr; text-align:left; }
+.terminal-output { flex:1; white-space:pre-wrap; word-break:break-all; line-height:1.7; font-size:14px; color:#c8d6e5; }
+.terminal-input-line { display:flex; align-items:center; gap:8px; margin-top:8px; border-top:1px solid #1a2639; padding-top:8px; }
+.terminal-prompt { color:#00ffcc; font-weight:bold; font-size:14px; }
+.terminal-input { background:transparent; border:none; color:#fff; font-family:'Fira Code',monospace; font-size:14px; flex:1; outline:none; min-width:60px; }
+.quick-commands { display:flex; gap:6px; flex-wrap:wrap; margin-top:10px; border-top:1px solid #1a2639; padding-top:8px; }
+.quick-commands button { background:#1e2d4a; border:none; color:#c8d6e5; padding:4px 14px; border-radius:4px; font-size:12px; cursor:pointer; transition:0.2s; font-family:monospace; }
+.quick-commands button:hover { background:#2a3a5a; color:#00ffcc; }
 
-/* ===== المحطة الطرفية (الأهم) ===== */
-.terminal-body {
-    background: #0a0e17; font-family: 'Fira Code', 'Courier New', monospace;
-    padding: 10px; height: 100%; overflow-y: auto;
-    display: flex; flex-direction: column; direction: ltr;
-    text-align: left;
-}
-.terminal-output {
-    flex:1; white-space: pre-wrap; word-break: break-all;
-    line-height: 1.7; font-size: 14px; color: #c8d6e5;
-}
-.terminal-input-line {
-    display: flex; align-items: center; gap: 8px;
-    margin-top: 8px; border-top: 1px solid #1a2639; padding-top: 8px;
-}
-.terminal-prompt { color: #00ffcc; font-weight: bold; font-size: 14px; }
-.terminal-input {
-    background: transparent; border: none; color: #fff;
-    font-family: 'Fira Code', monospace; font-size: 14px;
-    flex:1; outline: none; min-width: 60px;
-}
-.quick-commands {
-    display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px;
-    border-top: 1px solid #1a2639; padding-top: 8px;
-}
-.quick-commands button {
-    background: #1e2d4a; border: none; color: #c8d6e5;
-    padding: 4px 14px; border-radius: 4px; font-size: 12px;
-    cursor: pointer; transition: 0.2s; font-family: monospace;
-}
-.quick-commands button:hover { background: #2a3a5a; color: #00ffcc; }
+/* ===== المتصفح ===== */
+.browser-toolbar { display:flex; gap:8px; padding:8px; background:#0f172a; border-radius:6px; margin-bottom:10px; direction:ltr; }
+.browser-toolbar input { flex:1; background:#1a1f2f; border:1px solid #2a3a5a; border-radius:4px; color:#fff; padding:6px 10px; font-size:13px; }
+.browser-toolbar button { background:#1e2d4a; border:none; color:#fff; padding:4px 12px; border-radius:4px; cursor:pointer; }
+.browser-content { background:#0a0e17; padding:15px; border-radius:6px; min-height:200px; }
+.browser-content .site { color:#00ffcc; }
+
+/* ===== الهاتف ===== */
+.phone-frame { max-width:320px; margin:0 auto; background:#111; border-radius:30px; padding:15px; border:3px solid #2a3a5a; box-shadow:0 10px 40px rgba(0,0,0,0.8); }
+.phone-screen { background:#0a0e17; border-radius:20px; padding:15px; min-height:400px; }
+.phone-status { display:flex; justify-content:space-between; color:#888; font-size:12px; margin-bottom:10px; }
+.phone-apps { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+.phone-app { text-align:center; padding:10px 0; cursor:pointer; border-radius:10px; transition:0.2s; }
+.phone-app:hover { background:#1a1f2f; }
+.phone-app i { font-size:28px; color:#00ffcc; display:block; margin-bottom:4px; }
+.phone-app span { font-size:11px; color:#c8d6e5; }
+
+/* ===== البريد ===== */
+.mail-list { display:flex; flex-direction:column; gap:6px; }
+.mail-item { background:#0f172a; padding:12px; border-radius:6px; border-right:3px solid #00ffcc; cursor:pointer; transition:0.2s; }
+.mail-item:hover { background:#1a1f2f; }
+.mail-item .subject { font-weight:bold; color:#fff; }
+.mail-item .from { color:#888; font-size:12px; }
+.mail-item .body { margin-top:8px; color:#c8d6e5; font-size:13px; display:none; }
+.mail-item.open .body { display:block; }
 
 /* ===== شريط المهام ===== */
-#taskbar {
-    position: absolute; bottom:0; left:0; right:0; height: 48px;
-    background: #0f172aee; backdrop-filter: blur(10px);
-    border-top: 1px solid #1e2d4a;
-    display: flex; align-items: center; padding: 0 12px; z-index: 100;
-    gap: 8px; direction: ltr;
-}
-#startBtn { background: transparent; border: none; color: #c8d6e5; font-size: 20px; cursor: pointer; padding: 4px 8px; border-radius: 6px; }
-#startBtn:hover { background: #2a3a5a; }
-.taskbar-center { flex:1; display: flex; gap: 4px; overflow-x: auto; }
-.taskbar-app {
-    background: #1e2d4a; padding: 2px 14px; border-radius: 4px;
-    font-size: 12px; color: #fff; cursor: pointer; white-space: nowrap;
-}
-.taskbar-app:hover { background: #2a3a5a; }
-.taskbar-right { display: flex; gap: 12px; font-size: 13px; }
-.sys-indicators { display: flex; gap: 12px; align-items: center; }
-#cpuIndicator { color: #00ffcc; }
-#wantedIndicator { color: #ffa502; }
-#clockDisplay { color: #c8d6e5; min-width: 70px; text-align: center; }
+#taskbar { position:absolute; bottom:0; left:0; right:0; height:48px; background:#0f172aee; backdrop-filter:blur(10px); border-top:1px solid #1e2d4a; display:flex; align-items:center; padding:0 12px; z-index:100; gap:8px; direction:ltr; }
+#startBtn { background:transparent; border:none; color:#c8d6e5; font-size:20px; cursor:pointer; padding:4px 8px; border-radius:6px; }
+#startBtn:hover { background:#2a3a5a; }
+.taskbar-center { flex:1; display:flex; gap:4px; overflow-x:auto; }
+.taskbar-app { background:#1e2d4a; padding:2px 14px; border-radius:4px; font-size:12px; color:#fff; cursor:pointer; white-space:nowrap; }
+.taskbar-app:hover { background:#2a3a5a; }
+.taskbar-right { display:flex; gap:12px; font-size:13px; }
+.sys-indicators { display:flex; gap:12px; align-items:center; }
+#wifiIndicator { color:#00ffcc; cursor:pointer; }
+#cpuIndicator { color:#00ffcc; }
+#wantedIndicator { color:#ffa502; }
+#clockDisplay { color:#c8d6e5; min-width:70px; text-align:center; }
 
-/* ===== قائمة ابدأ ===== */
-#startMenu {
-    position: absolute; bottom: 55px; right: 10px;
-    width: 220px; background: #131b2b; border: 1px solid #2a3a5a;
-    border-radius: 12px; padding: 6px 0; z-index: 200;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-}
-.start-menu-item {
-    padding: 10px 18px; cursor: pointer; display: flex; align-items: center;
-    gap: 12px; font-size: 14px; border-radius: 4px;
-}
-.start-menu-item:hover { background: #1e2d4a; }
-.start-menu-item i { width: 20px; color: #00ffcc; }
+/* ===== قوائم منبثقة ===== */
+#startMenu, #wifiMenu { position:absolute; bottom:55px; background:#131b2b; border:1px solid #2a3a5a; border-radius:12px; padding:6px 0; z-index:200; box-shadow:0 10px 30px rgba(0,0,0,0.8); }
+#startMenu { right:10px; width:220px; }
+#wifiMenu { left:10px; width:200px; }
+.start-menu-item, .wifi-item { padding:10px 18px; cursor:pointer; display:flex; align-items:center; gap:12px; font-size:14px; border-radius:4px; }
+.start-menu-item:hover, .wifi-item:hover { background:#1e2d4a; }
+.start-menu-item i { width:20px; color:#00ffcc; }
+.wifi-item i { width:20px; color:#ffa502; }
 
-/* ===== الإشعارات ===== */
-#notification-container {
-    position: absolute; top: 60px; left: 20px; z-index: 500;
-    display: flex; flex-direction: column; gap: 8px; direction: rtl;
-}
-.notification {
-    background: #131b2b; border-right: 4px solid #00ffcc;
-    padding: 12px 18px; border-radius: 8px; box-shadow: 0 8px 25px rgba(0,0,0,0.6);
-    animation: slideIn 0.3s ease; min-width: 200px;
-    font-size: 14px;
-}
-@keyframes slideIn { from { transform: translateX(50px); opacity:0; } to { transform: translateX(0); opacity:1; } }
-
-/* ===== BSOD & Arrest ===== */
-#bsod-overlay, #arrest-overlay {
-    position: fixed; inset:0; z-index: 9999;
-    display: none; align-items: center; justify-content: center;
-}
-#bsod-overlay { background: #0a0aef; color: #fff; flex-direction: column; }
-.bsod-content { text-align: center; }
-.bsod-content h1 { font-size: 40px; margin: 20px 0; }
-.bsod-progress { width: 300px; height: 8px; background: #fff; margin: 20px auto; border-radius: 20px; overflow: hidden; }
-#bsodProgressFill { height: 100%; width: 100%; background: #00ffcc; animation: bsodShrink 20s linear forwards; }
-@keyframes bsodShrink { from { width:100%; } to { width:0%; } }
-
-#arrest-overlay { background: rgba(0,0,0,0.92); }
-.arrest-content {
-    background: #1a1a2e; padding: 40px; border-radius: 20px;
-    text-align: center; border: 2px solid #ffcc00; max-width: 90%;
-}
-.arrest-content button {
-    margin-top: 20px; padding: 10px 30px; background: #ffcc00;
-    color: #000; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;
-}
+/* ===== إشعارات ===== */
+#notification-container { position:absolute; top:60px; left:20px; z-index:500; display:flex; flex-direction:column; gap:8px; direction:rtl; }
+.notification { background:#131b2b; border-right:4px solid #00ffcc; padding:12px 18px; border-radius:8px; box-shadow:0 8px 25px rgba(0,0,0,0.6); animation:slideIn 0.3s ease; min-width:200px; font-size:14px; }
+@keyframes slideIn { from { transform:translateX(50px); opacity:0; } to { transform:translateX(0); opacity:1; } }
 
 /* ===== استجابة للهواتف ===== */
-@media (max-width: 768px) {
-    #desktop-icons { flex-direction: row; flex-wrap: wrap; gap: 8px; top: 10px; right: 10px; }
-    .desk-icon { width: 55px; padding: 4px; }
-    .desk-icon i { font-size: 22px; }
-    .desk-icon span { font-size: 9px; }
-    .window { top: 3%; right: 2%; width: 96%; height: 90%; }
-    #taskbar { height: 55px; }
-    .taskbar-right .sys-indicators span { font-size: 10px; }
-    .taskbar-right .sys-indicators span i { margin-left: 2px; }
-    .quick-commands button { padding: 6px 12px; font-size: 11px; }
-    .boot-container { padding: 20px; }
-    .login-box { padding: 25px 15px; }
-    .bsod-progress { width: 200px; }
+@media (max-width:768px) {
+    #desktop-icons { flex-direction:row; flex-wrap:wrap; gap:8px; top:10px; right:10px; }
+    .desk-icon { width:55px; padding:4px; }
+    .desk-icon i { font-size:22px; }
+    .desk-icon span { font-size:9px; }
+    .window { top:3%; right:2%; width:96%; height:90%; }
+    #taskbar { height:55px; }
+    .taskbar-right .sys-indicators span { font-size:10px; }
+    .quick-commands button { padding:6px 12px; font-size:11px; }
+    .phone-frame { max-width:100%; padding:10px; }
+    .phone-screen { min-height:300px; }
 }
-/* إظهار أزرار الأوامر في الجوال فقط */
-@media (min-width: 769px) { .quick-commands { display: flex; } }
-/* تحسين التمرير */
-::-webkit-scrollbar { width: 5px; }
-::-webkit-scrollbar-track { background: #0a0e17; }
-::-webkit-scrollbar-thumb { background: #2a3a5a; border-radius: 10px; }
