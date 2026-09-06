@@ -3,51 +3,80 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEXUS: الجدار المكسور</title>
+    <title>NEXUS - اختراق السيبراني</title>
     <link rel="stylesheet" href="style.css">
-    <!-- أيقونات فونت أويزم للشكل التقني -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
 
-    <!-- شاشة التحميل المؤقتة -->
-    <div id="boot-screen">
-        <div class="boot-content">
-            <i class="fas fa-microchip" style="font-size: 60px; color: #00ffcc;"></i>
-            <h2>NEXUS BIOS v2.1</h2>
-            <p>جارٍ تحميل البيئة الآمنة...</p>
-            <div class="loader-bar"><div class="loader-fill" id="loaderFill"></div></div>
+    <!-- ======== شاشة الإقلاع (BIOS / BOOT) ======== -->
+    <div id="bootScreen">
+        <div class="boot-container">
+            <div class="boot-header">
+                <i class="fas fa-microchip"></i>
+                <span>NEXUS BIOS v2.1</span>
+            </div>
+            <div class="boot-messages" id="bootMessages">
+                <div>اختبار الذاكرة... 262144K OK</div>
+                <div>تحميل النواة... [نجاح]</div>
+                <div>بدء تشغيل خدمات الشبكة... [نجاح]</div>
+                <div>تمهيد النظام...</div>
+            </div>
+            <div class="boot-progress">
+                <div class="progress-bar" id="bootProgress"></div>
+            </div>
+            <div class="boot-footer">v2.1 - البيئة الآمنة</div>
         </div>
     </div>
 
-    <!-- سطح المكتب الرئيسي -->
-    <div id="desktop" style="display: none;">
+    <!-- ======== شاشة تسجيل الدخول ======== -->
+    <div id="loginScreen" style="display:none;">
+        <div class="login-container">
+            <div class="login-box">
+                <div class="login-icon"><i class="fas fa-shield-alt"></i></div>
+                <h2>NEXUS - تسجيل الدخول</h2>
+                <p>البيئة الآمنة للمحللين</p>
+                <form id="loginForm" onsubmit="handleLogin(event)">
+                    <div class="input-group">
+                        <i class="fas fa-user"></i>
+                        <input type="text" id="loginUser" placeholder="اسم المستخدم" value="root" required>
+                    </div>
+                    <div class="input-group">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="loginPass" placeholder="كلمة المرور" value="toor" required>
+                    </div>
+                    <button type="submit">دخول <i class="fas fa-arrow-right"></i></button>
+                </form>
+                <div class="login-hint">المستخدم الافتراضي: root / toor</div>
+            </div>
+        </div>
+    </div>
 
-        <!-- خلفية سطح المكتب (ديناميكية) -->
+    <!-- ======== سطح المكتب الرئيسي ======== -->
+    <div id="desktop" style="display:none;">
+        <!-- الخلفية -->
         <div id="wallpaper"></div>
 
         <!-- أيقونات سطح المكتب -->
-        <div id="desktop-icons">
-            <div class="desk-icon" onclick="openWindow('terminal')"><i class="fas fa-terminal"></i><span>المحطة الطرفية</span></div>
-            <div class="desk-icon" onclick="openWindow('vault')"><i class="fas fa-skull"></i><span>القبو (السوق)</span></div>
-            <div class="desk-icon" onclick="openWindow('profile')"><i class="fas fa-user-astronaut"></i><span>ملفي الشخصي</span></div>
-            <div class="desk-icon" onclick="openWindow('phone')"><i class="fas fa-mobile-alt"></i><span>الهاتف</span></div>
-            <div class="desk-icon" onclick="openWindow('mail')"><i class="fas fa-envelope"></i><span>البريد</span></div>
-            <div class="desk-icon" onclick="openWindow('bank')"><i class="fas fa-university"></i><span>البنك</span></div>
-            <div class="desk-icon" onclick="openWindow('hq')"><i class="fas fa-headquarters"></i><span>المقر (HQ)</span></div>
+        <div id="desktopIcons">
+            <div class="desk-icon" data-app="terminal"><i class="fas fa-terminal"></i><span>المحطة</span></div>
+            <div class="desk-icon" data-app="vault"><i class="fas fa-skull"></i><span>القبو</span></div>
+            <div class="desk-icon" data-app="profile"><i class="fas fa-user-astronaut"></i><span>ملفي</span></div>
+            <div class="desk-icon" data-app="phone"><i class="fas fa-mobile-alt"></i><span>الهاتف</span></div>
+            <div class="desk-icon" data-app="mail"><i class="fas fa-envelope"></i><span>البريد</span></div>
+            <div class="desk-icon" data-app="bank"><i class="fas fa-university"></i><span>البنك</span></div>
+            <div class="desk-icon" data-app="hq"><i class="fas fa-headquarters"></i><span>المقر</span></div>
         </div>
 
-        <!-- نافذة الإطارات (حاوية النوافذ المنبثقة) -->
-        <div id="windows-container"></div>
+        <!-- حاوية النوافذ (قابلة للسحب) -->
+        <div id="windowsContainer"></div>
 
-        <!-- شريط المهام السفلي -->
+        <!-- شريط المهام -->
         <div id="taskbar">
             <div class="taskbar-left">
                 <button id="startBtn" onclick="toggleStartMenu()"><i class="fas fa-bars"></i> ابدأ</button>
             </div>
-            <div class="taskbar-center" id="taskbarApps">
-                <!-- هنا تظهر أيقونات التطبيقات المفتوحة -->
-            </div>
+            <div class="taskbar-center" id="taskbarApps"></div>
             <div class="taskbar-right">
                 <div class="sys-indicators">
                     <span id="cpuIndicator" title="حرارة المعالج"><i class="fas fa-microchip"></i> <span id="cpuValue">0</span>%</span>
@@ -57,43 +86,40 @@
             </div>
         </div>
 
-        <!-- قائمة ابدأ المنبثقة -->
-        <div id="startMenu" style="display: none;">
-            <div class="start-menu-item" onclick="openWindow('terminal')"><i class="fas fa-terminal"></i> المحطة</div>
-            <div class="start-menu-item" onclick="openWindow('vault')"><i class="fas fa-skull"></i> القبو</div>
-            <div class="start-menu-item" onclick="openWindow('profile')"><i class="fas fa-user"></i> الملف الشخصي</div>
-            <div class="start-menu-item" onclick="openWindow('phone')"><i class="fas fa-phone"></i> الهاتف</div>
-            <div class="start-menu-item" onclick="openWindow('mail')"><i class="fas fa-inbox"></i> البريد</div>
-            <div class="start-menu-item" onclick="openWindow('bank')"><i class="fas fa-coins"></i> البنك</div>
-            <div class="start-menu-item" onclick="openWindow('hq')"><i class="fas fa-network-wired"></i> المقر (HQ)</div>
+        <!-- قائمة ابدأ -->
+        <div id="startMenu" style="display:none;">
+            <div class="start-menu-item" data-app="terminal"><i class="fas fa-terminal"></i> المحطة</div>
+            <div class="start-menu-item" data-app="vault"><i class="fas fa-skull"></i> القبو</div>
+            <div class="start-menu-item" data-app="profile"><i class="fas fa-user"></i> الملف الشخصي</div>
+            <div class="start-menu-item" data-app="phone"><i class="fas fa-phone"></i> الهاتف</div>
+            <div class="start-menu-item" data-app="mail"><i class="fas fa-inbox"></i> البريد</div>
+            <div class="start-menu-item" data-app="bank"><i class="fas fa-coins"></i> البنك</div>
+            <div class="start-menu-item" data-app="hq"><i class="fas fa-network-wired"></i> المقر</div>
             <hr>
-            <div class="start-menu-item" onclick="resetGame()" style="color: #ff5555;"><i class="fas fa-power-off"></i> إعادة التشغيل</div>
+            <div class="start-menu-item" onclick="resetGame()" style="color:#ff5555;"><i class="fas fa-power-off"></i> إعادة التشغيل</div>
         </div>
 
         <!-- شاشة التعطل (BSOD) -->
-        <div id="bsod-overlay" style="display: none;">
+        <div id="bsodOverlay" style="display:none;">
             <div class="bsod-content">
-                <i class="fas fa-times-circle" style="font-size: 80px; color: #fff;"></i>
-                <h1>😵 SYSTEM HALTED</h1>
-                <p>ارتفاع حرارة المعالج! (CPU Overheat)</p>
-                <p>سيتم إعادة التشغيل تلقائياً خلال <span id="bsodTimer">20</span> ثانية...</p>
+                <i class="fas fa-times-circle"></i>
+                <h1>SYSTEM HALTED</h1>
+                <p>ارتفاع حرارة المعالج! سيتم إعادة التشغيل خلال <span id="bsodTimer">20</span> ثانية...</p>
                 <div class="bsod-progress"><div id="bsodProgressFill"></div></div>
             </div>
         </div>
 
         <!-- شاشة الاعتقال -->
-        <div id="arrest-overlay" style="display: none;">
+        <div id="arrestOverlay" style="display:none;">
             <div class="arrest-content">
-                <i class="fas fa-handcuffs" style="font-size: 80px; color: #ffcc00;"></i>
-                <h1 style="color: #ffcc00;">🚨 تم القبض عليك!</h1>
-                <p>حددت وحدة الجرائم الإلكترونية موقعك.</p>
-                <p>تم حجز <span id="arrestFine">0</span> دولار من حسابك ومصادرة أداة عشوائية!</p>
-                <button onclick="closeArrest()" style="padding: 12px 30px; background: #ffcc00; color: #000; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">العودة إلى المقر</button>
+                <i class="fas fa-handcuffs"></i>
+                <h1>🚨 تم القبض عليك!</h1>
+                <p>تم حجز <span id="arrestFine">0</span> دولار ومصادرة أداة!</p>
+                <button onclick="closeArrest()">العودة إلى المقر</button>
             </div>
         </div>
     </div>
 
-    <!-- جافا سكريبت -->
     <script src="script.js"></script>
 </body>
 </html>
