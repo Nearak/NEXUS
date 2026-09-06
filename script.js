@@ -1,6 +1,6 @@
 // ============================================================
-//  NEXUS: الجدار المكسور - الإصدار المتكامل
-//  واجهة كاملة + نظام ملفات + أوامر + مهام
+//  NEXUS: الجدار المكسور - الإصدار المتكامل v3.0
+//  واجهة ديناميكية + نظام ملفات + أوامر + مهام
 // ============================================================
 
 // ---------- نظام الصوت ----------
@@ -16,9 +16,9 @@ const AudioSystem = {
         osc.connect(gain);
         gain.connect(this.ctx.destination);
         osc.frequency.value = 800;
-        gain.gain.value = 0.05;
+        gain.gain.value = 0.04;
         osc.start(this.ctx.currentTime);
-        osc.stop(this.ctx.currentTime + 0.03);
+        osc.stop(this.ctx.currentTime + 0.025);
     },
     playSuccess() {
         if (!this.ctx) return;
@@ -28,9 +28,9 @@ const AudioSystem = {
             osc.connect(gain);
             gain.connect(this.ctx.destination);
             osc.frequency.value = freq;
-            gain.gain.value = 0.06;
-            osc.start(this.ctx.currentTime + i * 0.06);
-            osc.stop(this.ctx.currentTime + (i + 1) * 0.06);
+            gain.gain.value = 0.05;
+            osc.start(this.ctx.currentTime + i * 0.05);
+            osc.stop(this.ctx.currentTime + (i + 1) * 0.05);
         });
     },
     playError() {
@@ -72,7 +72,7 @@ const state = {
     cpu: 0,
     wanted: 0,
     inventory: [],
-    currentWifi: null, // null = غير متصل
+    currentWifi: null,
     networks: {
         'NEXUS_CORP': { discovered: false, cracked: false, password: '12345678' },
         'PUBLIC_WIFI': { discovered: false, cracked: true, password: '' },
@@ -89,12 +89,19 @@ const state = {
     ],
     phoneMessages: ['مرحباً، هاتفك الآمن متصل.'],
     bankTransactions: ['+1000 دولار (راتب ابتدائي)'],
+    settings: {
+        theme: 'dark',
+        fontSize: 'medium',
+        animations: true
+    },
     logs: []
 };
 
 let currentPath = '/home/user';
 let windowZIndex = 100;
 let windows = {};
+let commandHistory = [];
+let historyIndex = -1;
 
 // ---------- دوال مساعدة ----------
 function updateHUD() {
@@ -102,6 +109,7 @@ function updateHUD() {
     document.getElementById('cpuFill').style.width = Math.min(state.cpu, 100) + '%';
     document.getElementById('wantedValue').textContent = state.wanted;
     document.getElementById('wifiStatus').textContent = state.currentWifi || 'غير متصل';
+    document.getElementById('startUsername').textContent = state.username;
     updateWifiMenu();
 }
 
@@ -114,6 +122,7 @@ function addCPU(amount) {
     updateHUD();
     if (state.cpu >= 100) {
         showNotification('⚠️ ارتفاع الحرارة!', 'تعطل النظام مؤقتاً.', 'error');
+        triggerOverheat();
         state.cpu = 20;
         updateHUD();
     }
@@ -146,6 +155,14 @@ function updateTaskStatus(taskId, status) {
             AudioSystem.playSuccess();
         }
         saveState();
+        // تحديث نافذة المهام إذا كانت مفتوحة
+        if (windows['tasks']) {
+            const win = document.getElementById('win-tasks');
+            if (win) {
+                const body = win.querySelector('.window-body');
+                if (body) body.innerHTML = getTasksHTML();
+            }
+        }
     }
 }
 
@@ -160,16 +177,82 @@ function showNotification(title, body, type = 'info') {
     setTimeout(() => el.remove(), 4000);
 }
 
+// ---------- الإعدادات ----------
+function applySettings() {
+    const root = document.documentElement;
+    const s = state.settings;
+    
+    // حجم الخط
+    const fontSizes = { small: '12px', medium: '14px', large: '16px' };
+    document.querySelectorAll('.window-body, .terminal-body, .terminal-output').forEach(el => {
+        el.style.fontSize = fontSizes[s.fontSize] || '14px';
+    });
+    
+    // السمات
+    if (s.theme === 'light') {
+        root.style.setProperty('--bg-primary', '#f0f2f5');
+        root.style.setProperty('--text-primary', '#1a1a2e');
+        root.style.setProperty('--bg-secondary', '#e8eaed');
+        root.style.setProperty('--border-color', '#c8c8d0');
+    } else {
+        root.style.setProperty('--bg-primary', '#0a0e17');
+        root.style.setProperty('--text-primary', '#c8d6e5');
+        root.style.setProperty('--bg-secondary', '#131b2b');
+        root.style.setProperty('--border-color', '#2a3a5a');
+    }
+}
+
+// ---------- نظام التعطل ----------
+function triggerOverheat() {
+    if (state.isOverheated) return;
+    state.isOverheated = true;
+    const overlay = document.getElementById('bsod-overlay');
+    overlay.style.display = 'flex';
+    let timer = 20;
+    const timerEl = document.getElementById('bsodTimer');
+    const fillEl = document.getElementById('bsodProgressFill');
+    const interval = setInterval(() => {
+        timer--;
+        timerEl.textContent = timer;
+        fillEl.style.width = (timer / 20 * 100) + '%';
+        if (timer <= 0) {
+            clearInterval(interval);
+            overlay.style.display = 'none';
+            state.isOverheated = false;
+            addWanted(1);
+            updateHUD();
+            showNotification('⚠️ تعطل النظام', 'تم إعادة التشغيل.', 'error');
+        }
+    }, 1000);
+}
+
+function triggerArrest() {
+    if (state.isArrested) return;
+    state.isArrested = true;
+    const fine = Math.floor(state.money * 0.5);
+    state.money = Math.max(0, state.money - fine);
+    if (state.inventory.length > 0) state.inventory.pop();
+    document.getElementById('arrestFine').textContent = fine;
+    document.getElementById('arrest-overlay').style.display = 'flex';
+    state.wanted = 0;
+    updateHUD();
+    showNotification('🚨 تم الاعتقال!', `تم خصم ${fine} دولار.`, 'error');
+}
+
+function closeArrest() {
+    document.getElementById('arrest-overlay').style.display = 'none';
+    state.isArrested = false;
+    updateHUD();
+}
+
 // ---------- إدارة النوافذ ----------
 function openWindow(id) {
     const container = document.getElementById('windows-container');
 
-    // إذا كانت مفتوحة بالفعل
     if (windows[id]) {
         const win = document.getElementById(`win-${id}`);
         if (win) {
             win.style.zIndex = ++windowZIndex;
-            // إذا كانت مصغرة، أعد إظهارها
             if (win.dataset.minimized === 'true') {
                 win.dataset.minimized = 'false';
                 win.style.display = 'flex';
@@ -190,7 +273,8 @@ function openWindow(id) {
         bank: 'البنك',
         vault: 'القبو',
         profile: 'الملف الشخصي',
-        tasks: 'المهام'
+        tasks: 'المهام',
+        settings: 'الإعدادات'
     };
     const icons = {
         terminal: 'terminal',
@@ -202,7 +286,8 @@ function openWindow(id) {
         bank: 'university',
         vault: 'lock',
         profile: 'user-circle',
-        tasks: 'tasks'
+        tasks: 'tasks',
+        settings: 'cog'
     };
 
     const win = document.createElement('div');
@@ -211,41 +296,20 @@ function openWindow(id) {
     win.style.zIndex = ++windowZIndex;
     win.dataset.minimized = 'false';
 
-    // محتوى النافذة
     let content = '';
     switch (id) {
-        case 'terminal':
-            content = getTerminalHTML();
-            break;
-        case 'files':
-            content = getFilesHTML();
-            break;
-        case 'browser':
-            content = getBrowserHTML();
-            break;
-        case 'mail':
-            content = getMailHTML();
-            break;
-        case 'phone':
-            content = getPhoneHTML();
-            break;
-        case 'hq':
-            content = getHQHTML();
-            break;
-        case 'bank':
-            content = getBankHTML();
-            break;
-        case 'vault':
-            content = getVaultHTML();
-            break;
-        case 'profile':
-            content = getProfileHTML();
-            break;
-        case 'tasks':
-            content = getTasksHTML();
-            break;
-        default:
-            content = '<p>تطبيق قيد التطوير</p>';
+        case 'terminal': content = getTerminalHTML(); break;
+        case 'files': content = getFilesHTML(); break;
+        case 'browser': content = getBrowserHTML(); break;
+        case 'mail': content = getMailHTML(); break;
+        case 'phone': content = getPhoneHTML(); break;
+        case 'hq': content = getHQHTML(); break;
+        case 'bank': content = getBankHTML(); break;
+        case 'vault': content = getVaultHTML(); break;
+        case 'profile': content = getProfileHTML(); break;
+        case 'tasks': content = getTasksHTML(); break;
+        case 'settings': content = getSettingsHTML(); break;
+        default: content = '<p>تطبيق قيد التطوير</p>';
     }
 
     win.innerHTML = `
@@ -266,21 +330,18 @@ function openWindow(id) {
     // إضافة إلى شريط المهام
     const taskbar = document.getElementById('taskbarApps');
     const appBtn = document.createElement('span');
-    appBtn.className = 'taskbar-app';
+    appBtn.className = 'top-bar-app';
     appBtn.id = `taskbar-${id}`;
     appBtn.textContent = titles[id];
     appBtn.onclick = () => focusWindow(id);
     taskbar.appendChild(appBtn);
 
-    // جعل النافذة قابلة للسحب
     makeDraggable(win);
 
-    // تهيئة الطرفية
     if (id === 'terminal') {
         setTimeout(() => {
             const input = win.querySelector('.terminal-input');
             if (input) input.focus();
-            // عرض الترحيب
             const output = win.querySelector('.terminal-output');
             if (output && !output.innerHTML) {
                 output.innerHTML = '█ NEXUS Terminal v3.0\nاكتب help لبدء رحلتك.\n';
@@ -318,16 +379,19 @@ function maximizeWindow(id) {
     if (!win) return;
     if (win.dataset.maximized === 'true') {
         win.dataset.maximized = 'false';
-        win.style.top = '8%';
-        win.style.right = '8%';
-        win.style.width = '84%';
-        win.style.height = '80%';
+        win.style.top = '60px';
+        win.style.left = '50%';
+        win.style.transform = 'translateX(-50%)';
+        win.style.width = '85%';
+        win.style.height = '75%';
+        win.style.borderRadius = 'var(--radius)';
     } else {
         win.dataset.maximized = 'true';
-        win.style.top = '0';
-        win.style.right = '0';
+        win.style.top = '44px';
+        win.style.left = '0';
+        win.style.transform = 'none';
         win.style.width = '100%';
-        win.style.height = '100%';
+        win.style.height = 'calc(100% - 44px)';
         win.style.borderRadius = '0';
     }
 }
@@ -343,9 +407,7 @@ function focusWindow(id) {
 
 // ---------- السحب ----------
 function makeDraggable(el) {
-    let isDragging = false,
-        offsetX = 0,
-        offsetY = 0;
+    let isDragging = false, offsetX = 0, offsetY = 0;
     const header = el.querySelector('.window-header');
     if (!header) return;
 
@@ -358,6 +420,7 @@ function makeDraggable(el) {
         offsetX = cx - rect.left;
         offsetY = cy - rect.top;
         el.style.transition = 'none';
+        el.style.transform = 'none';
         e.preventDefault();
     };
 
@@ -367,8 +430,10 @@ function makeDraggable(el) {
         const cy = e.touches ? e.touches[0].clientY : e.clientY;
         let x = cx - offsetX;
         let y = cy - offsetY;
-        x = Math.max(0, Math.min(x, window.innerWidth - el.offsetWidth));
-        y = Math.max(0, Math.min(y, window.innerHeight - el.offsetHeight - 50));
+        const maxX = window.innerWidth - el.offsetWidth;
+        const maxY = window.innerHeight - el.offsetHeight - 44;
+        x = Math.max(0, Math.min(x, maxX));
+        y = Math.max(44, Math.min(y, maxY));
         el.style.left = x + 'px';
         el.style.top = y + 'px';
         el.style.right = 'auto';
@@ -392,7 +457,10 @@ function getTerminalHTML() {
             <div class="terminal-output" id="terminalOutput">█ NEXUS Terminal v3.0\nاكتب help لبدء رحلتك.\n</div>
             <div class="terminal-input-line">
                 <span class="prompt">$</span>
-                <input type="text" class="terminal-input" id="terminalInput" placeholder="اكتب أمراً..." onkeydown="handleTerminalKey(event)">
+                <input type="text" class="terminal-input" id="terminalInput" placeholder="اكتب أمراً..." 
+                    onkeydown="handleTerminalKey(event)" 
+                    onkeyup="handleTerminalHistory(event)"
+                    autofocus>
             </div>
             <div class="quick-commands">
                 <button onclick="quickCmd('help')">help</button>
@@ -406,11 +474,21 @@ function getTerminalHTML() {
     `;
 }
 
+let historyTemp = '';
+
 function handleTerminalKey(event) {
     if (event.key === 'Enter') {
         const input = event.target;
         const cmd = input.value.trim();
         if (!cmd) return;
+        
+        // إضافة إلى التاريخ
+        if (cmd !== commandHistory[commandHistory.length - 1]) {
+            commandHistory.push(cmd);
+        }
+        historyIndex = commandHistory.length;
+        historyTemp = '';
+        
         const output = document.getElementById('terminalOutput');
         output.innerHTML += `<div class="terminal-line"><span class="prompt">$</span> <span class="cmd">${cmd}</span></div>`;
         const result = executeCommand(cmd);
@@ -419,6 +497,26 @@ function handleTerminalKey(event) {
         output.parentElement.scrollTop = output.parentElement.scrollHeight;
     } else {
         AudioSystem.playKey();
+    }
+}
+
+function handleTerminalHistory(event) {
+    const input = event.target;
+    if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        if (historyIndex > 0) {
+            historyIndex--;
+            input.value = commandHistory[historyIndex] || '';
+        }
+    } else if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        if (historyIndex < commandHistory.length - 1) {
+            historyIndex++;
+            input.value = commandHistory[historyIndex] || '';
+        } else {
+            historyIndex = commandHistory.length;
+            input.value = historyTemp;
+        }
     }
 }
 
@@ -485,15 +583,16 @@ function executeCommand(input) {
         case 'scan':
             addCPU(15);
             let found = false;
+            let scanResult = '';
             for (let net in state.networks) {
                 if (!state.networks[net].discovered) {
                     state.networks[net].discovered = true;
                     found = true;
-                    result += `✅ تم اكتشاف: ${net}\n`;
+                    scanResult += `✅ تم اكتشاف: ${net}\n`;
                     if (net === 'NEXUS_CORP') updateTaskStatus(1, 'completed');
                 }
             }
-            if (!found) result = 'لا توجد شبكات جديدة.';
+            result = scanResult || 'لا توجد شبكات جديدة.';
             updateWifiMenu();
             break;
 
@@ -512,10 +611,9 @@ function executeCommand(input) {
                 result = `✅ اختراق ناجح! المفتاح: ${net.password}`;
                 AudioSystem.playSuccess();
                 if (netName === 'NEXUS_CORP') updateTaskStatus(2, 'completed');
-                // الاتصال التلقائي
                 state.currentWifi = netName;
                 updateHUD();
-                showNotification(`📡 متصل بـ ${netName}`, 'تم الاتصال تلقائياً بعد الاختراق.', 'success');
+                showNotification(`📡 متصل بـ ${netName}`, 'تم الاتصال تلقائياً.', 'success');
             } else {
                 result = `❌ فشل اختراق ${netName}. حاول مجدداً.`;
                 addWanted(1);
@@ -557,18 +655,23 @@ function executeCommand(input) {
 
 // ---------- تطبيقات ----------
 function getFilesHTML() {
-    let html = `<div style="font-size:13px;"><div style="color:#00ffcc;">📁 ${currentPath}</div>`;
+    let html = `<div style="font-size:13px;"><div style="color:var(--accent);margin-bottom:8px;">📁 ${currentPath}</div>`;
     const files = fileSystem[currentPath] || {};
-    Object.keys(files).forEach(f => {
-        html += `<div class="file-item" onclick="showFile('${f}')">${f}</div>`;
-    });
+    const keys = Object.keys(files);
+    if (keys.length === 0) {
+        html += '<div style="color:var(--text-secondary);font-size:12px;">المجلد فارغ</div>';
+    } else {
+        keys.forEach(f => {
+            html += `<div class="file-item" onclick="showFile('${f}')">${f}</div>`;
+        });
+    }
     return html + '</div>';
 }
 
 function showFile(filename) {
     const content = fileSystem[currentPath]?.[filename];
     if (content) {
-        showNotification(`📄 ${filename}`, content, 'info');
+        showNotification(`📄 ${filename}`, content.substring(0, 150) + (content.length > 150 ? '...' : ''), 'info');
         if (filename === 'secret.txt' && currentPath === '/home/user') {
             updateTaskStatus(3, 'completed');
         }
@@ -579,14 +682,24 @@ function getBrowserHTML() {
     return `
         <div style="font-size:13px;">
             <div style="display:flex; gap:8px; margin-bottom:10px;">
-                <input type="text" id="browserUrl" value="nexus://home" style="flex:1; background:#1a1f2f; border:1px solid #2a3a5a; border-radius:4px; color:#fff; padding:6px 10px; font-size:13px; direction:ltr;">
-                <button onclick="browserGo()" style="background:#00ffcc; color:#000; border:none; border-radius:4px; padding:6px 16px; cursor:pointer; font-weight:bold;">Go</button>
+                <input type="text" id="browserUrl" value="nexus://home" 
+                    style="flex:1; background:var(--bg-input); border:1px solid var(--border-color); border-radius:6px; color:var(--text-primary); padding:6px 12px; font-size:13px; direction:ltr;">
+                <button onclick="browserGo()" 
+                    style="background:var(--accent); color:#000; border:none; border-radius:6px; padding:6px 18px; cursor:pointer; font-weight:bold; transition:var(--transition);">
+                    Go
+                </button>
             </div>
-            <div id="browserContent" style="background:rgba(0,0,0,0.3); padding:12px; border-radius:6px; min-height:150px;">
-                <h4 style="color:#00ffcc;">🏠 الصفحة الرئيسية</h4>
-                <div onclick="browserNavigate('tasks')" style="padding:8px; margin:4px 0; background:rgba(0,255,204,0.05); border-radius:4px; cursor:pointer;">📋 المهام</div>
-                <div onclick="browserNavigate('bank')" style="padding:8px; margin:4px 0; background:rgba(0,255,204,0.05); border-radius:4px; cursor:pointer;">🏦 البنك</div>
-                <div onclick="browserNavigate('vault')" style="padding:8px; margin:4px 0; background:rgba(0,255,204,0.05); border-radius:4px; cursor:pointer;">🔒 القبو</div>
+            <div id="browserContent" style="background:rgba(0,0,0,0.3); padding:14px; border-radius:8px; min-height:150px;">
+                <h4 style="color:var(--accent);">🏠 الصفحة الرئيسية</h4>
+                <div onclick="browserNavigate('tasks')" style="padding:10px; margin:6px 0; background:rgba(0,255,204,0.05); border-radius:6px; cursor:pointer; transition:var(--transition);">
+                    📋 المهام
+                </div>
+                <div onclick="browserNavigate('bank')" style="padding:10px; margin:6px 0; background:rgba(0,255,204,0.05); border-radius:6px; cursor:pointer; transition:var(--transition);">
+                    🏦 البنك
+                </div>
+                <div onclick="browserNavigate('vault')" style="padding:10px; margin:6px 0; background:rgba(0,255,204,0.05); border-radius:6px; cursor:pointer; transition:var(--transition);">
+                    🔒 القبو
+                </div>
             </div>
         </div>
     `;
@@ -598,19 +711,19 @@ function browserNavigate(page) {
     if (!content) return;
     if (page === 'tasks') {
         url.value = 'nexus://tasks';
-        content.innerHTML = `<h4 style="color:#00ffcc;">📋 المهام</h4>${getTasksHTML()}`;
+        content.innerHTML = `<h4 style="color:var(--accent);">📋 المهام</h4>${getTasksHTML()}`;
     } else if (page === 'bank') {
         url.value = 'nexus://bank';
-        content.innerHTML = `<h4 style="color:#00ffcc;">🏦 البنك</h4>${getBankHTML()}`;
+        content.innerHTML = `<h4 style="color:var(--accent);">🏦 البنك</h4>${getBankHTML()}`;
     } else if (page === 'vault') {
         url.value = 'nexus://vault';
-        content.innerHTML = `<h4 style="color:#00ffcc;">🔒 القبو</h4>${getVaultHTML()}`;
+        content.innerHTML = `<h4 style="color:var(--accent);">🔒 القبو</h4>${getVaultHTML()}`;
     } else {
         url.value = 'nexus://home';
-        content.innerHTML = `<h4 style="color:#00ffcc;">🏠 الصفحة الرئيسية</h4>
-            <div onclick="browserNavigate('tasks')" style="padding:8px; margin:4px 0; background:rgba(0,255,204,0.05); border-radius:4px; cursor:pointer;">📋 المهام</div>
-            <div onclick="browserNavigate('bank')" style="padding:8px; margin:4px 0; background:rgba(0,255,204,0.05); border-radius:4px; cursor:pointer;">🏦 البنك</div>
-            <div onclick="browserNavigate('vault')" style="padding:8px; margin:4px 0; background:rgba(0,255,204,0.05); border-radius:4px; cursor:pointer;">🔒 القبو</div>`;
+        content.innerHTML = `<h4 style="color:var(--accent);">🏠 الصفحة الرئيسية</h4>
+            <div onclick="browserNavigate('tasks')" style="padding:10px; margin:6px 0; background:rgba(0,255,204,0.05); border-radius:6px; cursor:pointer; transition:var(--transition);">📋 المهام</div>
+            <div onclick="browserNavigate('bank')" style="padding:10px; margin:6px 0; background:rgba(0,255,204,0.05); border-radius:6px; cursor:pointer; transition:var(--transition);">🏦 البنك</div>
+            <div onclick="browserNavigate('vault')" style="padding:10px; margin:6px 0; background:rgba(0,255,204,0.05); border-radius:6px; cursor:pointer; transition:var(--transition);">🔒 القبو</div>`;
     }
 }
 
@@ -644,10 +757,18 @@ function getPhoneHTML() {
             <div class="phone-screen">
                 <div class="phone-status"><span>NEXUS</span><span>📱 100%</span></div>
                 <div class="phone-apps">
-                    <div class="phone-app" onclick="showNotification('📞', 'لا توجد مكالمات', 'info')"><i class="fas fa-phone"></i><span>اتصال</span></div>
-                    <div class="phone-app" onclick="showNotification('💬', 'رسائل جديدة', 'info')"><i class="fas fa-sms"></i><span>رسائل</span></div>
-                    <div class="phone-app" onclick="showNotification('📷', 'الكاميرا', 'info')"><i class="fas fa-camera"></i><span>كاميرا</span></div>
-                    <div class="phone-app" onclick="showNotification('⚙️', 'الإعدادات', 'info')"><i class="fas fa-cog"></i><span>إعدادات</span></div>
+                    <div class="phone-app" onclick="showNotification('📞', 'لا توجد مكالمات', 'info')">
+                        <i class="fas fa-phone"></i><span>اتصال</span>
+                    </div>
+                    <div class="phone-app" onclick="showNotification('💬', 'رسائل جديدة', 'info')">
+                        <i class="fas fa-sms"></i><span>رسائل</span>
+                    </div>
+                    <div class="phone-app" onclick="showNotification('📷', 'الكاميرا', 'info')">
+                        <i class="fas fa-camera"></i><span>كاميرا</span>
+                    </div>
+                    <div class="phone-app" onclick="showNotification('⚙️', 'الإعدادات', 'info')">
+                        <i class="fas fa-cog"></i><span>إعدادات</span>
+                    </div>
                 </div>
                 <div class="phone-messages">
                     ${state.phoneMessages.map(m => `<div>📨 ${m}</div>`).join('')}
@@ -660,23 +781,24 @@ function getPhoneHTML() {
 function getHQHTML() {
     let html = `
         <div style="font-size:13px;">
-            <div style="background:linear-gradient(135deg,rgba(0,255,204,0.1),transparent); padding:15px; border-radius:8px; border:1px solid #00ffcc;">
-                <h3 style="color:#00ffcc;">🎯 المهام النشطة</h3>
+            <div style="background:linear-gradient(135deg,rgba(0,255,204,0.08),transparent); padding:16px; border-radius:8px; border:1px solid var(--accent);">
+                <h3 style="color:var(--accent);">🎯 المهام النشطة</h3>
     `;
     state.tasks.forEach(t => {
         html += `
-            <div style="padding:6px; background:rgba(0,255,204,0.05); margin:4px 0; border-radius:4px;">
+            <div style="padding:6px 10px; background:rgba(0,255,204,0.04); margin:4px 0; border-radius:4px; font-size:12px;">
                 ${t.status === 'completed' ? '✅' : '⏳'} ${t.title} (${t.reward}$)
             </div>
         `;
     });
     html += `
             </div>
-            <div style="background:rgba(30,45,74,0.5); padding:12px; border-radius:8px; margin-top:12px;">
-                <strong style="color:#ffa502;">📡 الاتصالات</strong>
-                <div style="font-size:12px; color:#7a8fa0;">
-                    <div>البريد: ${state.mail.length} رسائل</div>
-                    <div>الشبكة: ${state.currentWifi || 'غير متصل'}</div>
+            <div style="background:rgba(30,45,74,0.3); padding:14px; border-radius:8px; margin-top:12px; border:1px solid var(--border-color);">
+                <strong style="color:var(--warning);">📡 الاتصالات</strong>
+                <div style="font-size:12px; color:var(--text-secondary); margin-top:4px;">
+                    <div>📧 البريد: ${state.mail.length} رسائل</div>
+                    <div>📶 الشبكة: ${state.currentWifi || 'غير متصل'}</div>
+                    <div>💰 الرصيد: ${state.money}$</div>
                 </div>
             </div>
         </div>
@@ -687,11 +809,11 @@ function getHQHTML() {
 function getBankHTML() {
     let html = `
         <div class="bank-balance">
-            <div style="font-size:12px; color:#7a8fa0;">الرصيد</div>
+            <div style="font-size:12px; color:var(--text-secondary);">الرصيد</div>
             <div class="amount">${state.money} $</div>
         </div>
         <div style="font-size:12px; max-height:150px; overflow-y:auto;">
-            <strong style="color:#00ffcc;">📊 السجل</strong>
+            <strong style="color:var(--accent);">📊 السجل</strong>
     `;
     state.bankTransactions.forEach(t => {
         html += `<div class="bank-transaction">${t}</div>`;
@@ -701,14 +823,14 @@ function getBankHTML() {
 
 function getVaultHTML() {
     let html = `
-        <div style="background:rgba(255,71,87,0.1); padding:15px; border-radius:8px; border:1px solid #ff4757; margin-bottom:12px;">
-            <strong style="color:#ff4757;">⚠️ منطقة خطيرة</strong>
-            <p style="font-size:12px; color:#7a8fa0;">أدوات وأسرار مظلمة</p>
+        <div style="background:rgba(255,71,87,0.08); padding:14px; border-radius:8px; border:1px solid var(--danger); margin-bottom:12px;">
+            <strong style="color:var(--danger);">⚠️ منطقة خطيرة</strong>
+            <p style="font-size:12px; color:var(--text-secondary);">أدوات وأسرار مظلمة</p>
         </div>
-        <div style="background:rgba(30,45,74,0.5); padding:15px; border-radius:8px;">
-            <strong style="color:#ffa502;">🎒 الحقيبة</strong>
+        <div style="background:rgba(30,45,74,0.3); padding:14px; border-radius:8px; border:1px solid var(--border-color);">
+            <strong style="color:var(--warning);">🎒 الحقيبة</strong>
             <div style="font-size:12px; margin-top:8px;">
-                ${state.inventory.length ? state.inventory.map(i => `<div>✓ ${i}</div>`).join('') : '<div style="color:#7a8fa0;">فارغة</div>'}
+                ${state.inventory.length ? state.inventory.map(i => `<div style="padding:4px 0; border-bottom:1px solid var(--border-color);">✓ ${i}</div>`).join('') : '<div style="color:var(--text-secondary);">فارغة</div>'}
             </div>
         </div>
     `;
@@ -718,16 +840,22 @@ function getVaultHTML() {
 function getProfileHTML() {
     return `
         <div style="font-size:13px;">
-            <div style="background:rgba(0,255,204,0.1); padding:15px; border-radius:8px; border:1px solid #00ffcc;">
-                <div><strong>المستخدم:</strong> ${state.username}</div>
-                <div><strong>المستوى:</strong> ${state.level}</div>
+            <div style="background:rgba(0,255,204,0.06); padding:16px; border-radius:8px; border:1px solid var(--accent);">
+                <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px;">
+                    <i class="fas fa-user-circle" style="font-size:40px; color:var(--accent);"></i>
+                    <div>
+                        <div style="font-weight:bold; font-size:16px;">${state.username}</div>
+                        <div style="font-size:12px; color:var(--text-secondary);">المستوى ${state.level}</div>
+                    </div>
+                </div>
             </div>
-            <div style="background:rgba(255,165,2,0.1); padding:15px; border-radius:8px; border:1px solid #ffa502; margin-top:12px;">
-                <strong>⚙️ الإحصائيات</strong>
-                <div style="margin-top:8px; font-size:12px;">
-                    <div>الأموال: <span style="color:#00ffcc;">${state.money} $</span></div>
-                    <div>المطاردة: <span style="color:#ffa502;">${state.wanted}/5</span></div>
-                    <div>الحرارة: <span style="color:${state.cpu>70?'#ff4757':'#00ffcc'};">${state.cpu}%</span></div>
+            <div style="background:rgba(255,165,2,0.06); padding:16px; border-radius:8px; border:1px solid var(--warning); margin-top:12px;">
+                <strong style="color:var(--warning);">⚙️ الإحصائيات</strong>
+                <div style="margin-top:8px; font-size:12px; display:grid; grid-template-columns:1fr 1fr; gap:4px;">
+                    <div>💰 الأموال: <span style="color:var(--accent);">${state.money} $</span></div>
+                    <div>🚨 المطاردة: <span style="color:${state.wanted > 3 ? 'var(--danger)' : 'var(--warning)'};">${state.wanted}/5</span></div>
+                    <div>🔥 الحرارة: <span style="color:${state.cpu > 70 ? 'var(--danger)' : 'var(--accent)'};">${state.cpu}%</span></div>
+                    <div>📡 الشبكة: <span style="color:var(--accent);">${state.currentWifi || 'غير متصل'}</span></div>
                 </div>
             </div>
         </div>
@@ -749,6 +877,54 @@ function getTasksHTML() {
         `;
     });
     return html + '</div>';
+}
+
+function getSettingsHTML() {
+    const s = state.settings;
+    return `
+        <div style="font-size:13px;">
+            <div class="settings-group">
+                <h4>🎨 المظهر</h4>
+                <div class="settings-row">
+                    <span>السمة</span>
+                    <select onchange="updateSetting('theme', this.value)">
+                        <option value="dark" ${s.theme === 'dark' ? 'selected' : ''}>داكن</option>
+                        <option value="light" ${s.theme === 'light' ? 'selected' : ''}>فاتح</option>
+                    </select>
+                </div>
+                <div class="settings-row">
+                    <span>حجم الخط</span>
+                    <select onchange="updateSetting('fontSize', this.value)">
+                        <option value="small" ${s.fontSize === 'small' ? 'selected' : ''}>صغير</option>
+                        <option value="medium" ${s.fontSize === 'medium' ? 'selected' : ''}>متوسط</option>
+                        <option value="large" ${s.fontSize === 'large' ? 'selected' : ''}>كبير</option>
+                    </select>
+                </div>
+                <div class="settings-row">
+                    <span>الرسوم المتحركة</span>
+                    <select onchange="updateSetting('animations', this.value === 'true')">
+                        <option value="true" ${s.animations ? 'selected' : ''}>مفعلة</option>
+                        <option value="false" ${!s.animations ? 'selected' : ''}>معطلة</option>
+                    </select>
+                </div>
+            </div>
+            <div class="settings-group">
+                <h4>ℹ️ حول</h4>
+                <div style="font-size:12px; color:var(--text-secondary);">
+                    <p>NEXUS v3.0 - بيئة الاختراق المتقدمة</p>
+                    <p style="margin-top:4px;">${state.username} | المستوى ${state.level}</p>
+                    <p style="margin-top:4px;">المهام المكتملة: ${state.tasks.filter(t => t.status === 'completed').length}/${state.tasks.length}</p>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function updateSetting(key, value) {
+    state.settings[key] = value;
+    applySettings();
+    saveState();
+    showNotification('⚙️ تم التحديث', `تم تحديث ${key}`, 'success');
 }
 
 // ---------- الشبكات ----------
@@ -837,11 +1013,14 @@ function handleLogin(event) {
         document.getElementById('desktop').style.display = 'block';
         loadState();
         updateHUD();
+        applySettings();
         updateClock();
         setInterval(updateClock, 1000);
         showNotification('✅ مرحباً', `أهلاً ${user}`, 'success');
-        openWindow('terminal');
-        openWindow('hq');
+        setTimeout(() => {
+            openWindow('terminal');
+            openWindow('hq');
+        }, 300);
         return false;
     }
     document.getElementById('loginError').style.display = 'block';
@@ -887,7 +1066,6 @@ window.addEventListener('DOMContentLoaded', () => {
         }
         bar.style.width = Math.min(progress, 100) + '%';
     }, 200);
-    document.getElementById('bootBtn').style.display = 'inline-block';
 });
 
 // إغلاق القوائم
