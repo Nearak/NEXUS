@@ -3,27 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEXUS: The Broken Wall</title>
+    <title>NEXUS: الجدار المكسور</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
 
-    <!-- ===== شاشة التمهيد (BIOS) ===== -->
+    <!-- ===== شاشة التمهيد ===== -->
     <div id="boot-screen" class="boot-screen-enhanced">
         <div class="boot-container">
-            <div class="boot-header">
-                <div class="boot-logo">
-                    <div class="boot-logo-text">█ NEXUS</div>
-                    <div class="boot-logo-subtext">The Broken Wall</div>
-                </div>
+            <div class="boot-logo">
+                <div class="boot-logo-text">█ NEXUS</div>
+                <div class="boot-logo-subtext">The Broken Wall v3.0</div>
             </div>
             <div class="boot-log" id="bootLog">
                 <div class="boot-line"><span class="boot-status-ok">✓</span> فحص الذاكرة... 8GB OK</div>
                 <div class="boot-line"><span class="boot-status-ok">✓</span> تحميل النواة السايبر...</div>
                 <div class="boot-line"><span class="boot-status-ok">✓</span> تهيئة نظام التشفير...</div>
                 <div class="boot-line"><span class="boot-status-ok">✓</span> توصيل الشبكة العميقة...</div>
-                <div class="boot-line"><span class="boot-status-ok">✓</span> تحميل ملف الهوية...</div>
                 <div class="boot-line typing-effect"><span class="boot-status-wait">⟳</span> جاهز للدخول...</div>
             </div>
             <div class="boot-progress"><div class="boot-bar-fill" id="bootBarFill"></div></div>
@@ -64,52 +61,24 @@
 
         <!-- أيقونات سطح المكتب -->
         <div id="desktop-icons" class="desktop-grid">
-            <div class="desk-icon tooltip" onclick="openWindow('terminal')" data-tooltip="المحطة الطرفية">
-                <i class="fas fa-terminal"></i>
-                <span>المحطة</span>
-            </div>
-            <div class="desk-icon tooltip" onclick="openWindow('files')" data-tooltip="مدير الملفات">
-                <i class="fas fa-folder"></i>
-                <span>الملفات</span>
-            </div>
-            <div class="desk-icon tooltip" onclick="openWindow('browser')" data-tooltip="المتصفح الشبكي">
-                <i class="fas fa-globe"></i>
-                <span>المتصفح</span>
-            </div>
-            <div class="desk-icon tooltip" onclick="openWindow('mail')" data-tooltip="البريد الآمن">
-                <i class="fas fa-envelope"></i>
-                <span>البريد</span>
-            </div>
-            <div class="desk-icon tooltip" onclick="openWindow('phone')" data-tooltip="الهاتف الآمن">
-                <i class="fas fa-mobile-alt"></i>
-                <span>الهاتف</span>
-            </div>
-            <div class="desk-icon tooltip" onclick="openWindow('hq')" data-tooltip="غرفة العمليات">
-                <i class="fas fa-project-diagram"></i>
-                <span>العمليات</span>
-            </div>
-            <div class="desk-icon tooltip" onclick="openWindow('bank')" data-tooltip="نظام البنك الرقمي">
-                <i class="fas fa-university"></i>
-                <span>البنك</span>
-            </div>
-            <div class="desk-icon tooltip" onclick="openWindow('vault')" data-tooltip="القبو السري">
-                <i class="fas fa-lock"></i>
-                <span>القبو</span>
-            </div>
-            <div class="desk-icon tooltip" onclick="openWindow('profile')" data-tooltip="الملف الشخصي">
-                <i class="fas fa-user-circle"></i>
-                <span>ملفي</span>
-            </div>
+            <div class="desk-icon tooltip" onclick="openWindow('terminal')" data-tooltip="المحطة الطرفية"><i class="fas fa-terminal"></i><span>المحطة</span></div>
+            <div class="desk-icon tooltip" onclick="openWindow('files')" data-tooltip="مدير الملفات"><i class="fas fa-folder"></i><span>الملفات</span></div>
+            <div class="desk-icon tooltip" onclick="openWindow('browser')" data-tooltip="المتصفح الشبكي"><i class="fas fa-globe"></i><span>المتصفح</span></div>
+            <div class="desk-icon tooltip" onclick="openWindow('mail')" data-tooltip="البريد الآمن"><i class="fas fa-envelope"></i><span>البريد</span></div>
+            <div class="desk-icon tooltip" onclick="openWindow('phone')" data-tooltip="الهاتف الآمن"><i class="fas fa-mobile-alt"></i><span>الهاتف</span></div>
+            <div class="desk-icon tooltip" onclick="openWindow('hq')" data-tooltip="غرفة العمليات"><i class="fas fa-project-diagram"></i><span>العمليات</span></div>
+            <div class="desk-icon tooltip" onclick="openWindow('bank')" data-tooltip="نظام البنك الرقمي"><i class="fas fa-university"></i><span>البنك</span></div>
+            <div class="desk-icon tooltip" onclick="openWindow('vault')" data-tooltip="القبو السري"><i class="fas fa-lock"></i><span>القبو</span></div>
+            <div class="desk-icon tooltip" onclick="openWindow('profile')" data-tooltip="الملف الشخصي"><i class="fas fa-user-circle"></i><span>ملفي</span></div>
+            <div class="desk-icon tooltip" onclick="openWindow('tasks')" data-tooltip="دفتر المهام"><i class="fas fa-tasks"></i><span>المهام</span></div>
         </div>
 
         <div id="windows-container"></div>
 
-        <!-- شريط المهام محسّن -->
+        <!-- شريط المهام -->
         <div id="taskbar" class="taskbar-enhanced">
             <div class="taskbar-section taskbar-left">
-                <button id="startBtn" class="start-btn" onclick="toggleStartMenu()" title="قائمة ابدأ">
-                    <i class="fas fa-cube"></i>
-                </button>
+                <button id="startBtn" class="start-btn" onclick="toggleStartMenu()" title="قائمة ابدأ"><i class="fas fa-cube"></i></button>
             </div>
             <div class="taskbar-section taskbar-center" id="taskbarApps"></div>
             <div class="taskbar-section taskbar-right">
@@ -118,12 +87,10 @@
                     <span id="cpuValue">0</span>%
                 </div>
                 <div class="sys-indicator" id="wantedIndicator" title="مستوى المطاردة">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <span id="wantedValue">0</span>/5
+                    <i class="fas fa-exclamation-triangle"></i><span id="wantedValue">0</span>/5
                 </div>
                 <div class="sys-indicator clickable" id="wifiIndicator" onclick="toggleWifiMenu()" title="اتصال الشبكة">
-                    <i class="fas fa-wifi"></i>
-                    <span id="wifiStatus">متصل</span>
+                    <i class="fas fa-wifi"></i><span id="wifiStatus">غير متصل</span>
                 </div>
                 <div class="sys-indicator" id="clockDisplay">00:00</div>
             </div>
@@ -136,6 +103,7 @@
                 <div class="start-menu-item" onclick="openWindow('terminal'); toggleStartMenu();"><i class="fas fa-terminal"></i> المحطة</div>
                 <div class="start-menu-item" onclick="openWindow('files'); toggleStartMenu();"><i class="fas fa-folder"></i> الملفات</div>
                 <div class="start-menu-item" onclick="openWindow('browser'); toggleStartMenu();"><i class="fas fa-globe"></i> المتصفح</div>
+                <div class="start-menu-item" onclick="openWindow('tasks'); toggleStartMenu();"><i class="fas fa-tasks"></i> المهام</div>
             </div>
             <div class="start-menu-divider"></div>
             <div class="start-menu-section">
@@ -151,29 +119,38 @@
             </div>
         </div>
 
-        <!-- قائمة الشبكات -->
+        <!-- قائمة الشبكات المحسّنة (تظهر الشبكات وحالة الاختراق) -->
         <div id="wifiMenu" class="wifi-menu-enhanced" style="display:none;">
-            <div class="wifi-header">الشبكات المتاحة</div>
-            <div class="wifi-item" onclick="connectWifi('NEXUS_CORP')">
+            <div class="wifi-header">📡 الشبكات المتاحة</div>
+            <div class="wifi-item" data-network="NEXUS_CORP" onclick="selectWifi('NEXUS_CORP')">
                 <i class="fas fa-lock"></i>
                 <div class="wifi-info">
                     <div class="wifi-name">NEXUS_CORP</div>
-                    <div class="wifi-strength">قوة الإشارة: ممتازة</div>
+                    <div class="wifi-strength" id="wifi-status-NEXUS_CORP">🔒 محمية (غير مخترقة)</div>
                 </div>
-                <i class="fas fa-check-circle" style="display:none;"></i>
+                <i class="fas fa-check-circle" style="display:none;" id="wifi-check-NEXUS_CORP"></i>
             </div>
-            <div class="wifi-item" onclick="connectWifi('PUBLIC_WIFI')">
+            <div class="wifi-item" data-network="PUBLIC_WIFI" onclick="selectWifi('PUBLIC_WIFI')">
                 <i class="fas fa-wifi"></i>
                 <div class="wifi-info">
                     <div class="wifi-name">PUBLIC_WIFI</div>
-                    <div class="wifi-strength">قوة الإشارة: جيدة</div>
+                    <div class="wifi-strength" id="wifi-status-PUBLIC_WIFI">🌐 مفتوحة</div>
                 </div>
+                <i class="fas fa-check-circle" style="display:none;" id="wifi-check-PUBLIC_WIFI"></i>
             </div>
-            <div class="wifi-item" onclick="connectWifi('DARK_NET')">
+            <div class="wifi-item" data-network="DARK_NET" onclick="selectWifi('DARK_NET')">
                 <i class="fas fa-user-secret"></i>
                 <div class="wifi-info">
                     <div class="wifi-name">DARK_NET</div>
-                    <div class="wifi-strength">قوة الإشارة: ضعيفة</div>
+                    <div class="wifi-strength" id="wifi-status-DARK_NET">🔒 مشفرة (تتطلب اختراق)</div>
+                </div>
+                <i class="fas fa-check-circle" style="display:none;" id="wifi-check-DARK_NET"></i>
+            </div>
+            <div class="wifi-item" style="border-top:1px solid #2a3a5a; margin-top:8px; padding-top:12px; background:rgba(0,255,204,0.05);">
+                <i class="fas fa-key"></i>
+                <div class="wifi-info">
+                    <div class="wifi-name" style="color:#ffa502;">اختراق الشبكة</div>
+                    <div class="wifi-strength">استخدم أمر <span style="color:#00ffcc;">crackwifi [SSID]</span> في المحطة</div>
                 </div>
             </div>
         </div>
@@ -182,36 +159,8 @@
         <div id="notification-container" class="notification-area"></div>
 
         <!-- شاشات الأخطاء -->
-        <div id="bsod-overlay" class="bsod-overlay" style="display:none;">
-            <div class="bsod-content">
-                <div class="bsod-title">SYSTEM CRITICAL ERROR</div>
-                <div class="bsod-message">CPU TEMPERATURE CRITICAL<br>EMERGENCY SHUTDOWN INITIATED</div>
-                <div class="bsod-progress">
-                    <div class="bsod-bar"><div id="bsodProgressFill"></div></div>
-                    <div class="bsod-timer"><span id="bsodTimer">20</span>s</div>
-                </div>
-            </div>
-        </div>
-        <div id="arrest-overlay" class="arrest-overlay" style="display:none;">
-            <div class="arrest-content">
-                <div class="arrest-header">FEDERAL DETENTION NOTICE</div>
-                <div class="arrest-body">
-                    <p>تم حبسك من قبل السلطات السيبرانية</p>
-                    <p>تم خصم <strong id="arrestFine">0</strong> دولار</p>
-                    <p>تم مصادرة أداة عشوائية</p>
-                </div>
-                <button class="arrest-btn" onclick="closeArrest()">فهمت</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- نظام الصوت المخفي -->
-    <div id="audio-system" style="display:none;">
-        <audio id="audioKeyPress" preload="auto"></audio>
-        <audio id="audioNotification" preload="auto"></audio>
-        <audio id="audioError" preload="auto"></audio>
-        <audio id="audioSuccess" preload="auto"></audio>
-        <audio id="audioAmbient" preload="auto" loop></audio>
+        <div id="bsod-overlay" class="bsod-overlay" style="display:none;">...</div>
+        <div id="arrest-overlay" class="arrest-overlay" style="display:none;">...</div>
     </div>
 
     <script src="script.js"></script>
