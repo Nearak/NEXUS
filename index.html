@@ -2,167 +2,51 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEXUS: الجدار المكسور v3.0</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>NEXUS: الجدار المكسور</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-
-    <!-- ===== شاشة التمهيد ===== -->
-    <div id="boot-screen">
-        <div class="boot-container">
-            <div class="boot-logo">
-                <div class="boot-logo-text">█ NEXUS</div>
-                <div class="boot-logo-subtext">The Broken Wall v3.0</div>
-            </div>
-            <div class="boot-log" id="bootLog">
-                <div class="boot-line"><span class="boot-status-ok">✔️</span> فحص الذاكرة... 8GB OK</div>
-                <div class="boot-line"><span class="boot-status-ok">✔️</span> تحميل النواة السايبر... OK</div>
-                <div class="boot-line"><span class="boot-status-ok">✔️</span> تهيئة نظام التشفير... OK</div>
-                <div class="boot-line"><span class="boot-status-ok">✔️</span> توصيل الشبكة العميقة... OK</div>
-                <div class="boot-line"><span class="boot-status-ok">✔️</span> تحميل ملف الهوية... OK</div>
-                <div class="boot-line typing-effect"><span class="boot-status-wait">⟳</span> جاهز للدخول...</div>
-            </div>
-            <div class="boot-progress"><div class="boot-bar-fill" id="bootBarFill"></div></div>
-            <button id="bootContinueBtn" class="boot-btn">اضغط للمتابعة</button>
-        </div>
-    </div>
-
-    <!-- ===== شاشة تسجيل الدخول ===== -->
-    <div id="login-screen" style="display:none;">
-        <div class="login-bg-animation"></div>
-        <div class="login-box">
-            <div class="login-header">
-                <h1>NEXUS TERMINAL</h1>
-                <p>نظام التقييم الأمني المتقدم</p>
-            </div>
-            <form id="loginForm" onsubmit="return handleLogin(event)">
-                <div class="login-field">
-                    <label><i class="fas fa-user"></i> اسم المستخدم</label>
-                    <input type="text" id="loginUser" placeholder="admin / guest" dir="ltr" autocomplete="username">
-                </div>
-                <div class="login-field">
-                    <label><i class="fas fa-lock"></i> كلمة المرور</label>
-                    <input type="password" id="loginPass" placeholder="••••••••" dir="ltr" autocomplete="current-password">
-                </div>
-                <button type="submit" class="login-btn"><i class="fas fa-sign-in-alt"></i> دخول آمن</button>
-                <div id="loginError" class="login-error"></div>
-            </form>
-            <div class="login-info">
-                <p><strong>معلومة:</strong> البيانات الافتراضية (admin / 1234)</p>
-                <p><strong>التنبيه:</strong> يتم تسجيل جميع الأنشطة</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- ===== سطح المكتب ===== -->
-    <div id="desktop" style="display:none;">
-        <div id="wallpaper" class="animated-wallpaper"></div>
-
-        <!-- أيقونات سطح المكتب -->
-        <div id="desktop-icons" class="desktop-grid">
-            <div class="desk-icon" onclick="openWindow('terminal')"><i class="fas fa-terminal"></i><span>المحطة</span></div>
-            <div class="desk-icon" onclick="openWindow('files')"><i class="fas fa-folder"></i><span>الملفات</span></div>
-            <div class="desk-icon" onclick="openBrowser()"><i class="fas fa-globe"></i><span>المتصفح</span></div>
-            <div class="desk-icon" onclick="openBrowser('mail')"><i class="fas fa-envelope"></i><span>البريد</span></div>
-            <div class="desk-icon" onclick="openBrowser('phone')"><i class="fas fa-mobile-alt"></i><span>الهاتف</span></div>
-            <div class="desk-icon" onclick="openBrowser('hq')"><i class="fas fa-project-diagram"></i><span>العمليات</span></div>
-            <div class="desk-icon" onclick="openBrowser('bank')"><i class="fas fa-university"></i><span>البنك</span></div>
-            <div class="desk-icon" onclick="openBrowser('vault')"><i class="fas fa-lock"></i><span>القبو</span></div>
-            <div class="desk-icon" onclick="openBrowser('profile')"><i class="fas fa-user-circle"></i><span>ملفي</span></div>
-            <div class="desk-icon" onclick="openBrowser('tasks')"><i class="fas fa-tasks"></i><span>المهام</span></div>
-        </div>
-
-        <div id="windows-container"></div>
-
-        <!-- شريط المهام -->
-        <div id="taskbar">
-            <div class="taskbar-left">
-                <button id="startBtn" onclick="toggleStartMenu()"><i class="fas fa-cube"></i></button>
-                <span class="taskbar-label">ابدأ</span>
-            </div>
-            <div class="taskbar-center" id="taskbarApps"></div>
-            <div class="taskbar-right">
-                <div class="sys-indicator" id="cpuIndicator">
-                    <i class="fas fa-microchip"></i>
-                    <span id="cpuValue">0</span>%
-                </div>
-                <div class="sys-indicator" id="wantedIndicator">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <span id="wantedValue">0</span>/5
-                </div>
-                <div class="sys-indicator clickable" id="wifiIndicator" onclick="toggleWifiMenu()">
-                    <i class="fas fa-wifi"></i>
-                    <span id="wifiStatus">غير متصل</span>
-                </div>
-                <div class="sys-indicator" id="clockDisplay">00:00</div>
+    <div id="app">
+        <!-- شاشة البداية -->
+        <div id="boot-screen">
+            <div class="boot-container">
+                <div class="boot-logo">█ NEXUS</div>
+                <div class="boot-sub">The Broken Wall</div>
+                <div class="boot-progress"><div id="bootBar"></div></div>
+                <button id="bootBtn" style="display:none;" onclick="startGame()">دخول إلى المحطة</button>
             </div>
         </div>
 
-        <!-- قائمة ابدأ -->
-        <div id="startMenu" style="display:none;">
-            <div class="start-menu-section">
-                <div class="menu-title">التطبيقات</div>
-                <div class="start-menu-item" onclick="openWindow('terminal'); toggleStartMenu();"><i class="fas fa-terminal"></i> المحطة</div>
-                <div class="start-menu-item" onclick="openWindow('files'); toggleStartMenu();"><i class="fas fa-folder"></i> الملفات</div>
-                <div class="start-menu-item" onclick="openBrowser(); toggleStartMenu();"><i class="fas fa-globe"></i> المتصفح</div>
-                <div class="start-menu-item" onclick="openBrowser('tasks'); toggleStartMenu();"><i class="fas fa-tasks"></i> المهام</div>
+        <!-- شاشة اللعبة -->
+        <div id="game" style="display:none;">
+            <!-- HUD -->
+            <div id="hud">
+                <div class="hud-item"><i class="fas fa-user"></i> <span id="hud-level">1</span></div>
+                <div class="hud-item"><i class="fas fa-coins"></i> <span id="hud-money">1000</span>$</div>
+                <div class="hud-item"><i class="fas fa-microchip"></i> <span id="hud-cpu">0</span>%</div>
+                <div class="hud-item"><i class="fas fa-exclamation-triangle"></i> <span id="hud-wanted">0</span>/5</div>
             </div>
-            <div class="start-menu-divider"></div>
-            <div class="start-menu-section">
-                <div class="menu-title">النظام</div>
-                <div class="start-menu-item" onclick="openBrowser('profile'); toggleStartMenu();"><i class="fas fa-user"></i> الملف الشخصي</div>
-                <div class="start-menu-item" onclick="openBrowser('hq'); toggleStartMenu();"><i class="fas fa-network-wired"></i> المقر HQ</div>
-                <div class="start-menu-item" onclick="openBrowser('vault'); toggleStartMenu();"><i class="fas fa-lock"></i> القبو</div>
-            </div>
-            <div class="start-menu-divider"></div>
-            <div class="start-menu-section">
-                <div class="menu-title">الإجراءات</div>
-                <div class="start-menu-item danger" onclick="resetGame(); toggleStartMenu();"><i class="fas fa-power-off"></i> إعادة تشغيل</div>
-            </div>
-        </div>
 
-        <!-- قائمة الشبكات المحسّنة -->
-        <div id="wifiMenu" style="display:none;">
-            <div class="wifi-header">📡 الشبكات المتاحة</div>
-            <div id="wifiList">
-                <!-- سيتم تعبئتها بواسطة JavaScript -->
-            </div>
-            <div class="wifi-footer">
-                <div class="wifi-item" style="border-top:1px solid var(--color-border); margin-top:6px; padding-top:10px;">
-                    <i class="fas fa-key"></i>
-                    <div class="wifi-info">
-                        <div class="wifi-name" style="color:#ffa502;">اختراق الشبكة</div>
-                        <div class="wifi-strength">استخدم <span style="color:#00ffcc;">crackwifi [SSID]</span></div>
-                    </div>
+            <!-- منطقة الإشعارات -->
+            <div id="notifications"></div>
+
+            <!-- المحطة الطرفية -->
+            <div id="terminal-wrapper">
+                <div id="terminal-output"></div>
+                <div id="terminal-input-line">
+                    <span class="prompt">$</span>
+                    <input type="text" id="terminal-input" placeholder="اكتب أمراً..." autofocus>
                 </div>
-            </div>
-        </div>
-
-        <!-- الإشعارات -->
-        <div id="notification-container" class="notification-area"></div>
-
-        <!-- شاشات الأخطاء -->
-        <div id="bsod-overlay" style="display:none;">
-            <div class="bsod-content">
-                <div class="bsod-title">⚠️ SYSTEM CRITICAL ERROR</div>
-                <div class="bsod-message">CPU TEMPERATURE CRITICAL<br>EMERGENCY SHUTDOWN</div>
-                <div class="bsod-progress">
-                    <div class="bsod-bar"><div id="bsodProgressFill"></div></div>
-                    <div class="bsod-timer"><span id="bsodTimer">20</span>s</div>
+                <div id="quick-commands">
+                    <button onclick="quickCmd('help')">help</button>
+                    <button onclick="quickCmd('ls')">ls</button>
+                    <button onclick="quickCmd('scan')">scan</button>
+                    <button onclick="quickCmd('crack NEXUS_CORP')">crack</button>
+                    <button onclick="quickCmd('tasks')">tasks</button>
+                    <button onclick="quickCmd('clear')">clear</button>
                 </div>
-            </div>
-        </div>
-
-        <div id="arrest-overlay" style="display:none;">
-            <div class="arrest-content">
-                <div class="arrest-header">🚨 FEDERAL DETENTION</div>
-                <div class="arrest-body">
-                    <p>تم حبسك من قبل السلطات السيبرانية</p>
-                    <p>تم خصم <strong id="arrestFine">0</strong> دولار</p>
-                </div>
-                <button class="arrest-btn" onclick="closeArrest()">فهمت</button>
             </div>
         </div>
     </div>
