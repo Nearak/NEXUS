@@ -13,81 +13,168 @@
     <div id="boot-screen">
         <div class="boot-container">
             <div class="boot-logo">█ NEXUS</div>
-            <div class="boot-sub">The Broken Wall v3.0</div>
+            <div class="boot-sub">v3.0 - بيئة الاختراق المتقدمة</div>
             <div class="boot-progress"><div id="bootBar"></div></div>
-            <button id="bootBtn" onclick="startGame()">دخول إلى النظام</button>
+            <button id="bootBtn" onclick="startGame()">🚀 تشغيل النظام</button>
         </div>
     </div>
 
     <!-- ===== شاشة تسجيل الدخول ===== -->
     <div id="login-screen" style="display:none;">
         <div class="login-box">
-            <h1>NEXUS TERMINAL</h1>
-            <p>نظام التقييم الأمني المتقدم</p>
+            <div class="login-header">
+                <i class="fas fa-shield-alt"></i>
+                <h1>NEXUS TERMINAL</h1>
+                <p>نظام التقييم الأمني المتقدم</p>
+            </div>
             <form onsubmit="return handleLogin(event)">
-                <input type="text" id="loginUser" placeholder="اسم المستخدم" dir="ltr" value="admin">
-                <input type="password" id="loginPass" placeholder="كلمة السر" dir="ltr" value="1234">
+                <div class="login-field">
+                    <label><i class="fas fa-user"></i> اسم المستخدم</label>
+                    <input type="text" id="loginUser" placeholder="admin" dir="ltr" value="admin">
+                </div>
+                <div class="login-field">
+                    <label><i class="fas fa-lock"></i> كلمة المرور</label>
+                    <input type="password" id="loginPass" placeholder="••••••••" dir="ltr" value="1234">
+                </div>
                 <button type="submit"><i class="fas fa-sign-in-alt"></i> دخول</button>
                 <div id="loginError"></div>
             </form>
+            <div class="login-info">
+                <span>🔒 اتصال آمن</span>
+                <span>🛡️ محمي بواسطة NEXUS v3.0</span>
+            </div>
         </div>
     </div>
 
     <!-- ===== سطح المكتب ===== -->
     <div id="desktop" style="display:none;">
-        <!-- خلفية -->
+        <!-- خلفية سطح المكتب -->
         <div id="wallpaper"></div>
 
-        <!-- أيقونات سطح المكتب -->
-        <div id="desktop-icons">
-            <div class="desk-icon" onclick="openWindow('terminal')"><i class="fas fa-terminal"></i><span>المحطة</span></div>
-            <div class="desk-icon" onclick="openWindow('files')"><i class="fas fa-folder"></i><span>الملفات</span></div>
-            <div class="desk-icon" onclick="openWindow('browser')"><i class="fas fa-globe"></i><span>المتصفح</span></div>
-            <div class="desk-icon" onclick="openWindow('mail')"><i class="fas fa-envelope"></i><span>البريد</span></div>
-            <div class="desk-icon" onclick="openWindow('phone')"><i class="fas fa-mobile-alt"></i><span>الهاتف</span></div>
-            <div class="desk-icon" onclick="openWindow('hq')"><i class="fas fa-headquarters"></i><span>المقر</span></div>
-            <div class="desk-icon" onclick="openWindow('bank')"><i class="fas fa-university"></i><span>البنك</span></div>
-            <div class="desk-icon" onclick="openWindow('vault')"><i class="fas fa-lock"></i><span>القبو</span></div>
-            <div class="desk-icon" onclick="openWindow('profile')"><i class="fas fa-user-circle"></i><span>ملفي</span></div>
-            <div class="desk-icon" onclick="openWindow('tasks')"><i class="fas fa-tasks"></i><span>المهام</span></div>
+        <!-- ===== شريط المهام (علوي) ===== -->
+        <div id="top-bar">
+            <div class="top-bar-left">
+                <button id="startBtn" onclick="toggleStartMenu()">
+                    <i class="fas fa-cube"></i>
+                    <span>ابدأ</span>
+                </button>
+                <div class="quick-launch">
+                    <button onclick="openWindow('terminal')" title="المحطة"><i class="fas fa-terminal"></i></button>
+                    <button onclick="openWindow('browser')" title="المتصفح"><i class="fas fa-globe"></i></button>
+                    <button onclick="openWindow('files')" title="الملفات"><i class="fas fa-folder"></i></button>
+                </div>
+            </div>
+            <div class="top-bar-center" id="taskbarApps"></div>
+            <div class="top-bar-right">
+                <div class="system-tray">
+                    <div class="tray-item" id="wifiIndicator" onclick="toggleWifiMenu()" title="الشبكات">
+                        <i class="fas fa-wifi"></i>
+                        <span id="wifiStatus">غير متصل</span>
+                    </div>
+                    <div class="tray-item" id="cpuIndicator">
+                        <i class="fas fa-microchip"></i>
+                        <div class="tray-bar"><div class="tray-fill" id="cpuFill"></div></div>
+                        <span id="cpuValue">0%</span>
+                    </div>
+                    <div class="tray-item" id="wantedIndicator">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span id="wantedValue">0</span>
+                    </div>
+                    <div class="tray-item" id="clockDisplay">00:00</div>
+                </div>
+            </div>
         </div>
 
-        <!-- حاوية النوافذ -->
+        <!-- ===== أيقونات سطح المكتب ===== -->
+        <div id="desktop-icons">
+            <div class="desk-icon" onclick="openWindow('terminal')">
+                <i class="fas fa-terminal"></i>
+                <span>المحطة</span>
+            </div>
+            <div class="desk-icon" onclick="openWindow('files')">
+                <i class="fas fa-folder"></i>
+                <span>الملفات</span>
+            </div>
+            <div class="desk-icon" onclick="openWindow('browser')">
+                <i class="fas fa-globe"></i>
+                <span>المتصفح</span>
+            </div>
+            <div class="desk-icon" onclick="openWindow('mail')">
+                <i class="fas fa-envelope"></i>
+                <span>البريد</span>
+            </div>
+            <div class="desk-icon" onclick="openWindow('phone')">
+                <i class="fas fa-mobile-alt"></i>
+                <span>الهاتف</span>
+            </div>
+            <div class="desk-icon" onclick="openWindow('hq')">
+                <i class="fas fa-headquarters"></i>
+                <span>المقر</span>
+            </div>
+            <div class="desk-icon" onclick="openWindow('bank')">
+                <i class="fas fa-university"></i>
+                <span>البنك</span>
+            </div>
+            <div class="desk-icon" onclick="openWindow('vault')">
+                <i class="fas fa-lock"></i>
+                <span>القبو</span>
+            </div>
+            <div class="desk-icon" onclick="openWindow('profile')">
+                <i class="fas fa-user-circle"></i>
+                <span>ملفي</span>
+            </div>
+            <div class="desk-icon" onclick="openWindow('tasks')">
+                <i class="fas fa-tasks"></i>
+                <span>المهام</span>
+            </div>
+            <div class="desk-icon" onclick="openWindow('settings')">
+                <i class="fas fa-cog"></i>
+                <span>الإعدادات</span>
+            </div>
+        </div>
+
+        <!-- ===== حاوية النوافذ ===== -->
         <div id="windows-container"></div>
 
-        <!-- شريط المهام -->
-        <div id="taskbar">
-            <div class="taskbar-left">
-                <button id="startBtn" onclick="toggleStartMenu()"><i class="fas fa-cube"></i></button>
-            </div>
-            <div class="taskbar-center" id="taskbarApps"></div>
-            <div class="taskbar-right">
-                <div class="sys-indicator" id="wifiIndicator" onclick="toggleWifiMenu()" title="الشبكات">
-                    <i class="fas fa-wifi"></i><span id="wifiStatus">غير متصل</span>
-                </div>
-                <div class="sys-indicator" id="cpuIndicator">
-                    <div class="indicator-bar"><div class="indicator-fill" id="cpuFill"></div></div>
-                    <span id="cpuValue">0</span>%
-                </div>
-                <div class="sys-indicator" id="wantedIndicator">
-                    <i class="fas fa-exclamation-triangle"></i><span id="wantedValue">0</span>/5
-                </div>
-                <div class="sys-indicator" id="clockDisplay">00:00</div>
-            </div>
-        </div>
-
-        <!-- قوائم منبثقة -->
+        <!-- ===== قوائم منبثقة ===== -->
         <div id="startMenu" style="display:none;">
-            <div class="start-item" onclick="openWindow('terminal'); toggleStartMenu();"><i class="fas fa-terminal"></i> المحطة</div>
-            <div class="start-item" onclick="openWindow('files'); toggleStartMenu();"><i class="fas fa-folder"></i> الملفات</div>
-            <div class="start-item" onclick="openWindow('browser'); toggleStartMenu();"><i class="fas fa-globe"></i> المتصفح</div>
-            <div class="start-item" onclick="openWindow('tasks'); toggleStartMenu();"><i class="fas fa-tasks"></i> المهام</div>
-            <hr>
-            <div class="start-item" onclick="openWindow('profile'); toggleStartMenu();"><i class="fas fa-user"></i> الملف الشخصي</div>
-            <div class="start-item" onclick="openWindow('hq'); toggleStartMenu();"><i class="fas fa-headquarters"></i> المقر</div>
-            <div class="start-item" onclick="openWindow('vault'); toggleStartMenu();"><i class="fas fa-lock"></i> القبو</div>
-            <hr>
-            <div class="start-item danger" onclick="resetGame(); toggleStartMenu();"><i class="fas fa-power-off"></i> إعادة تشغيل</div>
+            <div class="start-header">
+                <div class="start-user">
+                    <i class="fas fa-user-circle"></i>
+                    <div>
+                        <div class="start-username" id="startUsername">admin</div>
+                        <div class="start-userlevel">المستوى 1</div>
+                    </div>
+                </div>
+            </div>
+            <div class="start-search">
+                <i class="fas fa-search"></i>
+                <input type="text" placeholder="ابحث عن تطبيق...">
+            </div>
+            <div class="start-items">
+                <div class="start-item" onclick="openWindow('terminal'); toggleStartMenu();">
+                    <i class="fas fa-terminal"></i> المحطة
+                </div>
+                <div class="start-item" onclick="openWindow('files'); toggleStartMenu();">
+                    <i class="fas fa-folder"></i> الملفات
+                </div>
+                <div class="start-item" onclick="openWindow('browser'); toggleStartMenu();">
+                    <i class="fas fa-globe"></i> المتصفح
+                </div>
+                <div class="start-item" onclick="openWindow('mail'); toggleStartMenu();">
+                    <i class="fas fa-envelope"></i> البريد
+                </div>
+                <div class="start-item" onclick="openWindow('tasks'); toggleStartMenu();">
+                    <i class="fas fa-tasks"></i> المهام
+                </div>
+                <div class="start-divider"></div>
+                <div class="start-item" onclick="openWindow('settings'); toggleStartMenu();">
+                    <i class="fas fa-cog"></i> الإعدادات
+                </div>
+                <div class="start-item danger" onclick="resetGame(); toggleStartMenu();">
+                    <i class="fas fa-power-off"></i> إعادة تشغيل
+                </div>
+            </div>
         </div>
 
         <div id="wifiMenu" style="display:none;">
@@ -113,21 +200,42 @@
                     <div class="wifi-strength" id="ws-DARK_NET">🔒 مشفرة</div>
                 </div>
             </div>
-            <div class="wifi-item" style="border-top:1px solid #2a3a5a; margin-top:6px; padding-top:10px; background:rgba(0,255,204,0.05);">
-                <i class="fas fa-key"></i>
+            <div class="wifi-divider"></div>
+            <div class="wifi-item" onclick="forgetWifi()">
+                <i class="fas fa-times"></i>
                 <div class="wifi-info">
-                    <div class="wifi-name" style="color:#ffa502;">نسيان الشبكة</div>
-                    <div class="wifi-strength" onclick="forgetWifi()" style="cursor:pointer; color:#ff4757;">اضغط لنسيان الشبكة الحالية</div>
+                    <div class="wifi-name" style="color:#ff4757;">نسيان الشبكة الحالية</div>
                 </div>
             </div>
         </div>
 
-        <!-- إشعارات -->
+        <!-- ===== الإشعارات ===== -->
         <div id="notification-container"></div>
 
-        <!-- شاشات الأخطاء -->
-        <div id="bsod-overlay" style="display:none;">...</div>
-        <div id="arrest-overlay" style="display:none;">...</div>
+        <!-- ===== شاشات الأخطاء ===== -->
+        <div id="bsod-overlay" style="display:none;">
+            <div class="bsod-content">
+                <div class="bsod-icon">💀</div>
+                <div class="bsod-title">SYSTEM CRITICAL ERROR</div>
+                <div class="bsod-message">ارتفاع حرارة المعالج!<br>سيتم إعادة التشغيل...</div>
+                <div class="bsod-progress">
+                    <div class="bsod-bar"><div id="bsodProgressFill"></div></div>
+                    <span id="bsodTimer">20</span>s
+                </div>
+            </div>
+        </div>
+
+        <div id="arrest-overlay" style="display:none;">
+            <div class="arrest-content">
+                <div class="arrest-icon">🚨</div>
+                <div class="arrest-title">تم القبض عليك!</div>
+                <div class="arrest-body">
+                    <p>تم حجز <strong id="arrestFine">0</strong> دولار</p>
+                    <p>تم مصادرة أداة عشوائية</p>
+                </div>
+                <button class="arrest-btn" onclick="closeArrest()">فهمت</button>
+            </div>
+        </div>
     </div>
 
     <script src="script.js"></script>
