@@ -17,9 +17,9 @@ class AudioSystem {
         osc.connect(gain);
         gain.connect(ctx.destination);
         osc.frequency.value = 800;
-        gain.gain.value = 0.08;
+        gain.gain.value = 0.06;
         osc.start(ctx.currentTime);
-        osc.stop(ctx.currentTime + 0.04);
+        osc.stop(ctx.currentTime + 0.03);
     }
     playSuccess() {
         if (!this.audioContext) return;
@@ -30,7 +30,7 @@ class AudioSystem {
             osc.connect(gain);
             gain.connect(ctx.destination);
             osc.frequency.value = freq;
-            gain.gain.value = 0.12;
+            gain.gain.value = 0.1;
             osc.start(ctx.currentTime + i * 0.06);
             osc.stop(ctx.currentTime + (i + 1) * 0.06);
         });
@@ -44,13 +44,11 @@ class AudioSystem {
         gain.connect(ctx.destination);
         osc.frequency.value = 300;
         osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.3);
-        gain.gain.value = 0.15;
+        gain.gain.value = 0.12;
         osc.start(ctx.currentTime);
         osc.stop(ctx.currentTime + 0.3);
     }
-    playNotification() {
-        this.playSuccess();
-    }
+    playNotification() { this.playSuccess(); }
 }
 
 const audioSystem = new AudioSystem();
@@ -67,11 +65,11 @@ let state = {
     wallpaper: 'radial-gradient(circle at 20% 30%, #1a2a3a, #0a0e17)',
     accentColor: '#00ffcc',
     mail: [
-        { from: 'Ariel@NEXUS.sec', subject: '🔐 مرحباً بك في NEXUS', body: 'مرحباً بك في NEXUS... اكتب help في المحطة للبدء.' },
-        { from: 'System@NEXUS.sec', subject: '📋 المهمة الأولى: اختراق الشبكة', body: 'لبدء العمل، يجب اختراق NEXUS_CORP.\nاستخدم الأمر: crackwifi NEXUS_CORP\nجرب كلمات المرور: 12345678, password, admin' }
+        { from: 'Ariel@NEXUS.sec', subject: '🔐 مرحباً بك في NEXUS', body: 'مرحباً بك في نظام NEXUS... اكتب help في المحطة للبدء.' },
+        { from: 'System@NEXUS.sec', subject: '📋 المهمة الأولى', body: 'لبدء العمل، يجب اختراق NEXUS_CORP.\nاستخدم: crackwifi NEXUS_CORP\nجرب: 12345678, password, admin' }
     ],
     bankTransactions: ['+1500 دولار (راتب ابتدائي)'],
-    phoneMessages: ['مرحباً، هاتفك الآمن متصل.'],
+    phoneMessages: ['مرحباً، هاتفك الآمن متصل.', 'لديك بريد جديد من Ariel'],
     logs: [],
     isOverheated: false,
     isArrested: false,
@@ -81,9 +79,9 @@ let state = {
         { id: 3, title: 'استغلال ثغرة SQL', desc: 'استخدم sqlmap http://test.com/login', reward: 1200, status: 'pending' }
     ],
     wifiNetworks: {
-        'NEXUS_CORP': { status: 'secure', password: '12345678', cracked: false },
-        'PUBLIC_WIFI': { status: 'open', cracked: true },
-        'DARK_NET': { status: 'secure', password: 'dark2024', cracked: false }
+        'NEXUS_CORP': { status: 'secure', password: '12345678', cracked: false, connected: false },
+        'PUBLIC_WIFI': { status: 'open', cracked: true, connected: false },
+        'DARK_NET': { status: 'secure', password: 'dark2024', cracked: false, connected: false }
     },
     currentWifi: 'غير متصل',
     mission1Done: false
@@ -103,10 +101,10 @@ let currentPath = '/home/user';
 // ===== دوال مساعدة =====
 function updateUI() {
     document.getElementById('cpuValue').innerText = Math.min(state.cpu, 100);
-    document.getElementById('cpuFill').style.width = Math.min(state.cpu, 100) + '%';
     document.getElementById('wantedValue').innerText = state.wanted;
     document.getElementById('wallpaper').style.background = state.wallpaper;
     document.getElementById('wifiStatus').innerText = state.currentWifi;
+    updateWifiMenu();
 }
 
 function addLog(msg) {
@@ -142,7 +140,7 @@ function updateTaskStatus(taskId, status) {
     if (task) {
         task.status = status;
         if (taskId === 1 && status === 'completed') {
-            showNotification('🔓 تم فتح DARK_NET', 'يمكنك الآن اختراق DARK_NET.', 'info');
+            showNotification('🔓 تم فتح DARK_NET', 'يمكنك الآن محاولة اختراق DARK_NET.', 'info');
         }
         saveState();
     }
@@ -153,12 +151,7 @@ function showNotification(title, body, type = 'info') {
     const container = document.getElementById('notification-container');
     const notif = document.createElement('div');
     notif.className = 'notification';
-    const colors = {
-        success: '#2ed573',
-        error: '#ff4757',
-        warning: '#ffa502',
-        info: '#00ffcc'
-    };
+    const colors = { success: '#2ed573', error: '#ff4757', warning: '#ffa502', info: '#00ffcc' };
     notif.style.borderRightColor = colors[type] || '#00ffcc';
     notif.innerHTML = `<strong>${title}</strong><br>${body}`;
     container.appendChild(notif);
@@ -215,7 +208,7 @@ function makeDraggable(el) {
     const header = el.querySelector('.window-header');
     if (!header) return;
     const startDrag = (e) => {
-        if (e.target.tagName === 'BUTTON') return;
+        if (e.target.closest('.window-controls')) return;
         isDragging = true;
         const rect = el.getBoundingClientRect();
         const cx = e.touches ? e.touches[0].clientX : e.clientX;
@@ -248,10 +241,21 @@ function makeDraggable(el) {
 }
 
 // ===== إدارة النوافذ =====
-function openWindow(id) {
+let windowCounter = 0;
+let minimizedWindows = {};
+
+function openWindow(id, content = null) {
     const container = document.getElementById('windows-container');
     const existing = document.getElementById(`win-${id}`);
-    if (existing) { existing.style.zIndex = Date.now() % 1000 + 100; return; }
+    if (existing) {
+        existing.style.zIndex = Date.now() % 1000 + 100;
+        if (existing.classList.contains('minimized')) {
+            existing.classList.remove('minimized');
+            const taskBtn = document.getElementById(`taskbar-${id}`);
+            if (taskBtn) taskBtn.classList.remove('minimized-app');
+        }
+        return;
+    }
 
     const win = document.createElement('div');
     win.className = 'window';
@@ -261,46 +265,58 @@ function openWindow(id) {
     win.style.top = (8 + Math.random() * 4) + '%';
 
     const titles = {
-        terminal: 'المحطة الطرفية', files: 'مدير الملفات', browser: 'المتصفح',
-        vault: 'القبو', profile: 'الملف الشخصي', phone: 'الهاتف',
-        mail: 'البريد', bank: 'البنك', hq: 'غرفة العمليات', tasks: 'دفتر المهام'
+        terminal: 'المحطة الطرفية',
+        files: 'مدير الملفات',
+        browser: 'المتصفح'
     };
     const icons = {
-        terminal: 'terminal', files: 'folder', browser: 'globe', vault: 'lock',
-        profile: 'user-circle', phone: 'mobile-alt', mail: 'envelope',
-        bank: 'university', hq: 'project-diagram', tasks: 'tasks'
+        terminal: 'terminal',
+        files: 'folder',
+        browser: 'globe'
     };
 
-    let content = '';
-    switch (id) {
-        case 'terminal': content = getTerminalHTML(); break;
-        case 'files': content = getFilesHTML(); break;
-        case 'browser': content = getBrowserHTML(); break;
-        case 'profile': content = getProfileHTML(); break;
-        case 'vault': content = getVaultHTML(); break;
-        case 'phone': content = getPhoneHTML(); break;
-        case 'mail': content = getMailHTML(); break;
-        case 'bank': content = getBankHTML(); break;
-        case 'hq': content = getHQHTML(); break;
-        case 'tasks': content = getTasksHTML(); break;
-        default: content = '<p>تطبيق قيد التطوير</p>';
+    let bodyContent = '';
+    if (content) {
+        bodyContent = content;
+    } else {
+        switch (id) {
+            case 'terminal': bodyContent = getTerminalHTML(); break;
+            case 'files': bodyContent = getFilesHTML(); break;
+            case 'browser': bodyContent = getBrowserHTML(); break;
+            default: bodyContent = '<p>تطبيق غير معروف</p>';
+        }
     }
 
     win.innerHTML = `
         <div class="window-header">
-            <h3><i class="fas fa-${icons[id]}"></i> ${titles[id]}</h3>
-            <button class="win-close" onclick="closeWindow('${id}')">✕</button>
+            <h3><i class="fas fa-${icons[id] || 'window-maximize'}"></i> ${titles[id] || id}</h3>
+            <div class="window-controls">
+                <button class="win-minimize" onclick="minimizeWindow('${id}')" title="تصغير">─</button>
+                <button class="win-maximize" onclick="maximizeWindow('${id}')" title="تكبير">☐</button>
+                <button class="win-close" onclick="closeWindow('${id}')" title="إغلاق">✕</button>
+            </div>
         </div>
-        <div class="window-body">${content}</div>
+        <div class="window-body">${bodyContent}</div>
     `;
     container.appendChild(win);
     makeDraggable(win);
 
+    // إضافة إلى شريط المهام
     const taskbar = document.getElementById('taskbarApps');
     const appBtn = document.createElement('span');
     appBtn.className = 'taskbar-app';
-    appBtn.innerText = titles[id];
-    appBtn.onclick = () => focusWindow(id);
+    appBtn.innerText = titles[id] || id;
+    appBtn.onclick = () => {
+        const w = document.getElementById(`win-${id}`);
+        if (w) {
+            if (w.classList.contains('minimized')) {
+                w.classList.remove('minimized');
+                appBtn.classList.remove('minimized-app');
+            } else {
+                w.style.zIndex = Date.now() % 1000 + 100;
+            }
+        }
+    };
     appBtn.id = `taskbar-${id}`;
     taskbar.appendChild(appBtn);
 
@@ -310,6 +326,26 @@ function openWindow(id) {
 function closeWindow(id) {
     document.getElementById(`win-${id}`)?.remove();
     document.getElementById(`taskbar-${id}`)?.remove();
+    delete minimizedWindows[id];
+}
+
+function minimizeWindow(id) {
+    const win = document.getElementById(`win-${id}`);
+    if (win) {
+        win.classList.add('minimized');
+        const taskBtn = document.getElementById(`taskbar-${id}`);
+        if (taskBtn) taskBtn.classList.add('minimized-app');
+        minimizedWindows[id] = true;
+    }
+}
+
+function maximizeWindow(id) {
+    const win = document.getElementById(`win-${id}`);
+    if (win) {
+        win.classList.toggle('maximized');
+        const btn = win.querySelector('.win-maximize');
+        if (btn) btn.innerText = win.classList.contains('maximized') ? '☐' : '☐';
+    }
 }
 
 function focusWindow(id) {
@@ -408,8 +444,7 @@ function executeCommand(cmd) {
             }
             if (found) {
                 net.cracked = true;
-                state.currentWifi = arg;
-                updateUI();
+                connectToWifi(arg);
                 audioSystem.playSuccess();
                 updateTaskStatus(1, 'completed');
                 addMoney(500);
@@ -470,162 +505,313 @@ function executeCommand(cmd) {
     }
 }
 
-// ===== وظائف التطبيقات =====
-function getFilesHTML() {
-    let html = `<div style="font-size:13px;"><div style="color:#00ffcc;">📁 ${currentPath}</div>`;
-    const files = fileSystem[currentPath] || {};
-    Object.keys(files).forEach(f => {
-        html += `<div style="padding:6px; background:rgba(0,255,204,0.05); margin:4px 0; border-radius:4px; cursor:pointer;" onclick="showNotification('📄 ${f}', '${files[f].substring(0,80)}...', 'info')">${f}</div>`;
-    });
-    return html + '</div>';
+// ===== المتصفح المحسّن =====
+let browserHistory = [];
+let browserHistoryIndex = -1;
+let browserCurrentPage = 'home';
+
+function openBrowser(page = 'home') {
+    // نغلق أي نافذة متصفح مفتوحة
+    const existing = document.getElementById('win-browser');
+    if (existing) {
+        closeWindow('browser');
+    }
+    // نفتح نافذة متصفح جديدة
+    openWindow('browser', getBrowserHTML());
+    // ننتظر حتى تظهر النافذة ثم نذهب للصفحة المطلوبة
+    setTimeout(() => {
+        if (page && page !== 'home') {
+            navigateTo(page);
+        }
+    }, 100);
 }
 
 function getBrowserHTML() {
     return `
-        <div style="font-size:13px;">
-            <h4 style="color:#00ffcc;">🌐 المتصفح</h4>
-            <div style="background:rgba(0,255,204,0.05); padding:12px; border-radius:8px; margin:8px 0;">
-                <div style="font-weight:bold; color:#00ffcc;">nexus.sec</div>
-                <div style="font-size:12px; color:#888;">نظام الإنترنت الآمن</div>
+        <div style="display:flex;flex-direction:column;height:100%;">
+            <div class="browser-toolbar">
+                <div class="browser-nav-buttons">
+                    <button onclick="browserBack()" title="رجوع"><i class="fas fa-arrow-left"></i></button>
+                    <button onclick="browserForward()" title="تقدم"><i class="fas fa-arrow-right"></i></button>
+                    <button onclick="browserReload()" title="تحديث"><i class="fas fa-sync-alt"></i></button>
+                </div>
+                <div class="browser-url-bar">
+                    <span class="url-icon"><i class="fas fa-lock" style="color:#00ffcc;"></i></span>
+                    <input type="text" id="browserUrl" value="nexus://home" placeholder="ابحث أو اكتب عنوان..." onkeydown="if(event.key==='Enter')browserGo()">
+                </div>
+                <div class="browser-actions">
+                    <button onclick="browserGo()" title="اذهب"><i class="fas fa-arrow-right"></i></button>
+                    <button onclick="openBrowser('home')" title="الرئيسية"><i class="fas fa-home"></i></button>
+                </div>
             </div>
-            <div style="background:rgba(0,255,204,0.05); padding:12px; border-radius:8px;">
-                <div style="font-weight:bold; color:#ffa502;">dark-market.onion</div>
-                <div style="font-size:12px; color:#888;">السوق السوداء (متقدم)</div>
+            <div class="browser-content" id="browserContent">
+                ${getPageContent('home')}
             </div>
         </div>
     `;
 }
 
-function getMailHTML() {
-    let html = '<div class="mail-list">';
-    state.mail.forEach((m, i) => {
-        html += `
-            <div class="mail-item" onclick="this.classList.toggle('open')">
-                <div class="subject">${m.from}</div>
-                <div class="from">${m.subject}</div>
-                <div class="body">${m.body}</div>
-            </div>
-        `;
-    });
-    return html + '</div>';
-}
-
-function getProfileHTML() {
-    return `
-        <div style="font-size:13px;">
-            <div style="background:rgba(0,255,204,0.1); padding:15px; border-radius:8px; border:1px solid #00ffcc;">
-                <div><strong>المستخدم:</strong> ${state.username}</div>
-                <div><strong>الاسم:</strong> ${state.displayName}</div>
-                <div><strong>المستوى:</strong> مبتدئ</div>
-            </div>
-            <div style="background:rgba(255,165,2,0.1); padding:15px; border-radius:8px; border:1px solid #ffa502; margin-top:12px;">
-                <strong>⚙️ الإحصائيات</strong>
-                <div style="margin-top:8px; font-size:12px;">
-                    <div>الأموال: <span style="color:#00ffcc;">${state.money} $</span></div>
-                    <div>المطاردة: <span style="color:#ffa502;">${state.wanted}/5</span></div>
-                    <div>الحرارة: <span style="color:${state.cpu>70?'#ff4757':'#00ffcc'};">${state.cpu}%</span></div>
+function getPageContent(page) {
+    const pages = {
+        'home': `
+            <div class="browser-page">
+                <div class="page-header">🏠 الصفحة الرئيسية</div>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;">
+                    <div style="background:rgba(30,45,74,0.5);padding:16px;border-radius:8px;cursor:pointer;text-align:center;" onclick="navigateTo('bank')">
+                        <i class="fas fa-university" style="font-size:28px;color:#00ffcc;"></i>
+                        <div style="margin-top:6px;">البنك</div>
+                    </div>
+                    <div style="background:rgba(30,45,74,0.5);padding:16px;border-radius:8px;cursor:pointer;text-align:center;" onclick="navigateTo('tasks')">
+                        <i class="fas fa-tasks" style="font-size:28px;color:#ffa502;"></i>
+                        <div style="margin-top:6px;">المهام</div>
+                    </div>
+                    <div style="background:rgba(30,45,74,0.5);padding:16px;border-radius:8px;cursor:pointer;text-align:center;" onclick="navigateTo('mail')">
+                        <i class="fas fa-envelope" style="font-size:28px;color:#00ffcc;"></i>
+                        <div style="margin-top:6px;">البريد</div>
+                    </div>
+                    <div style="background:rgba(30,45,74,0.5);padding:16px;border-radius:8px;cursor:pointer;text-align:center;" onclick="navigateTo('profile')">
+                        <i class="fas fa-user-circle" style="font-size:28px;color:#00ffcc;"></i>
+                        <div style="margin-top:6px;">ملفي</div>
+                    </div>
+                    <div style="background:rgba(30,45,74,0.5);padding:16px;border-radius:8px;cursor:pointer;text-align:center;" onclick="navigateTo('vault')">
+                        <i class="fas fa-lock" style="font-size:28px;color:#ff4757;"></i>
+                        <div style="margin-top:6px;">القبو</div>
+                    </div>
+                    <div style="background:rgba(30,45,74,0.5);padding:16px;border-radius:8px;cursor:pointer;text-align:center;" onclick="navigateTo('hq')">
+                        <i class="fas fa-project-diagram" style="font-size:28px;color:#00ffcc;"></i>
+                        <div style="margin-top:6px;">المقر</div>
+                    </div>
+                    <div style="background:rgba(30,45,74,0.5);padding:16px;border-radius:8px;cursor:pointer;text-align:center;" onclick="navigateTo('phone')">
+                        <i class="fas fa-mobile-alt" style="font-size:28px;color:#00ffcc;"></i>
+                        <div style="margin-top:6px;">الهاتف</div>
+                    </div>
+                </div>
+                <div style="margin-top:20px;padding:16px;background:rgba(0,255,204,0.05);border-radius:8px;border:1px solid #00ffcc;">
+                    <strong style="color:#00ffcc;">📡 حالة النظام</strong>
+                    <div style="font-size:12px;color:#888;margin-top:8px;">
+                        <div>المستخدم: ${state.username}</div>
+                        <div>الشبكة: ${state.currentWifi}</div>
+                        <div>المطاردة: ${state.wanted}/5</div>
+                    </div>
                 </div>
             </div>
-        </div>
-    `;
-}
-
-function getBankHTML() {
-    return `
-        <div style="font-size:13px;">
-            <div style="background:linear-gradient(135deg,rgba(0,255,204,0.1),rgba(0,255,204,0.05)); padding:20px; border-radius:12px; border:1px solid #00ffcc; text-align:center;">
-                <div style="font-size:11px; color:#888;">الرصيد</div>
-                <div style="font-size:28px; color:#00ffcc; font-weight:bold;">${state.money} $</div>
-            </div>
-            <div style="background:rgba(30,45,74,0.5); padding:12px; border-radius:8px; margin-top:12px;">
-                <strong style="color:#00ffcc;">📊 السجل</strong>
-                <div style="font-size:12px; max-height:150px; overflow-y:auto;">
-                    ${state.bankTransactions.map(t => `<div style="padding:4px; border-bottom:1px solid #2a3a5a;">${t}</div>`).join('')}
+        `,
+        'bank': `
+            <div class="browser-page">
+                <div class="page-header">🏦 البنك الرقمي</div>
+                <div class="bank-balance">
+                    <div class="label">الرصيد الحالي</div>
+                    <div class="amount">${state.money} $</div>
+                </div>
+                <div style="background:rgba(30,45,74,0.5);padding:12px;border-radius:8px;">
+                    <strong style="color:#00ffcc;">📊 سجل المعاملات</strong>
+                    <div style="margin-top:8px;max-height:200px;overflow-y:auto;">
+                        ${state.bankTransactions.map(t => `<div class="bank-transaction">${t}</div>`).join('')}
+                    </div>
                 </div>
             </div>
-        </div>
-    `;
-}
-
-function getVaultHTML() {
-    return `
-        <div style="font-size:13px;">
-            <div style="background:rgba(255,71,87,0.1); padding:15px; border-radius:8px; border:1px solid #ff4757;">
-                <strong style="color:#ff4757;">⚠️ منطقة خطيرة</strong>
-                <p style="font-size:12px; color:#888;">أدوات وأسرار مظلمة</p>
+        `,
+        'tasks': `
+            <div class="browser-page">
+                <div class="page-header">📋 دفتر المهام</div>
+                ${state.tasks.map(t => `
+                    <div class="task-item ${t.status === 'completed' ? 'completed' : ''}">
+                        <div class="task-title">${t.title}</div>
+                        <div class="task-desc">${t.desc}</div>
+                        <div class="task-reward">💰 ${t.reward} دولار</div>
+                        <div class="task-status">${t.status === 'completed' ? '✅ مكتملة' : '⏳ قيد التنفيذ'}</div>
+                    </div>
+                `).join('')}
             </div>
-            <div style="background:rgba(30,45,74,0.5); padding:15px; border-radius:8px; margin-top:12px;">
-                <strong style="color:#ffa502;">🎒 الحقيبة</strong>
-                <div style="font-size:12px; margin-top:8px;">
-                    ${state.inventory.length ? state.inventory.map(i => `<div>✓ ${i}</div>`).join('') : '<div style="color:#888;">فارغة</div>'}
-                </div>
+        `,
+        'mail': `
+            <div class="browser-page">
+                <div class="page-header">📧 البريد الآمن</div>
+                ${state.mail.map((m, i) => `
+                    <div class="mail-item" onclick="this.classList.toggle('open')">
+                        <div class="subject">${m.from}</div>
+                        <div class="from">${m.subject}</div>
+                        <div class="body">${m.body}</div>
+                    </div>
+                `).join('')}
             </div>
-        </div>
-    `;
-}
-
-function getPhoneHTML() {
-    return `
-        <div class="phone-frame">
-            <div class="phone-screen">
-                <div class="phone-status"><span>NEXUS</span><span>📱 100%</span></div>
-                <div class="phone-apps">
-                    <div class="phone-app" onclick="showNotification('📞', 'لا توجد مكالمات', 'info')"><i class="fas fa-phone"></i><span>اتصال</span></div>
-                    <div class="phone-app" onclick="showNotification('💬', '2 رسائل جديدة', 'info')"><i class="fas fa-sms"></i><span>رسائل</span></div>
-                    <div class="phone-app" onclick="showNotification('🖼️', 'لا توجد صور', 'info')"><i class="fas fa-images"></i><span>معرض</span></div>
-                    <div class="phone-app" onclick="showNotification('⚙️', 'الإعدادات محمية', 'info')"><i class="fas fa-cog"></i><span>إعدادات</span></div>
+        `,
+        'profile': `
+            <div class="browser-page">
+                <div class="page-header">👤 الملف الشخصي</div>
+                <div class="profile-card">
+                    <div class="field"><strong>اسم المستخدم:</strong> <span class="value">${state.username}</span></div>
+                    <div class="field"><strong>الاسم الكامل:</strong> <span class="value">${state.displayName}</span></div>
+                    <div class="field"><strong>المستوى الأمني:</strong> <span class="value" style="color:#00ffcc;">مبتدئ</span></div>
                 </div>
-                <div style="font-size:11px; color:#888; margin-top:12px;">
-                    ${state.phoneMessages.map(m => `<div>📨 ${m}</div>`).join('')}
-                </div>
-            </div>
-        </div>
-    `;
-}
-
-function getHQHTML() {
-    return `
-        <div style="font-size:13px;">
-            <div style="background:linear-gradient(135deg,rgba(0,255,204,0.1),transparent); padding:15px; border-radius:8px; border:1px solid #00ffcc;">
-                <h3 style="color:#00ffcc;">🎯 المهام النشطة</h3>
-                <div style="font-size:12px;">
-                    ${state.tasks.map(t => `
-                        <div style="padding:6px; background:rgba(0,255,204,0.05); margin:4px 0; border-radius:4px;">
-                            ${t.status === 'completed' ? '✅' : '⏳'} ${t.title}
-                            <span style="color:#888; font-size:11px;">(${t.reward}$)</span>
+                <div style="background:rgba(255,165,2,0.1);padding:16px;border-radius:8px;border:1px solid #ffa502;">
+                    <strong style="color:#ffa502;">⚙️ الإحصائيات</strong>
+                    <div class="stats-grid">
+                        <div class="stat-box">
+                            <div class="stat-value">${state.money}$</div>
+                            <div class="stat-label">الأموال</div>
                         </div>
-                    `).join('')}
+                        <div class="stat-box">
+                            <div class="stat-value" style="color:#ffa502;">${state.wanted}/5</div>
+                            <div class="stat-label">المطاردة</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value" style="color:${state.cpu>70?'#ff4757':'#00ffcc'};">${state.cpu}%</div>
+                            <div class="stat-label">الحرارة</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value" style="color:#00ffcc;">${state.inventory.length}</div>
+                            <div class="stat-label">الأدوات</div>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div style="background:rgba(30,45,74,0.5); padding:12px; border-radius:8px; margin-top:12px;">
-                <strong style="color:#ffa502;">📡 الاتصالات</strong>
-                <div style="font-size:12px; color:#888;">
-                    <div>البريد: ${state.mail.length} رسائل</div>
-                    <div>الشبكة: ${state.currentWifi}</div>
+        `,
+        'vault': `
+            <div class="browser-page">
+                <div class="page-header">💀 القبو السري</div>
+                <div style="background:rgba(255,71,87,0.1);padding:16px;border-radius:8px;border:1px solid #ff4757;margin-bottom:16px;">
+                    <strong style="color:#ff4757;">⚠️ منطقة خطيرة</strong>
+                    <p style="font-size:12px;color:#888;margin-top:6px;">أدوات وأسرار مظلمة للعمليات المتقدمة</p>
+                </div>
+                <div style="background:rgba(30,45,74,0.5);padding:16px;border-radius:8px;">
+                    <strong style="color:#ffa502;">🎒 الحقيبة</strong>
+                    <div style="font-size:12px;margin-top:8px;">
+                        ${state.inventory.length ? state.inventory.map(i => `<div style="padding:4px;border-bottom:1px solid #2a3a5a;">✓ ${i}</div>`).join('') : '<div style="color:#888;">فارغة</div>'}
+                    </div>
                 </div>
             </div>
-        </div>
-    `;
+        `,
+        'hq': `
+            <div class="browser-page">
+                <div class="page-header">🏢 غرفة العمليات</div>
+                <div style="background:linear-gradient(135deg,rgba(0,255,204,0.1),transparent);padding:16px;border-radius:8px;border:1px solid #00ffcc;margin-bottom:16px;">
+                    <strong style="color:#00ffcc;">🎯 المهام النشطة</strong>
+                    <div style="font-size:12px;margin-top:8px;">
+                        ${state.tasks.map(t => `
+                            <div style="padding:6px;background:rgba(0,255,204,0.05);margin:4px 0;border-radius:4px;">
+                                ${t.status === 'completed' ? '✅' : '⏳'} ${t.title}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                <div style="background:rgba(30,45,74,0.5);padding:16px;border-radius:8px;">
+                    <strong style="color:#ffa502;">📡 الاتصالات</strong>
+                    <div style="font-size:12px;color:#888;margin-top:6px;">
+                        <div>البريد: ${state.mail.length} رسائل</div>
+                        <div>الشبكة: ${state.currentWifi}</div>
+                        <div>المستخدمين النشطين: 1</div>
+                    </div>
+                </div>
+            </div>
+        `,
+        'phone': `
+            <div class="browser-page">
+                <div class="page-header">📱 الهاتف الآمن</div>
+                <div class="phone-container">
+                    <div class="phone-frame">
+                        <div class="phone-notch"></div>
+                        <div class="phone-screen">
+                            <div class="phone-status">
+                                <span>NEXUS</span>
+                                <span>📶 ${state.currentWifi}</span>
+                                <span>🔋 100%</span>
+                            </div>
+                            <div class="phone-apps-grid">
+                                <div class="phone-app" onclick="showNotification('📞', 'لا توجد مكالمات', 'info')">
+                                    <i class="fas fa-phone"></i><span>اتصال</span>
+                                </div>
+                                <div class="phone-app" onclick="showNotification('💬', 'لديك رسائل جديدة', 'info')">
+                                    <i class="fas fa-sms"></i><span>رسائل</span>
+                                </div>
+                                <div class="phone-app" onclick="showNotification('🖼️', 'لا توجد صور', 'info')">
+                                    <i class="fas fa-images"></i><span>معرض</span>
+                                </div>
+                                <div class="phone-app" onclick="showNotification('⚙️', 'الإعدادات محمية', 'info')">
+                                    <i class="fas fa-cog"></i><span>إعدادات</span>
+                                </div>
+                            </div>
+                            <div class="phone-messages">
+                                ${state.phoneMessages.map(m => `
+                                    <div class="phone-message">📨 ${m}</div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `
+    };
+    return pages[page] || pages['home'];
 }
 
-function getTasksHTML() {
-    let html = '<div style="font-size:13px;">';
-    state.tasks.forEach(t => {
-        const cls = t.status === 'completed' ? 'task-item completed' : 'task-item';
-        const statusText = t.status === 'completed' ? '✅ مكتملة' : '⏳ قيد التنفيذ';
-        html += `
-            <div class="${cls}">
-                <div class="task-title">${t.title}</div>
-                <div class="task-desc">${t.desc}</div>
-                <div class="task-reward">💰 ${t.reward} دولار</div>
-                <div class="task-status">${statusText}</div>
-            </div>
-        `;
+function navigateTo(page) {
+    browserCurrentPage = page;
+    const content = document.getElementById('browserContent');
+    const url = document.getElementById('browserUrl');
+    if (content) {
+        content.innerHTML = getPageContent(page);
+        // إضافة إلى التاريخ
+        browserHistory = browserHistory.slice(0, browserHistoryIndex + 1);
+        browserHistory.push(page);
+        browserHistoryIndex = browserHistory.length - 1;
+    }
+    if (url) {
+        url.value = `nexus://${page}`;
+    }
+}
+
+function browserGo() {
+    const url = document.getElementById('browserUrl');
+    if (!url) return;
+    const query = url.value.trim();
+    // البحث عن صفحات معروفة
+    const knownPages = ['home', 'bank', 'tasks', 'mail', 'profile', 'vault', 'hq', 'phone'];
+    for (let page of knownPages) {
+        if (query.includes(page)) {
+            navigateTo(page);
+            return;
+        }
+    }
+    // إذا كان بحثاً
+    if (query.length > 0) {
+        showNotification('🔍 بحث', `البحث عن: ${query}`, 'info');
+        navigateTo('home');
+    }
+}
+
+function browserBack() {
+    if (browserHistoryIndex > 0) {
+        browserHistoryIndex--;
+        navigateTo(browserHistory[browserHistoryIndex]);
+    }
+}
+
+function browserForward() {
+    if (browserHistoryIndex < browserHistory.length - 1) {
+        browserHistoryIndex++;
+        navigateTo(browserHistory[browserHistoryIndex]);
+    }
+}
+
+function browserReload() {
+    if (browserCurrentPage) {
+        navigateTo(browserCurrentPage);
+        showNotification('🔄 تحديث', 'تم تحديث الصفحة', 'info');
+    }
+}
+
+// ===== وظائف الملفات =====
+function getFilesHTML() {
+    let html = `<div style="font-size:13px;"><div style="color:#00ffcc;">📁 ${currentPath}</div>`;
+    const files = fileSystem[currentPath] || {};
+    Object.keys(files).forEach(f => {
+        html += `<div style="padding:6px;background:rgba(0,255,204,0.05);margin:4px 0;border-radius:4px;cursor:pointer;" onclick="showNotification('📄 ${f}', '${files[f].substring(0,80)}...', 'info')">${f}</div>`;
     });
     return html + '</div>';
 }
 
-// ===== الشبكات =====
+// ===== الشبكات المحسّنة =====
 function toggleWifiMenu() {
     const menu = document.getElementById('wifiMenu');
     menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
@@ -634,26 +820,63 @@ function toggleWifiMenu() {
 }
 
 function updateWifiMenu() {
+    const list = document.getElementById('wifiList');
+    if (!list) return;
+    let html = '';
     for (let net in state.wifiNetworks) {
         const info = state.wifiNetworks[net];
-        const statusEl = document.getElementById(`wifi-status-${net}`);
-        const checkEl = document.getElementById(`wifi-check-${net}`);
+        const isConnected = state.currentWifi === net;
+        let statusText = '🔒 محمية';
+        let statusClass = 'secure';
+        let checkMark = '';
+        let actions = '';
+
         if (info.cracked || info.status === 'open') {
-            statusEl.innerText = info.cracked ? '✅ مخترقة' : '🌐 مفتوحة';
-            statusEl.className = 'wifi-strength cracked';
-            if (checkEl) checkEl.style.display = 'inline-block';
+            statusText = info.cracked ? '✅ مخترقة' : '🌐 مفتوحة';
+            statusClass = info.cracked ? 'cracked' : '';
+            if (isConnected) {
+                statusText = '✅ متصل';
+                statusClass = 'connected';
+                checkMark = `<span class="wifi-check"><i class="fas fa-check-circle"></i></span>`;
+            }
+            actions = `
+                <div class="wifi-actions">
+                    ${!isConnected ? `<button onclick="connectToWifi('${net}')">اتصل</button>` : ''}
+                    <button onclick="forgetWifi('${net}')" title="نسيان الشبكة"><i class="fas fa-trash-alt"></i></button>
+                </div>
+            `;
         } else {
-            statusEl.innerText = '🔒 محمية';
-            statusEl.className = 'wifi-strength secure';
-            if (checkEl) checkEl.style.display = 'none';
+            actions = `
+                <div class="wifi-actions">
+                    <button onclick="showNotification('🔒 محمية', 'استخدم crackwifi ${net} لاختراقها', 'warning')">اختراق</button>
+                </div>
+            `;
         }
+
+        html += `
+            <div class="wifi-item" style="${isConnected ? 'background:rgba(0,255,204,0.05);border-right:3px solid #00ffcc;' : ''}">
+                <i class="fas ${info.status === 'secure' ? 'fa-lock' : 'fa-wifi'}"></i>
+                <div class="wifi-info">
+                    <div class="wifi-name">${net}</div>
+                    <div class="wifi-strength ${statusClass}">${statusText}</div>
+                </div>
+                ${checkMark}
+                ${actions}
+            </div>
+        `;
     }
+    list.innerHTML = html;
 }
 
-function selectWifi(network) {
+function connectToWifi(network) {
     const info = state.wifiNetworks[network];
     if (!info) return;
     if (info.cracked || info.status === 'open') {
+        // قطع الاتصال بالشبكة الحالية
+        for (let n in state.wifiNetworks) {
+            state.wifiNetworks[n].connected = false;
+        }
+        info.connected = true;
         state.currentWifi = network;
         updateUI();
         audioSystem.playSuccess();
@@ -664,6 +887,26 @@ function selectWifi(network) {
         audioSystem.playError();
         showNotification('🔒 محمية', `شبكة ${network} غير مخترقة. استخدم crackwifi ${network}`, 'error');
     }
+}
+
+function forgetWifi(network) {
+    const info = state.wifiNetworks[network];
+    if (!info) return;
+    // إذا كانت الشبكة متصلة حالياً، افصلها
+    if (state.currentWifi === network) {
+        state.currentWifi = 'غير متصل';
+        info.connected = false;
+    }
+    // إعادة ضبط حالة الاختراق (للشبكات الآمنة فقط)
+    if (info.status === 'secure') {
+        info.cracked = false;
+        info.connected = false;
+    }
+    updateUI();
+    audioSystem.playSuccess();
+    showNotification('🗑️ تم النسيان', `تم نسيان شبكة ${network}`, 'info');
+    document.getElementById('wifiMenu').style.display = 'none';
+    saveState();
 }
 
 // ===== قوائم =====
@@ -699,8 +942,11 @@ function handleLogin(event) {
         updateClock();
         setInterval(updateClock, 1000);
         showNotification('✅ مرحباً', `أهلاً ${user}`, 'success');
-        openWindow('terminal');
-        openWindow('hq');
+        // فتح التطبيقات الافتراضية
+        setTimeout(() => {
+            openWindow('terminal');
+            openBrowser('hq');
+        }, 300);
         return false;
     }
     document.getElementById('loginError').style.display = 'block';
@@ -708,10 +954,11 @@ function handleLogin(event) {
     return false;
 }
 
-// ===== حفظ و تحميل =====
+// ===== حفظ وتحميل =====
 function saveState() {
     try { localStorage.setItem('nexusState', JSON.stringify(state)); } catch(e) {}
 }
+
 function loadState() {
     try {
         const saved = localStorage.getItem('nexusState');
@@ -724,7 +971,6 @@ window.addEventListener('DOMContentLoaded', () => {
     audioSystem.init();
     loadState();
 
-    // محاكاة تمهيد BIOS
     let progress = 0;
     const bar = document.getElementById('bootBarFill');
     const btn = document.getElementById('bootContinueBtn');
@@ -748,7 +994,7 @@ window.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// إغلاق القوائم بالضغط خارجها
+// إغلاق القوائم بالنقر خارجها
 document.addEventListener('click', (e) => {
     ['startMenu', 'wifiMenu'].forEach(id => {
         const menu = document.getElementById(id);
@@ -759,4 +1005,16 @@ document.addEventListener('click', (e) => {
             }
         }
     });
+});
+
+// إغلاق النوافذ بـ Escape
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        const wins = document.querySelectorAll('.window:not(.minimized)');
+        if (wins.length > 0) {
+            const last = wins[wins.length - 1];
+            const id = last.id.replace('win-', '');
+            closeWindow(id);
+        }
+    }
 });
