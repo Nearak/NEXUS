@@ -9,60 +9,53 @@
 body {
     background: #0a0e17;
     height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    overflow: hidden;
     color: #c8d6e5;
     direction: rtl;
 }
 
-#app {
-    width: 100%;
-    max-width: 800px;
-    height: 100vh;
-    max-height: 700px;
-    background: #131b2b;
-    border: 1px solid #2a3a5a;
-    border-radius: 16px;
-    overflow: hidden;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.8);
-    display: flex;
-    flex-direction: column;
-}
-
-/* ===== شاشة البداية ===== */
+/* ===== شاشة التمهيد ===== */
 #boot-screen {
-    flex: 1;
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(135deg, #0a0e17, #1a1f3a);
     display: flex;
     align-items: center;
     justify-content: center;
+    z-index: 9999;
     flex-direction: column;
-    background: linear-gradient(135deg, #0a0e17, #1a1f3a);
-    padding: 30px;
+}
+
+.boot-container {
+    text-align: center;
+    padding: 40px;
+    border: 2px solid #00ffcc;
+    border-radius: 20px;
+    background: rgba(15, 23, 42, 0.9);
+    box-shadow: 0 0 60px rgba(0, 255, 204, 0.2);
 }
 
 .boot-logo {
-    font-size: 48px;
+    font-size: 56px;
     color: #00ffcc;
-    text-shadow: 0 0 20px rgba(0,255,204,0.5);
+    text-shadow: 0 0 30px rgba(0, 255, 204, 0.5);
     font-weight: bold;
-    letter-spacing: 4px;
+    letter-spacing: 6px;
 }
 
 .boot-sub {
     color: #7a8fa0;
     font-size: 18px;
-    letter-spacing: 2px;
-    margin-top: 8px;
+    letter-spacing: 3px;
+    margin: 8px 0 30px;
 }
 
 .boot-progress {
-    width: 80%;
-    max-width: 300px;
+    width: 300px;
     height: 6px;
     background: #1a1f2f;
     border-radius: 10px;
-    margin-top: 30px;
+    margin: 0 auto 30px;
     overflow: hidden;
 }
 
@@ -74,8 +67,7 @@ body {
 }
 
 #bootBtn {
-    margin-top: 30px;
-    padding: 12px 36px;
+    padding: 12px 40px;
     background: #00ffcc;
     color: #000;
     border: none;
@@ -84,185 +76,355 @@ body {
     font-size: 16px;
     cursor: pointer;
     transition: 0.2s;
-    box-shadow: 0 0 20px rgba(0,255,204,0.3);
+    box-shadow: 0 0 20px rgba(0, 255, 204, 0.3);
 }
 
 #bootBtn:hover {
     transform: scale(1.05);
-    box-shadow: 0 0 30px rgba(0,255,204,0.5);
+    box-shadow: 0 0 40px rgba(0, 255, 204, 0.5);
 }
 
-/* ===== شاشة اللعبة ===== */
-#game {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    background: #0a0e17;
-}
-
-/* ===== HUD ===== */
-#hud {
-    display: flex;
-    justify-content: space-around;
-    padding: 10px 16px;
-    background: rgba(15, 23, 42, 0.9);
-    border-bottom: 1px solid #2a3a5a;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-
-.hud-item {
+/* ===== تسجيل الدخول ===== */
+#login-screen {
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 14, 23, 0.98);
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 13px;
-    color: #c8d6e5;
-    background: rgba(0,0,0,0.3);
-    padding: 4px 12px;
-    border-radius: 20px;
+    justify-content: center;
+    z-index: 9998;
 }
 
-.hud-item i {
+.login-box {
+    background: #131b2b;
+    padding: 40px;
+    border-radius: 16px;
+    border: 2px solid #00ffcc;
+    width: 90%;
+    max-width: 380px;
+    text-align: center;
+}
+
+.login-box h1 {
     color: #00ffcc;
-    font-size: 14px;
+    font-size: 24px;
+    margin-bottom: 4px;
 }
 
-.hud-item span {
+.login-box p {
+    color: #7a8fa0;
+    font-size: 13px;
+    margin-bottom: 20px;
+}
+
+.login-box input {
+    width: 100%;
+    padding: 12px;
+    margin: 8px 0;
+    background: #1a1f2f;
+    border: 1px solid #2a3a5a;
+    border-radius: 8px;
+    color: #c8d6e5;
+    font-size: 15px;
+    direction: ltr;
+    text-align: left;
+}
+
+.login-box input:focus {
+    border-color: #00ffcc;
+    outline: none;
+}
+
+.login-box button {
+    width: 100%;
+    padding: 12px;
+    background: #00ffcc;
+    color: #000;
+    border: none;
+    border-radius: 8px;
     font-weight: bold;
-    min-width: 20px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: 0.2s;
+    margin-top: 10px;
 }
 
-/* ===== الإشعارات ===== */
-#notifications {
+.login-box button:hover {
+    background: #00ddbb;
+}
+
+#loginError {
+    color: #ff4757;
+    font-size: 13px;
+    margin-top: 10px;
+    display: none;
+}
+
+/* ===== سطح المكتب ===== */
+#desktop {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+}
+
+#wallpaper {
     position: absolute;
-    top: 70px;
+    inset: 0;
+    background: radial-gradient(circle at 20% 30%, #1a2a3a, #0a0e17);
+    z-index: 0;
+    transition: 0.5s;
+}
+
+/* ===== أيقونات سطح المكتب ===== */
+#desktop-icons {
+    position: absolute;
+    top: 20px;
     right: 20px;
-    z-index: 100;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px 15px;
+    z-index: 1;
+}
+
+.desk-icon {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    align-items: center;
+    width: 70px;
+    padding: 8px 4px;
+    border-radius: 10px;
+    color: #c8d6e5;
+    cursor: pointer;
+    transition: 0.2s;
+    background: transparent;
+}
+
+.desk-icon:hover {
+    background: rgba(0, 255, 204, 0.1);
+    transform: scale(1.05);
+}
+
+.desk-icon i {
+    font-size: 28px;
+    color: #00ffcc;
+    margin-bottom: 4px;
+}
+
+.desk-icon span {
+    font-size: 10px;
+    text-align: center;
+    text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+}
+
+/* ===== النوافذ ===== */
+#windows-container {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
     pointer-events: none;
 }
 
-.notification {
-    background: rgba(19, 27, 43, 0.95);
-    border-right: 4px solid #00ffcc;
-    padding: 12px 16px;
-    border-radius: 8px;
-    font-size: 13px;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.6);
-    animation: slideIn 0.3s ease;
-    min-width: 200px;
-    pointer-events: auto;
-}
-
-@keyframes slideIn {
-    from { transform: translateX(50px); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
-}
-
-/* ===== المحطة الطرفية ===== */
-#terminal-wrapper {
-    flex: 1;
+.window {
+    position: absolute;
+    top: 8%;
+    right: 8%;
+    width: 84%;
+    height: 80%;
+    background: rgba(19, 27, 43, 0.96);
+    border: 1px solid #2a3a5a;
+    border-radius: 12px;
     display: flex;
     flex-direction: column;
-    padding: 12px;
-    background: #0a0e17;
-    font-family: 'Courier New', monospace;
-    position: relative;
+    pointer-events: all;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9);
+    animation: winFade 0.2s ease;
+    backdrop-filter: blur(5px);
+    overflow: hidden;
+    min-width: 300px;
 }
 
-#terminal-output {
-    flex: 1;
-    overflow-y: auto;
-    padding: 8px;
-    font-size: 14px;
-    line-height: 1.6;
-    white-space: pre-wrap;
-    word-break: break-all;
+@keyframes winFade {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.window-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 14px;
+    background: #0f172a;
+    border-bottom: 1px solid #2a3a5a;
+    cursor: grab;
     direction: ltr;
-    text-align: left;
+    flex-shrink: 0;
+}
+
+.window-header:active {
+    cursor: grabbing;
+}
+
+.window-header h3 {
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #00ffcc;
+}
+
+.window-controls {
+    display: flex;
+    gap: 6px;
+}
+
+.window-controls button {
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.2s;
+}
+
+.win-min {
+    background: #ffa502;
+    color: #000;
+}
+.win-min:hover {
+    background: #ffb522;
+}
+.win-max {
+    background: #2ed573;
+    color: #000;
+}
+.win-max:hover {
+    background: #3de683;
+}
+.win-close {
+    background: #ff4757;
+    color: #fff;
+}
+.win-close:hover {
+    background: #ff6370;
+    transform: rotate(90deg);
+}
+
+.window-body {
+    flex: 1;
+    padding: 14px;
+    overflow-y: auto;
+    background: rgba(10, 14, 23, 0.5);
+    direction: rtl;
     scrollbar-width: thin;
     scrollbar-color: #00ffcc transparent;
 }
 
-#terminal-output::-webkit-scrollbar {
+.window-body::-webkit-scrollbar {
     width: 6px;
 }
-#terminal-output::-webkit-scrollbar-track {
+.window-body::-webkit-scrollbar-track {
     background: transparent;
 }
-#terminal-output::-webkit-scrollbar-thumb {
+.window-body::-webkit-scrollbar-thumb {
     background: #00ffcc;
     border-radius: 10px;
+}
+
+/* ===== المحطة الطرفية ===== */
+.terminal-body {
+    background: #0a0e17;
+    font-family: 'Courier New', monospace;
+    padding: 10px;
+    height: 100%;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    direction: ltr;
+    text-align: left;
+    font-size: 13px;
+}
+
+.terminal-output {
+    flex: 1;
+    white-space: pre-wrap;
+    word-break: break-all;
+    line-height: 1.6;
+    color: #c8d6e5;
+    margin-bottom: 8px;
 }
 
 .terminal-line {
     padding: 2px 0;
 }
-
 .terminal-line .prompt {
     color: #00ffcc;
     font-weight: bold;
 }
-
 .terminal-line .cmd {
     color: #ffa502;
 }
-
 .terminal-line .output {
     color: #c8d6e5;
 }
-
 .terminal-line .success {
     color: #2ed573;
 }
-
 .terminal-line .error {
     color: #ff4757;
 }
-
 .terminal-line .info {
     color: #00d2ff;
 }
 
-#terminal-input-line {
+.terminal-input-line {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 8px 0;
+    padding: 6px 0;
     border-top: 1px solid #1a1f2f;
-    margin-top: 8px;
+    margin-top: 6px;
 }
 
-#terminal-input-line .prompt {
+.terminal-input-line .prompt {
     color: #00ffcc;
     font-weight: bold;
-    font-size: 16px;
+    font-size: 15px;
 }
 
-#terminal-input {
+.terminal-input {
     flex: 1;
     background: transparent;
     border: none;
     color: #c8d6e5;
     font-family: 'Courier New', monospace;
-    font-size: 15px;
+    font-size: 14px;
     outline: none;
     padding: 4px 0;
-    min-width: 60px;
     caret-color: #00ffcc;
 }
 
-#quick-commands {
+.quick-commands {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 5px;
     padding-top: 8px;
     border-top: 1px solid #1a1f2f;
 }
 
-#quick-commands button {
+.quick-commands button {
     background: rgba(30, 45, 74, 0.8);
     border: 1px solid #2a3a5a;
     color: #c8d6e5;
@@ -274,34 +436,492 @@ body {
     font-family: 'Courier New', monospace;
 }
 
-#quick-commands button:hover {
+.quick-commands button:hover {
     background: rgba(42, 58, 90, 0.8);
     color: #00ffcc;
     border-color: #00ffcc;
 }
 
+/* ===== شريط المهام ===== */
+#taskbar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 44px;
+    background: rgba(15, 23, 42, 0.98);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid #2a3a5a;
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    z-index: 100;
+    gap: 8px;
+    direction: ltr;
+}
+
+.taskbar-left {
+    flex-shrink: 0;
+}
+#startBtn {
+    background: transparent;
+    border: none;
+    color: #00ffcc;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: 0.2s;
+}
+#startBtn:hover {
+    background: rgba(0, 255, 204, 0.1);
+}
+
+.taskbar-center {
+    flex: 1;
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+.taskbar-center::-webkit-scrollbar {
+    display: none;
+}
+
+.taskbar-app {
+    background: rgba(30, 45, 74, 0.8);
+    padding: 3px 12px;
+    border-radius: 4px;
+    font-size: 11px;
+    color: #c8d6e5;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: 0.2s;
+    border: 1px solid transparent;
+    flex-shrink: 0;
+}
+
+.taskbar-app:hover {
+    background: rgba(42, 58, 90, 0.8);
+    color: #00ffcc;
+    border-color: #00ffcc;
+}
+
+.taskbar-right {
+    flex-shrink: 0;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.sys-indicator {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: #c8d6e5;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.sys-indicator.clickable {
+    cursor: pointer;
+    transition: 0.2s;
+}
+.sys-indicator.clickable:hover {
+    background: rgba(0, 255, 204, 0.1);
+    color: #00ffcc;
+}
+
+.indicator-bar {
+    width: 30px;
+    height: 4px;
+    background: #1a1f2f;
+    border-radius: 2px;
+    overflow: hidden;
+}
+.indicator-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #2ed573, #ffa502);
+    transition: 0.3s;
+}
+
+#wantedIndicator {
+    color: #ffa502;
+}
+#clockDisplay {
+    min-width: 55px;
+    text-align: center;
+    color: #7a8fa0;
+}
+
+/* ===== قوائم ===== */
+#startMenu,
+#wifiMenu {
+    position: absolute;
+    bottom: 48px;
+    background: rgba(19, 27, 43, 0.98);
+    border: 1px solid #00ffcc;
+    border-radius: 10px;
+    z-index: 200;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+    min-width: 200px;
+    backdrop-filter: blur(5px);
+    padding: 6px 0;
+}
+
+#startMenu {
+    right: 10px;
+}
+#wifiMenu {
+    left: 10px;
+}
+
+.start-item,
+.wifi-item {
+    padding: 8px 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    transition: 0.2s;
+    color: #c8d6e5;
+}
+
+.start-item:hover,
+.wifi-item:hover {
+    background: rgba(0, 255, 204, 0.1);
+    color: #00ffcc;
+}
+
+.start-item i,
+.wifi-item i {
+    width: 18px;
+    color: #00ffcc;
+}
+
+.start-item.danger {
+    color: #ff4757;
+}
+.start-item.danger i {
+    color: #ff4757;
+}
+.start-item.danger:hover {
+    background: rgba(255, 71, 87, 0.15);
+}
+
+#startMenu hr {
+    border: none;
+    border-top: 1px solid #2a3a5a;
+    margin: 4px 12px;
+}
+
+.wifi-header {
+    padding: 8px 16px;
+    font-size: 11px;
+    color: #00ffcc;
+    border-bottom: 1px solid #2a3a5a;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.wifi-info {
+    flex: 1;
+}
+.wifi-name {
+    font-weight: 600;
+}
+.wifi-strength {
+    font-size: 10px;
+    color: #7a8fa0;
+}
+.wifi-strength.cracked {
+    color: #2ed573;
+}
+.wifi-strength.secure {
+    color: #ff4757;
+}
+
+/* ===== إشعارات ===== */
+#notification-container {
+    position: absolute;
+    top: 60px;
+    left: 20px;
+    z-index: 500;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    direction: rtl;
+}
+
+.notification {
+    background: rgba(19, 27, 43, 0.95);
+    border-right: 4px solid #00ffcc;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
+    animation: notifIn 0.3s ease;
+    min-width: 200px;
+    border: 1px solid #2a3a5a;
+}
+
+@keyframes notifIn {
+    from {
+        transform: translateX(50px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.notification strong {
+    color: #00ffcc;
+    display: block;
+    margin-bottom: 4px;
+}
+
+/* ===== تطبيقات ===== */
+
+/* --- الملفات --- */
+.file-item {
+    padding: 6px 10px;
+    background: rgba(0, 255, 204, 0.05);
+    margin: 4px 0;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: 0.2s;
+    font-size: 13px;
+}
+.file-item:hover {
+    background: rgba(0, 255, 204, 0.15);
+}
+
+/* --- البريد --- */
+.mail-item {
+    background: rgba(30, 45, 74, 0.5);
+    padding: 10px 14px;
+    border-radius: 6px;
+    border-right: 3px solid #00ffcc;
+    cursor: pointer;
+    transition: 0.2s;
+    margin-bottom: 6px;
+    border: 1px solid #2a3a5a;
+}
+.mail-item:hover {
+    background: rgba(30, 45, 74, 0.8);
+}
+.mail-item .subject {
+    font-weight: bold;
+    color: #00ffcc;
+}
+.mail-item .from {
+    color: #7a8fa0;
+    font-size: 11px;
+}
+.mail-item .body {
+    margin-top: 8px;
+    font-size: 12px;
+    display: none;
+    padding-top: 8px;
+    border-top: 1px solid #2a3a5a;
+}
+.mail-item.open .body {
+    display: block;
+}
+
+/* --- الهاتف --- */
+.phone-frame {
+    max-width: 280px;
+    margin: 0 auto;
+    background: #1a1a1a;
+    border-radius: 30px;
+    padding: 12px;
+    border: 2px solid #2a3a5a;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+}
+
+.phone-screen {
+    background: #0a0e17;
+    border-radius: 24px;
+    padding: 14px;
+    min-height: 320px;
+    border: 1px solid #2a3a5a;
+}
+
+.phone-status {
+    display: flex;
+    justify-content: space-between;
+    color: #7a8fa0;
+    font-size: 10px;
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #2a3a5a;
+}
+
+.phone-apps {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+}
+.phone-app {
+    text-align: center;
+    padding: 8px 0;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: 0.2s;
+}
+.phone-app:hover {
+    background: rgba(0, 255, 204, 0.1);
+}
+.phone-app i {
+    font-size: 24px;
+    color: #00ffcc;
+    display: block;
+    margin-bottom: 2px;
+}
+.phone-app span {
+    font-size: 9px;
+    color: #c8d6e5;
+}
+
+.phone-messages {
+    margin-top: 10px;
+    font-size: 11px;
+    color: #7a8fa0;
+}
+.phone-messages div {
+    padding: 4px 0;
+    border-bottom: 1px solid #1a1f2f;
+}
+
+/* --- البنك --- */
+.bank-balance {
+    background: linear-gradient(135deg, rgba(0, 255, 204, 0.1), rgba(0, 255, 204, 0.05));
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid #00ffcc;
+    text-align: center;
+    margin-bottom: 16px;
+}
+.bank-balance .amount {
+    font-size: 28px;
+    color: #00ffcc;
+    font-weight: bold;
+}
+.bank-transaction {
+    padding: 4px 0;
+    font-size: 12px;
+    border-bottom: 1px solid #2a3a5a;
+}
+
+/* --- المهام --- */
+.task-item {
+    background: rgba(30, 45, 74, 0.5);
+    padding: 10px 14px;
+    border-radius: 6px;
+    border-right: 4px solid #ffa502;
+    margin-bottom: 6px;
+    transition: 0.2s;
+}
+.task-item.completed {
+    border-right-color: #2ed573;
+    opacity: 0.7;
+}
+.task-item .title {
+    font-weight: bold;
+}
+.task-item .desc {
+    font-size: 12px;
+    color: #7a8fa0;
+    margin-top: 2px;
+}
+.task-item .reward {
+    font-size: 11px;
+    color: #00ffcc;
+    margin-top: 2px;
+}
+.task-item .status {
+    font-size: 11px;
+    color: #ffa502;
+    margin-top: 2px;
+}
+
+/* ===== شاشات الأخطاء ===== */
+#bsod-overlay {
+    position: fixed;
+    inset: 0;
+    background: #0000ff;
+    z-index: 10000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-family: 'Courier New', monospace;
+}
+#arrest-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(255, 71, 87, 0.2);
+    z-index: 10000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(5px);
+}
+
 /* ===== استجابة الجوال ===== */
 @media (max-width: 600px) {
-    #app {
-        max-height: 100vh;
-        border-radius: 0;
-        border: none;
+    #desktop-icons {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        top: 10px;
+        right: 10px;
     }
-    #hud .hud-item {
-        font-size: 11px;
+    .desk-icon {
+        width: 55px;
+    }
+    .desk-icon i {
+        font-size: 22px;
+    }
+    .desk-icon span {
+        font-size: 9px;
+    }
+    .window {
+        top: 3%;
+        right: 2%;
+        width: 96%;
+        height: 90%;
+    }
+    .taskbar-right .sys-indicator {
+        font-size: 9px;
+        padding: 1px 4px;
+    }
+    .indicator-bar {
+        width: 20px;
+    }
+    .quick-commands button {
+        font-size: 9px;
         padding: 2px 8px;
     }
-    #terminal-output {
-        font-size: 13px;
+    .phone-frame {
+        max-width: 100%;
+        padding: 8px;
     }
-    #terminal-input {
-        font-size: 14px;
-    }
-    #quick-commands button {
-        font-size: 10px;
-        padding: 3px 8px;
+    .phone-screen {
+        min-height: 250px;
     }
     .boot-logo {
         font-size: 36px;
+    }
+    .boot-progress {
+        width: 200px;
+    }
+    .login-box {
+        padding: 25px;
     }
 }
