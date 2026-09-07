@@ -321,3 +321,36 @@ body.crt::after{content:'';position:fixed;inset:0;z-index:9995;pointer-events:no
 .toast.bad{border-inline-start-color:var(--red)}.toast.bad b{color:var(--red)}
 .toast.good{border-inline-start-color:var(--green)}.toast.good b{color:var(--green)}
 @media (max-width:1100px){.dicon{width:80px}.dicon span{font-size:10px}#phone{width:220px}.ph-screen{height:380px}}
+/* ★ شاشات الهوية: إنشاء + تسجيل دخول */
+#setupScreen,#loginScreen{position:fixed;inset:0;z-index:10001;background:#050706;display:flex;align-items:center;justify-content:center}
+.su-box{width:min(420px,92%);background:var(--panel);border:1px solid var(--line2);border-radius:14px;padding:26px 24px;box-shadow:0 30px 80px rgba(0,0,0,.7)}
+.su-logo{display:flex;align-items:center;justify-content:center;gap:10px;color:var(--amber);margin-bottom:6px}
+.su-logo svg{width:26px;height:26px}
+.su-logo b{font-family:var(--mono);letter-spacing:3px;font-size:17px}
+.su-sub{text-align:center;color:var(--muted);font-size:12px;margin-bottom:20px}
+.su-row{margin-bottom:13px}
+.su-row label{display:block;font-size:11.5px;color:var(--muted);margin-bottom:5px;letter-spacing:.5px}
+.su-row input{width:100%;background:#0a0e0b;border:1px solid var(--line2);border-radius:7px;padding:11px 14px;color:var(--amber2);font-family:var(--mono);font-size:14px;outline:none;direction:ltr;text-align:left}
+.su-row input:focus{border-color:var(--amber)}
+.su-err{min-height:18px;font-size:11.5px;color:var(--red);margin-bottom:8px;text-align:center}
+.su-box button{display:block;width:100%;padding:12px;border:1px solid var(--amber);border-radius:8px;color:var(--amber);font-size:14px;background:rgba(255,176,0,.05);transition:.2s;margin-top:4px}
+.su-box button:hover{background:var(--amber);color:#141005}
+.su-box button.su-danger{border-color:var(--line2);color:var(--muted);font-size:11.5px;margin-top:12px;padding:9px}
+.su-box button.su-danger:hover{border-color:var(--red);color:var(--red);background:rgba(255,82,82,.06)}
+.su-note{text-align:center;font-size:10.5px;color:#5f6f64;margin-top:14px;line-height:1.8}
+.lg-user{text-align:center;font-family:var(--mono);color:var(--amber2);font-size:17px;letter-spacing:2px;margin-bottom:16px;direction:ltr}
+#lgUser::before{content:'⌁ ';color:var(--amberDim)}
+/* ★ الفيديو الافتتاحي */
+#introScreen{position:fixed;inset:0;z-index:10002;background:#000;display:flex;align-items:center;justify-content:center;transition:opacity .45s}
+#introScreen.fadeout{opacity:0;pointer-events:none}
+#introVideo{width:100%;height:100%;object-fit:contain;background:#000}
+#introPlay{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  display:flex;flex-direction:column;align-items:center;gap:14px;
+  color:var(--amber);font-size:15px;letter-spacing:1px}
+#introPlay svg{width:74px;height:74px;padding:18px;border:1px solid var(--amberDim);
+  border-radius:50%;box-sizing:border-box;animation:qbPulse 1.6s infinite}
+#introPlay:hover{color:var(--amber2)}
+#introPlay:hover svg{border-color:var(--amber)}
+#introSkip{position:absolute;bottom:22px;left:22px;border:1px solid var(--line2);
+  border-radius:6px;padding:9px 18px;font-size:12.5px;color:var(--muted);background:rgba(11,16,13,.7);transition:.15s}
+#introSkip:hover{border-color:var(--amber);color:var(--amber)}
