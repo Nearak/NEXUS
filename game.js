@@ -1481,7 +1481,7 @@ function initIntro(){
   scr.hidden=false;
   playBtn.onclick=()=>{
     audioInit();
-    vid.src='https://files.catbox.moe/477j6l.mp4';
+    vid.src='https://res.cloudinary.com/rr0h5xww/video/upload/v1788782718/intro.mp4';
     playBtn.hidden=true;
     skipBtn.hidden=false;
     vid.play().catch(toBoot);
