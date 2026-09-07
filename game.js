@@ -27,6 +27,7 @@ function tone(f=880,dur=.07,type='square',vol=.05,delay=0,slideTo=0){
 }
 const sfx={
   key(){tone(1250+Math.random()*650,.016,'square',.011);},
+  ok(){[523,659,880].forEach((f,i)=>tone(f,.1,'triangle',.05,i*.09));},
   msg(){tone(620,.09,'sine',.05);tone(930,.12,'sine',.05,.1);},
   ring(){for(let i=0;i<3;i++){tone(1200,.1,'sine',.055,i*.24);tone(950,.1,'sine',.055,i*.24+.12);}},
   err(){tone(180,.22,'sawtooth',.06);tone(130,.3,'sawtooth',.05,.09);},
