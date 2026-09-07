@@ -7,8 +7,8 @@
 /* ★ صورك الحقيقية: ضعها بجانب الملفات أو في مجلد assets/
    واكتب المسار هنا. فارغ = يُستخدم الرسم المدمج */
 const IMG={
-  camCar:'',   // مثال: 'assets/cam04.jpg'
-  driver:''    // مثال: 'assets/driver.jpg'
+  camCar:'assets/car1.png',   // مثال: 'assets/cam04.jpg'
+  driver:'assests/person1p/png'    // مثال: 'assets/driver.jpg'
 };
 
 /* ============ أدوات عامة ============ */
