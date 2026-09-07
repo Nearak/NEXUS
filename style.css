@@ -373,3 +373,29 @@ body.crt::after{content:'';position:fixed;inset:0;z-index:9995;pointer-events:no
 .clue span{display:block;font-size:10px;color:#5c4f38;margin-top:3px;line-height:1.5}
 @keyframes clueIn{0%{opacity:0}100%{opacity:1}}
 .clue{animation:clueIn .4s ease}
+/* مِرقاب */
+.t-mrq{flex:1;min-height:0;display:flex;flex-direction:column}
+.mq-head{display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid var(--line)}
+.mq-head b{font-size:12px;color:var(--amberSoft)}
+.mq-head .st{font-family:var(--mono);font-size:10px;color:var(--muted);margin-inline-start:auto}
+.mq-head .st.on{color:var(--green)}
+#mqEmpty{flex:1;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12.5px;text-align:center;line-height:2.1;padding:20px}
+#mqEmpty b{color:var(--amber)}
+#mqWork{flex:1;min-height:0;display:none;flex-direction:column}
+#mqWork.on{display:flex}
+.mq-scope{flex:none;height:170px;background:#060907;border-bottom:1px solid var(--line);position:relative;overflow:hidden}
+#mqWave{width:100%;height:100%;display:block}
+.mq-freq{display:flex;align-items:center;gap:12px;padding:12px 16px;direction:ltr}
+.mq-freq .lbl{font-family:var(--mono);font-size:9.5px;letter-spacing:2px;color:var(--muted)}
+#mqTune{flex:1;accent-color:var(--amber);height:4px}
+#mqTuneVal{font-family:var(--mono);color:var(--amber);font-size:13px;min-width:64px;text-align:center}
+.mq-meter{display:flex;align-items:center;gap:11px;padding:0 16px 10px}
+.mq-meter .bar{flex:1;height:8px;border:1px solid var(--line2);background:#0a0e0b}
+.mq-meter i{display:block;height:100%;width:0;background:var(--amber);transition:width .2s}
+.mq-meter b{font-family:var(--mono);font-size:11.5px;color:var(--amber);min-width:40px}
+#mqStatus{padding:0 16px 10px;font-size:11.5px;color:var(--muted);line-height:1.7}
+#mqGrab{margin:0 16px 14px;padding:10px;border:1px solid var(--line2);color:var(--muted);border-radius:6px;font-size:13px;transition:.2s}
+#mqGrab:not(:disabled){border-color:var(--amber);color:var(--amber);background:rgba(255,176,0,.07);animation:qbPulse 1.5s infinite}
+#mqGrab:not(:disabled):hover{background:var(--amber);color:#141005}
+.mq-log{flex:1;overflow-y:auto;border-top:1px solid var(--line);padding:10px 14px;font-family:var(--mono);font-size:11.5px;direction:ltr;text-align:left;color:var(--amberSoft);line-height:1.8}
+.mq-log .sig{color:var(--green)}.mq-log .dim{color:#75836f}.mq-log .rd{color:var(--red)}.mq-log .am{color:var(--amber)}
