@@ -2,36 +2,12 @@
 /* ============================================================
    NEXUS-7 — story.js
    كل القصص والمهام هنا. المحرك (game.js) لا يعرف القصة.
-   إضافة ليلة جديدة = أضف NIGHTS.nX + ST.beats.nX فقط.
    ============================================================ */
 
-const STORY_META={
-  boss:'كامل',
-  codename:'راصد',
-  channel:'CH-07'
-};
-
-/* ---------- الواجهة التي يقرؤها المحرك ---------- */
-const ST={
-  /* تعريف ليلة بحسب رقمها — نُرجع الليلة الأخيرة المعرفة إذا تجاوز الرقم */
-  current(n){
-    const keys=Object.keys(NIGHTS).sort();
-    const key='n'+n;
-    return NIGHTS[key]||null;
-  },
-  /* الأهداف الفعالة لليلة الحالية (المحرك يستدعيها) */
-  obj(){const d=this.cur();return d?d.obj:[];},
-  hints(){const d=this.cur();return d?d.hints:{};},
-  clues(){const d=this.cur();return d&&d.clues?d.clues:[];},
-  canSend(){const d=this.cur();return d&&d.canSend?d.canSend():false;},
-  cur:null /* يُضبط من game.js: ()=>NIGHTS['n'+night] */
-};
-
+const STORY_META={boss:'كامل',codename:'راصد',channel:'CH-07'};
 const NIGHTS={};
 
-/* ============================================================
-   الليلة 1 — «الطريق 16»
-   ============================================================ */
+/* ============ الليلة 1 — «الطريق 16» ============ */
 NIGHTS.n1={
   title:'الطريق 16',
   obj:[
@@ -46,7 +22,7 @@ NIGHTS.n1={
     {id:'enc',t:'حمّل <code>case_file.enc</code>'},
     {id:'key',t:'فك التشفير في <code>DECRYPT</code>'},
     {id:'board',t:'اربط الأدلة في لوحة <code>EVIDENCE</code>'},
-    {id:'sent',t:'أرسل التقرير إلى المشرف كامل'},
+    {id:'sent',t:'أرسل التقرير إلى المشرف كامل'}
   ],
   hints:{
     help:'افتح الطرفية TERM واكتب help.',
@@ -55,27 +31,25 @@ NIGHTS.n1={
     conn:'connect 10.0.44.77 — أو انقر العقدة في خريطة NET.',
     log:'ls ثم download hwy16_log.log',
     hash:'في السجل بصمة md5. جرّب: hashcat -m 0 5f4dcc3b5aa765d61d8327deb882cf99 rockyou.txt',
-    plate:'افتح DB وابحث عن: HX-4471',
+    plate:'افتح DB وابحث عن HX-4471 — ثم انقر على صف النتيجة نفسه لفتح بطاقة المالك.',
     root:'msfconsole ← search hwycam ← use 0 ← set RHOSTS ← exploit',
     enc:'download case_file.enc — يحتاج جذر root.',
     key:'افتح DECRYPT واضبط حلقة الإزاحة حتى يوضح النص، ثم ثبّت.',
     board:'افتح EVIDENCE — انقر دليلين متتاليين لربطهما. رابطان على الأقل يكفيان.',
     sent:'زر «إرفاق الأدلة وإرسالها» في لوحة EVIDENCE، أو اكتب send في الطرفية.'
   },
-  canSend:()=>S.flags.log&&S.flags.plate&&S.flags.root&&S.flags.key,
+  canSend:function(){return S.flags.log&&S.flags.plate&&S.flags.root&&S.flags.key;},
   clues:[
     {id:'cam',t:'لقطة CAM-04',sub:'سيارة زرقاء — تفتيش 3',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>'},
     {id:'log',t:'سجل HWY-16',sub:'حركات فجر الحادثة',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="16" y2="12"/><line x1="4" y1="18" x2="18" y2="18"/></svg>'},
     {id:'plate',t:'اللوحة HX-4471',sub:'قُرئت عند تفتيشين متتاليين',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="8" width="20" height="8" rx="2"/><line x1="7" y1="12" x2="17" y2="12"/></svg>'},
     {id:'hash',t:'كلمة مرور مكشوفة',sub:'admin / password',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="7.5" cy="15.5" r="4.5"/><path d="M11 12L21 2M16 7l3 3"/></svg>'},
     {id:'db',t:'السجل المدني',sub:'المالك: مهند كريم الحسني',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>'},
-    {id:'dossier',t:'ملف القضية 4471-A',sub:'مطلوب — جريمة قتل',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>'},
-  ],
+    {id:'dossier',t:'ملف القضية 4471-A',sub:'مطلوب — جريمة قتل',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>'}
+  ]
 };
 
-/* ============================================================
-   الليلة 2 — «مِرقاب»
-   ============================================================ */
+/* ============ الليلة 2 — «مِرقاب» ============ */
 NIGHTS.n2={
   title:'مِرقاب',
   obj:[
@@ -83,7 +57,7 @@ NIGHTS.n2={
     {id:'mrq1',t:'التقط إشارة <code>مهند</code> بمِرقاب'},
     {id:'mrq2',t:'التقط الإشارة المجهولة — <code>ليث</code>'},
     {id:'board',t:'اربط الأدلة الجديدة في <code>EVIDENCE</code>'},
-    {id:'sent',t:'أرسل تقرير الليلة إلى المشرف كامل'},
+    {id:'sent',t:'أرسل تقرير الليلة إلى المشرف كامل'}
   ],
   hints:{
     open:'افتح تطبيق MIRQAB من شريط المهام واضغط «تشغيل الماسح».',
@@ -92,16 +66,14 @@ NIGHTS.n2={
     board:'افتح EVIDENCE واربط دليلين على الأقل بخيط.',
     sent:'زر «إرفاق الأدلة وإرسالها» في اللوحة، أو send في الطرفية.'
   },
-  canSend:()=>S.flags.mrq1&&S.flags.mrq2,
+  canSend:function(){return S.flags.mrq1&&S.flags.mrq2;},
   clues:[
     {id:'signal',t:'إشارة مهند',sub:'نقطة مهجورة قرب الطريق 16 — K9',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12a10 10 0 0 1 20 0"/><path d="M5.5 12a6.5 6.5 0 0 1 13 0"/><circle cx="12" cy="12" r="2"/></svg>'},
-    {id:'layth',t:'اتصال «ليث»',sub:'جهة اتصال متكررة — غير معروفة للوحدة',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>'},
-  ],
+    {id:'layth',t:'اتصال «ليث»',sub:'جهة اتصال متكررة — غير معروفة للوحدة',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>'}
+  ]
 };
 
-/* ============================================================
-   لحظات القصة (beats) — يصيح المحرك إليها عند الأحداث
-   ============================================================ */
+/* ============ لحظات القصة ============ */
 const ST_BEATS={
   n1:{
     async start(){
@@ -114,10 +86,12 @@ const ST_BEATS={
       setPhoneView('chat');
     },
     async breach(){
+      if(!S.flags.live)return;
       await sleep(600);
       await say('كادوا يمسكونك! الملفات المحمّلة بأمان — أعد الاتصال وأكمل المهمة.');
     },
     async decline(){
+      if(!S.flags.live)return;
       await say('أعتقد أنك رفضت بالخطأ يا راصد. أعد الرد… وسننسى الموقف.');
     },
     async finish(){
@@ -129,27 +103,30 @@ const ST_BEATS={
   n2:{
     async start(){
       S.flags.live=true;
-      renderObj();
+      renderObj();refreshQuick();
       sysSay('ليلة '+String(night).padStart(2,'0')+' — «مِرقاب»');
       await say('راصد… الليلة لن أتصل كثيراً. اقرأ بسرعة.');
       await say('الشحنة وصلت محطتك قبل قليل — جهاز يسمونه «مِرقاب». يلتقط إشارات الهواتف القريبة منك. افتحه من شريط المهام وشغّل الماسح.');
       await say('هدفك: مهند. هاتفه ينبض كل ليلة من نقطة مهجورة قرب الطريق 16 — يلتقي أحداً هناك. حدد تردده والتقط إشارته.');
       await say('واعذرني عن التقطيع في كلامي… القناة الليلة ليست نظيفة كأمس.');
-      renderObj();refreshQuick();
       setPhoneView('chat');
     },
     async breach(){
+      if(!S.flags.live)return;
       await sleep(600);
       await say('قطع الاتصال فوراً! ما جرى عندك لا يجب أن يُرصد. أكمل… بحذر هذه المرة.');
     },
     async decline(){
+      if(!S.flags.live)return;
       await say('راصد. الرد. هذا ليس وقتاً للتجاهل.');
     },
     async grab1(){
+      if(!S.flags.live)return;
       await sleep(400);
       await say('التقطت نبضته… نقطة مهجورة K9 قرب الطريق. الآن استمر — هناك إشارة أخرى مرافقة لنفس الالتقاء. التقطها أيضاً.');
     },
     async grab2(){
+      if(!S.flags.live)return;
       await sleep(700);
       await say('ماذا؟… «ليث»؟ هذا الاسم ليس في أي سجل عندنا. ولا في ملفاتي.');
       await say('وأثناء تنصتك… راصد، البث المضاد جاء من داخل قنوات الوحدة نفسها. لا تسألني من. لا أريد هذا مكتوباً في أي مكان.');
