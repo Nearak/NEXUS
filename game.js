@@ -167,6 +167,32 @@ let termCounter=0;
 let termActive=null;
 const TERMS=[];
 
+/* الأوامر الأساسية لـ Tab-completion — الوسائط لا تُكمل (سلوك واقعي) */
+const CMD_LIST=['help','ls','cat','open','download','dl','rm','nmap','hydra',
+  'hashcat','john','connect','ssh','msfconsole','db','decrypt','notes',
+  'evidence','board','mirqab','mrq','disconnect','exit','trace','send',
+  'clear','cls','whoami','date','pwd','echo','history','ping','ifconfig',
+  'netstat','ps','browser'];
+function tabComplete(T){
+  if(!T||!T.input)return;
+  const cur=T.input.value;
+  /* نكمل فقط إذا المؤشر في الكلمة الأولى (بلا مسافة قبلها) — الأمر الأساسي فقط */
+  if(/\s/.test(cur))return;
+  const matches=CMD_LIST.filter(c=>c.startsWith(cur.toLowerCase())&&c!==cur.toLowerCase());
+  if(!matches.length)return;             /* لا مرشحين: تصرف صامت مثل الطرفيات الحقيقية */
+  if(matches.length===1){
+    T.input.value=matches[0]+' ';       /* مرشح واحد: أكمل + مسافة */
+    return;
+  }
+  /* عدة مرشحين: أكمل أطول بادئة مشتركة ثم اعرض الخيارات */
+  let prefix=matches[0];
+  for(const m of matches){
+    while(!m.startsWith(prefix))prefix=prefix.slice(0,-1);
+  }
+  T.input.value=prefix;
+  tprintTo(T,matches.join('  '),'dim');
+}
+
 function mkTermSession(container,label){
   const wrap=document.createElement('div');wrap.className='t-term';
   const out=document.createElement('div');out.className='t-out';
@@ -187,8 +213,12 @@ function mkTermSession(container,label){
       if(t.busy){tprintTo(t,'…busy','dim');return;}
       termActive=t;
       await runCmd(v,t);
-    }else if(e.key==='ArrowUp'){if(t.hi>0){t.hi--;inp.value=t.hist[t.hi];}}
+        }else if(e.key==='ArrowUp'){if(t.hi>0){t.hi--;inp.value=t.hist[t.hi];}}
     else if(e.key==='ArrowDown'){if(t.hi<t.hist.length-1){t.hi++;inp.value=t.hist[t.hi];}else{t.hi=t.hist.length;inp.value='';}}
+    else if(e.key==='Tab'){
+      e.preventDefault();          /* منع قفز التركيز للعنصر التالي */
+      tabComplete(t);
+    }
   });
   out.addEventListener('click',()=>{if(!getSelection().toString())inp.focus();});
   return t;
