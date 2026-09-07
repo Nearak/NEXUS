@@ -133,6 +133,7 @@ function openApp(id){
     addEventListener('pointermove',mv);addEventListener('pointerup',up);
   });
   win.addEventListener('pointerdown',()=>focusWin(id));
+  if(a.headExtra)a.headExtra(win,id);
   focusWin(id);
   a.onOpen&&a.onOpen();
   syncTaskWindows();
@@ -163,34 +164,22 @@ function syncTaskWindows(){
   });
 }
 
-/* ============ الطرفية — جلسات متعددة ============ */
-const TERMS=[];
-let termActive=null;
+/* ============ الطرفية — نوافذ متعددة مستقلة ============ */
 let termCounter=0;
 
 function mkTermSession(container,label){
   const t={
-    id:++termCounter, label:label||('sh-'+termCounter),
+    label:label||('sh-'+termCounter),
     out:null, input:null, prompt:null,
     busy:false, hist:[], hi:0, msf:false
   };
-  const wrap=document.createElement('div');wrap.className='t-term';
-  const head=document.createElement('div');
-  head.style.cssText='display:flex;align-items:center;gap:8px;padding:5px 10px;background:var(--panel2);border-bottom:1px solid var(--line);flex:none';
-  head.innerHTML='<span style="font-family:var(--mono);font-size:10px;color:var(--muted)">'+esc(t.label)+'</span>';
-  const add=document.createElement('button');
-  add.textContent='+ طرفية';
-  add.style.cssText='margin-inline-start:auto;font-size:10px;border:1px solid var(--line2);border-radius:4px;padding:3px 8px;color:var(--muted)';
-  add.onclick=(e)=>{e.stopPropagation();newTerminal();};
-  head.appendChild(add);
   const out=document.createElement('div');out.className='t-out';
   const row=document.createElement('div');row.className='t-in';
   const pr=document.createElement('span');pr.className='prompt';pr.textContent=ID.name+'@nexus-7:~$';
   const inp=document.createElement('input');
   inp.autocomplete='off';inp.spellcheck=false;
   row.append(pr,inp);
-  wrap.append(head,out,row);
-  container.appendChild(wrap);
+  container.append(out,row);
   t.out=out;t.input=inp;t.prompt=pr;
   inp.addEventListener('keydown',async e=>{
     if(e.key==='Enter'){
@@ -207,36 +196,43 @@ function mkTermSession(container,label){
   out.addEventListener('click',()=>{if(!getSelection().toString())inp.focus();});
   return t;
 }
-function newTerminal(){
-  const layers=$('#termTabs');
-  if(!layers)return;
-  const shell=document.createElement('div');
-  shell.style.cssText='display:flex;flex-direction:column;flex:1;min-height:0;border-top:2px solid var(--line2)';
-  layers.appendChild(shell);
-  const t=mkTermSession(shell);
-  TERMS.push(t);
-  termActive=t;
-  tprintTo(t,'NEXUS-7 secure shell — جلسة '+t.label,'dim');
-  tprintTo(t,'اكتب <span class="am">help</span> لعرض الأوامر.','dim');
-  sfx.pop();
+/* الجلسة النشطة = آخر طرفية ركّزت عليها */
+function bindActiveOnFocus(winId,t){
+  const w=wins[winId];
+  if(w)w.addEventListener('pointerdown',()=>{termActive=t;});
+}
+function newTerminalWindow(){
+  termCounter++;
+  const id='terminal'+(termCounter>1?termCounter:'');
+  APPS[id]={
+    title:'TERM — الطرفية #'+termCounter,
+    w:730,h:470,icon:IC.term2,
+    build:(host)=>{
+      const t=mkTermSession(host,'sh-'+termCounter);
+      termActive=t;
+      tprintTo(t,'NEXUS-7 secure shell — جلسة '+t.label,'dim');
+      tprintTo(t,'اكتب <span class="am">help</span> لعرض الأوامر.','dim');
+      bindActiveOnFocus(id,t);
+    }
+  };
+  const old=iconPos['terminal'];
+  iconPos[id]={x:(old?old.x:innerWidth-116)+(termCounter-1)*38, y:(old?old.y:16)+(termCounter-1)*34};
+  openApp(id);
 }
 function tprintTo(t,html,cls=''){
   if(!t||!t.out)return null;
   const d=document.createElement('div');d.className='tl '+cls;d.innerHTML=html;
   t.out.appendChild(d);t.out.scrollTop=t.out.scrollHeight;return d;
 }
-function activeTerm(){
-  if(!termActive&&TERMS.length)termActive=TERMS[0];
-  return termActive;
-}
-function tprint(html='',cls=''){return tprintTo(activeTerm(),html,cls);}
+let termActive=null;
+function tprint(html='',cls=''){return tprintTo(termActive,html,cls);}
 async function ttype(text,cls='',spd=7){
-  const t=activeTerm();if(!t)return;
+  const t=termActive;if(!t)return;
   const d=tprintTo(t,'',cls);if(!d)return;
   for(const ch of text){d.textContent+=ch;if(Math.random()<.3)sfx.key();t.out.scrollTop=t.out.scrollHeight;await sleep(spd);}
 }
 async function tprogress(label,dur=1400){
-  const t=activeTerm();if(!t)return;
+  const t=termActive;if(!t)return;
   const d=tprintTo(t,'');if(!d)return;
   for(let p=0;p<=100;p+=4){
     const fill=Math.floor(p/5);
@@ -247,25 +243,13 @@ async function tprogress(label,dur=1400){
   d.innerHTML=esc(label)+' ['+'█'.repeat(20)+'] 100% <span class="gr">OK</span>';
 }
 function buildTerm(host){
-  host.innerHTML='';
-  const layers=document.createElement('div');
-  layers.id='termTabs';
-  layers.style.cssText='display:flex;flex-direction:column;flex:1;min-height:0;overflow-y:auto';
-  host.appendChild(layers);
-  if(!TERMS.length){
-    const shell=document.createElement('div');
-    shell.style.cssText='display:flex;flex-direction:column;flex:1;min-height:0';
-    layers.appendChild(shell);
-    const t=mkTermSession(shell,'sh-1');
-    TERMS.push(t);termActive=t;
-    tprintTo(t,'NEXUS-7 secure shell — build 7.8','dim');
-    tprintTo(t,'أهلاً <span class="am">'+esc(ID.name)+'</span> — رمزك «راصد». اكتب <span class="am">help</span>.','dim');
-  }else{
-    TERMS.forEach(t=>{
-      const shell=t.out.parentElement;
-      if(shell.parentElement!==layers)layers.appendChild(shell);
-    });
-  }
+  termCounter=1;
+  const t=mkTermSession(host,'sh-1');
+  termActive=t;
+  tprintTo(t,'NEXUS-7 secure shell — build 7.8','dim');
+  tprintTo(t,'أهلاً <span class="am">'+esc(ID.name)+'</span> — رمزك «راصد». اكتب <span class="am">help</span>.','dim');
+  tprintTo(t,'<span class="am">tip:</span> زر «طرفية جديدة» هنا يفتح نافذة مستقلة — أو استخدم قائمة ابدأ.','dim');
+  bindActiveOnFocus('terminal',t);
 }
 
 /* ============ تنفيذ الأوامر ============ */
@@ -1183,7 +1167,7 @@ function buildInfo(host){
 
 /* ============ التطبيقات ============ */
 const IC={
-  term:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>',
+  term:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>',   term2:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/><circle cx="19" cy="6" r="2.4" fill="var(--amber)" stroke="none"/></svg>',   term2:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/><circle cx="19" cy="6" r="2.4" fill="var(--amber)" stroke="none"/></svg>',
   files:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>',
   browser:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>',
   notes:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
@@ -1196,7 +1180,7 @@ const IC={
   info:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
 };
 const APPS={
-  terminal:{title:'TERM — الطرفية',w:730,h:470,icon:IC.term,build:buildTerm},
+  terminal:{title:'TERM — الطرفية',w:730,h:470,icon:IC.term,build:buildTerm,     headExtra:(win,id)=>{       const b=document.createElement('button');       b.textContent='+ نافذة';       b.title='فتح طرفية جديدة في نافذة مستقلة';       b.style.cssText='margin-inline-start:auto;font-size:10px;border:1px solid var(--line2);border-radius:4px;padding:3px 8px;color:var(--muted)';       b.onclick=(e)=>{e.stopPropagation();newTerminalWindow();};       win.querySelector('.win-h').appendChild(b);     }},
   files:{title:'FILES — الخزنة',w:700,h:440,icon:IC.files,build:buildFiles,onOpen:renderFiles},
   browser:{title:'NEXUS WEB',w:740,h:500,icon:IC.browser,build:buildBrowser},
   notes:{title:'NOTES — المفكرة',w:560,h:460,icon:IC.notes,build:buildNotes},
@@ -1591,11 +1575,12 @@ document.addEventListener('click',e=>{
   if(e.target.closest('.win,#icons,#phone'))return;
   e.preventDefault();
   const m=$('#ctxMenu');
-  m.innerHTML='<button id="cxTerm">فتح الطرفية</button><button id="cxNotes">المفكرة</button><button id="cxBoard">لوحة الأدلة</button><button id="cxStart">قائمة التطبيقات</button><hr><button id="cxInfo">معلومات النظام</button><button id="cxOff" class="danger">إيقاف التشغيل</button>';
+  m.innerHTML='<button id="cxTerm">فتح الطرفية</button><button id="cxTermNew">طرفية جديدة (نافذة مستقلة)</button><button id="cxNotes">المفكرة</button><button id="cxBoard">لوحة الأدلة</button><button id="cxStart">قائمة التطبيقات</button><hr><button id="cxInfo">معلومات النظام</button><button id="cxOff" class="danger">إيقاف التشغيل</button>';
   m.hidden=false;
   m.style.left=Math.min(e.clientX,innerWidth-200)+'px';
   m.style.top=Math.min(e.clientY,innerHeight-300)+'px';
   $('#cxTerm').onclick=()=>{m.hidden=true;openApp('terminal');};
+  $('#cxTermNew').onclick=()=>{m.hidden=true;newTerminalWindow();};
   $('#cxNotes').onclick=()=>{m.hidden=true;openApp('notes');};
   $('#cxBoard').onclick=()=>{m.hidden=true;openApp('board');};
   $('#cxStart').onclick=()=>{m.hidden=true;$('#startMenu').hidden=false;};
@@ -1668,7 +1653,7 @@ function enterOS(){
   $('#tbClock').textContent=clockStr();
   $('#phClock').textContent=clockStr().slice(0,5);
   renderIcons();renderStart();renderObj();
-  requestAnimationFrame(drawMq);
+  requestAnimationFrame(drawMq); /* حلقة مِرقاب — تختصر نفسها عند إخفاء النافذة */
   sysSay('القناة خاملة — بانتظار اتصال المشرف');
   setTimeout(()=>toast('نظام','أهلاً '+ID.name+' — الوحدة بانتظارك. رمزك: راصد.'),700);
   setTimeout(incomingCall,3500);
