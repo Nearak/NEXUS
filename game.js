@@ -1,14 +1,14 @@
 'use strict';
 /* ============================================================
-   NEXUS-7 — game.js (المحرك)
-   لا قصة هنا. القصة كاملة في story.js: NIGHTS + ST_BEATS.
-   محرك: نوافذ، طرفية متعددة الجلسات، ملفات، شبكة، أدوات،
-   مِرقاب، لوحة أدلة، هوية، حفظ، طاقة.
-   ميزات: طرفيات متعددة + ليلة حرة بعد إنهاء المهمة.
+   NEXUS-7 — game.js (المحرك v7.8)
+   لا قصة هنا — القصة كاملة في story.js (NIGHTS + ST_BEATS).
+   المحرك: نوافذ، طرفية متعددة الجلسات، ملفات، شبكة، أدوات،
+   مِرقاب، لوحة أدلة، هوية، حفظ، طاقة، ليلة حرة بعد الإنجاز.
    ============================================================ */
 
 const IMG={camCar:'assests/car1p.png',driver:'assests/person1p.png'};
 
+/* ============ أدوات عامة ============ */
 const $=s=>document.querySelector(s);
 const $$=s=>[...document.querySelectorAll(s)];
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
@@ -62,7 +62,7 @@ function glitch(strength=1,red=false){
   setTimeout(()=>os.classList.remove('glitching'),460*strength);
 }
 
-/* ============ الصور المدمجة ============ */
+/* ============ الصور المدمجة (بديل عند غياب ملفات assests) ============ */
 const CAR_SVG=`<svg viewBox="0 0 480 300" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="c-vig" cx="50%" cy="45%" r="78%"><stop offset="55%" stop-color="rgba(0,0,0,0)"/><stop offset="100%" stop-color="rgba(0,0,0,.55)"/></radialGradient><filter id="c-noise"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2"/><feColorMatrix type="matrix" values="0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 .07 0"/></filter></defs><rect width="480" height="300" fill="#c6caca"/><rect x="0" y="144" width="480" height="156" fill="#4c514d"/><g stroke="#c9cdc7" stroke-width="3" opacity=".5"><line x1="30" y1="160" x2="10" y2="296"/><line x1="140" y1="160" x2="128" y2="296"/><line x1="250" y1="160" x2="246" y2="296"/><line x1="360" y1="160" x2="364" y2="296"/><line x1="462" y1="160" x2="470" y2="296"/></g><ellipse cx="240" cy="268" rx="128" ry="12" fill="rgba(0,0,0,.35)"/><rect x="140" y="192" width="200" height="62" rx="14" fill="#2e4a7a"/><path d="M172 194 L186 160 Q190 154 200 154 L280 154 Q290 154 294 160 L308 194 Z" fill="#27406b"/><path d="M196 166 L284 166 L296 190 L184 190 Z" fill="#1c2937"/><rect x="308" y="168" width="26" height="22" rx="5" fill="#22303d"/><rect x="146" y="196" width="36" height="11" rx="4" fill="#a8282a"/><rect x="150" y="198" width="24" height="6" rx="2" fill="#d8494a"/><rect x="298" y="196" width="36" height="11" rx="4" fill="#a8282a"/><rect x="304" y="198" width="24" height="6" rx="2" fill="#d8494a"/><rect x="142" y="228" width="196" height="22" rx="9" fill="#263d66"/><rect x="214" y="226" width="52" height="17" rx="3" fill="#e6c437" stroke="#8a7a20"/><text x="240" y="239" text-anchor="middle" font-family="monospace" font-size="10" font-weight="bold" fill="#1c1c14">HX-4471</text><rect x="152" y="248" width="40" height="15" rx="6" fill="#17130f"/><rect x="288" y="248" width="40" height="15" rx="6" fill="#17130f"/><rect width="480" height="300" fill="url(#c-vig)"/><rect width="480" height="300" filter="url(#c-noise)"/><g font-family="monospace" font-size="13" fill="#f1f2ec"><text x="14" y="26">2024-05-15 14:32:01 UTC</text><text x="466" y="26" text-anchor="end">CAM-04/CHK-3 HWY-16</text><text x="14" y="286">CAM-04/CHK-3 HWY-16</text></g><circle cx="430" cy="282" r="5" fill="#ff4136"><animate attributeName="opacity" values="1;.15;1" dur="1.2s" repeatCount="indefinite"/></circle><text x="444" y="287" font-family="monospace" font-size="12" fill="#ff6b60">REC</text></svg>`;
 const DRIVER_SVG=`<svg viewBox="0 0 460 300" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="d-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#cdd2d4"/><stop offset="1" stop-color="#aab1b4"/></linearGradient><radialGradient id="d-vig" cx="50%" cy="45%" r="80%"><stop offset="60%" stop-color="rgba(0,0,0,0)"/><stop offset="100%" stop-color="rgba(0,0,0,.45)"/></radialGradient><filter id="d-noise"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2"/><feColorMatrix type="matrix" values="0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 .06 0"/></filter></defs><rect width="460" height="300" fill="url(#d-sky)"/><rect x="0" y="58" width="460" height="124" fill="#9aa1a5"/><rect x="6" y="10" width="448" height="240" rx="18" fill="none" stroke="#12161a" stroke-width="14"/><path d="M336 70 Q396 66 402 120 L402 300 L330 300 L326 140 Q326 92 336 70 Z" fill="#191d21"/><path d="M352 176 L260 300 L296 300 L376 186 Z" fill="#22272c"/><path d="M110 300 Q118 232 168 214 Q196 202 210 196 L268 196 Q330 214 352 300 Z" fill="#39482f"/><path d="M210 196 L268 196 L262 214 L216 214 Z" fill="#2c3925"/><path d="M206 200 Q238 188 270 200 L262 176 Q238 168 214 176 Z" fill="#46563a"/><rect x="222" y="168" width="36" height="26" rx="10" fill="#c99a76"/><ellipse cx="240" cy="130" rx="47" ry="55" fill="#d8a884"/><ellipse cx="284" cy="136" rx="9" ry="14" fill="#c99a76"/><path d="M193 118 Q196 70 240 66 Q284 70 287 118 Q288 96 274 84 Q240 74 206 84 Q192 96 193 118 Z" fill="#4a3a2c"/><line x1="212" y1="118" x2="232" y2="116" stroke="#3c2f24" stroke-width="4" stroke-linecap="round"/><line x1="246" y1="116" x2="264" y2="118" stroke="#3c2f24" stroke-width="4" stroke-linecap="round"/><ellipse cx="222" cy="130" rx="7" ry="6" fill="#2c241d"/><circle cx="219" cy="130" r="2.4" fill="#0d0b09"/><ellipse cx="254" cy="130" rx="7" ry="6" fill="#2c241d"/><circle cx="251" cy="130" r="2.4" fill="#0d0b09"/><path d="M236 132 Q232 144 236 150 Q240 153 244 150" fill="none" stroke="#b98a67" stroke-width="3" stroke-linecap="round"/><path d="M203 142 Q206 176 226 186 Q240 192 254 186 Q274 176 277 142 Q276 168 262 178 Q240 190 218 178 Q204 168 203 142 Z" fill="#4e3d2c"/><path d="M206 146 Q210 172 228 181 Q240 186 252 181 Q270 172 274 146 Q272 164 258 173 Q240 182 222 173 Q208 164 206 146 Z" fill="#5b4935"/><path d="M228 166 Q240 172 252 166" stroke="#3a2d20" stroke-width="3" fill="none" stroke-linecap="round"/><rect x="0" y="244" width="460" height="56" fill="#14181c"/><rect x="0" y="240" width="460" height="8" rx="4" fill="#1d2227"/><rect x="30" y="262" width="60" height="10" rx="5" fill="#2a3138"/><rect width="460" height="300" fill="url(#d-vig)"/><rect width="460" height="300" filter="url(#d-noise)"/></svg>`;
 const camMedia=()=>IMG.camCar?'<img src="'+IMG.camCar+'" alt="CAM-04">':CAR_SVG;
@@ -164,8 +164,8 @@ function syncTaskWindows(){
 }
 
 /* ============ الطرفية — جلسات متعددة ============ */
-const TERMS=[];       /* جلسات الطرفية */
-let termActive=null;  /* الجلسة النشطة (تستقبل أوامر النظام) */
+const TERMS=[];
+let termActive=null;
 let termCounter=0;
 
 function mkTermSession(container,label){
@@ -178,13 +178,11 @@ function mkTermSession(container,label){
   const head=document.createElement('div');
   head.style.cssText='display:flex;align-items:center;gap:8px;padding:5px 10px;background:var(--panel2);border-bottom:1px solid var(--line);flex:none';
   head.innerHTML='<span style="font-family:var(--mono);font-size:10px;color:var(--muted)">'+esc(t.label)+'</span>';
-  if(TERMS.length>0){
-    const add=document.createElement('button');
-    add.textContent='+ طرفية';
-    add.style.cssText='margin-inline-start:auto;font-size:10px;border:1px solid var(--line2);border-radius:4px;padding:3px 8px;color:var(--muted)';
-    add.onclick=(e)=>{e.stopPropagation();newTerminal();};
-    head.appendChild(add);
-  }
+  const add=document.createElement('button');
+  add.textContent='+ طرفية';
+  add.style.cssText='margin-inline-start:auto;font-size:10px;border:1px solid var(--line2);border-radius:4px;padding:3px 8px;color:var(--muted)';
+  add.onclick=(e)=>{e.stopPropagation();newTerminal();};
+  head.appendChild(add);
   const out=document.createElement('div');out.className='t-out';
   const row=document.createElement('div');row.className='t-in';
   const pr=document.createElement('span');pr.className='prompt';pr.textContent=ID.name+'@nexus-7:~$';
@@ -212,7 +210,6 @@ function mkTermSession(container,label){
 function newTerminal(){
   const layers=$('#termTabs');
   if(!layers)return;
-  /* طبقة جلسة جديدة داخل نافذة الطرفية الواحدة */
   const shell=document.createElement('div');
   shell.style.cssText='display:flex;flex-direction:column;flex:1;min-height:0;border-top:2px solid var(--line2)';
   layers.appendChild(shell);
@@ -229,18 +226,18 @@ function tprintTo(t,html,cls=''){
   t.out.appendChild(d);t.out.scrollTop=t.out.scrollHeight;return d;
 }
 function activeTerm(){
-  if(!termActive){ /* طمأنة: إذا لم توجد جلسة فعّالة افتح نافذة الطرفية */
-    openApp('terminal');
-  }
-  return termActive||TERMS[0];
+  if(!termActive&&TERMS.length)termActive=TERMS[0];
+  return termActive;
 }
 function tprint(html='',cls=''){return tprintTo(activeTerm(),html,cls);}
 async function ttype(text,cls='',spd=7){
-  const t=activeTerm();const d=tprintTo(t,'',cls);if(!d)return;
+  const t=activeTerm();if(!t)return;
+  const d=tprintTo(t,'',cls);if(!d)return;
   for(const ch of text){d.textContent+=ch;if(Math.random()<.3)sfx.key();t.out.scrollTop=t.out.scrollHeight;await sleep(spd);}
 }
 async function tprogress(label,dur=1400){
-  const t=activeTerm();const d=tprintTo(t,'');if(!d)return;
+  const t=activeTerm();if(!t)return;
+  const d=tprintTo(t,'');if(!d)return;
   for(let p=0;p<=100;p+=4){
     const fill=Math.floor(p/5);
     d.textContent=label+' ['+'█'.repeat(fill)+'░'.repeat(20-fill)+'] '+String(p).padStart(3)+'%';
@@ -253,7 +250,7 @@ function buildTerm(host){
   host.innerHTML='';
   const layers=document.createElement('div');
   layers.id='termTabs';
-  layers.style.cssText='display:flex;flex-direction:column;flex:1;min-height:0';
+  layers.style.cssText='display:flex;flex-direction:column;flex:1;min-height:0;overflow-y:auto';
   host.appendChild(layers);
   if(!TERMS.length){
     const shell=document.createElement('div');
@@ -261,10 +258,9 @@ function buildTerm(host){
     layers.appendChild(shell);
     const t=mkTermSession(shell,'sh-1');
     TERMS.push(t);termActive=t;
-    tprintTo(t,'NEXUS-7 secure shell — build 7.7','dim');
+    tprintTo(t,'NEXUS-7 secure shell — build 7.8','dim');
     tprintTo(t,'أهلاً <span class="am">'+esc(ID.name)+'</span> — رمزك «راصد». اكتب <span class="am">help</span>.','dim');
   }else{
-    /* إعادة فتح النافذة: أعد إرفاق جلسات موجودة */
     TERMS.forEach(t=>{
       const shell=t.out.parentElement;
       if(shell.parentElement!==layers)layers.appendChild(shell);
@@ -274,7 +270,7 @@ function buildTerm(host){
 
 /* ============ تنفيذ الأوامر ============ */
 async function runCmd(raw,t){
-  const T=t||activeTerm();
+  const T=t||activeTerm();if(!T)return;
   const line=raw.trim();if(!line)return;
   if(T.msf)return runMsf(line,T);
   const parts=line.split(/\s+/);
@@ -282,8 +278,8 @@ async function runCmd(raw,t){
   T.busy=true;
   try{
     switch(cmd){
-      case 'help':cmdHelp(T);break;
-      case 'ls':cmdLs(T);break;
+      case 'help':cmdHelp();break;
+      case 'ls':cmdLs();break;
       case 'cat':case 'open':cmdCat(parts[1]||'');break;
       case 'download':case 'dl':await cmdDownload(parts[1]||'');break;
       case 'rm':cmdRm(parts[1]||'');break;
@@ -316,13 +312,13 @@ async function runCmd(raw,t){
     }
   }finally{T.busy=false;}
 }
-function cmdHelp(T){
-  const rows=[['── استطلاع ──',''],['nmap','مسح الشبكة'],['ping &lt;ip&gt;','اختبار وصول'],['── اختراق ──',''],['hydra -l admin -P rockyou.txt ssh://ip','كسر كلمة مرور SSH'],['connect &lt;ip&gt; [user pass]','فتح نفق'],['msfconsole','إطار استغلال الثغرات'],['hashcat -m 0 &lt;hash&gt; rockyou.txt','كسر بصمات MD5'],['john &lt;hash&gt;','كسر بـ john'],['── ملفات ──',''],['ls · cat &lt;f&gt; · download &lt;f&gt; · rm &lt;f&gt;','استعراض ونسخ وحذف'],['── أدوات المشغّل ──',''],['db · decrypt · evidence · mirqab · notes · send · trace','—'],['── أخرى ──',''],['ifconfig · netstat · ps · history · clear · (+ طرفية)','—']];
+function cmdHelp(){
+  const rows=[['── استطلاع ──',''],['nmap','مسح الشبكة'],['ping &lt;ip&gt;','اختبار وصول'],['── اختراق ──',''],['hydra -l admin -P rockyou.txt ssh://ip','كسر كلمة مرور SSH'],['connect &lt;ip&gt; [user pass]','فتح نفق'],['msfconsole','إطار استغلال الثغرات'],['hashcat -m 0 &lt;hash&gt; rockyou.txt','كسر بصمات MD5'],['john &lt;hash&gt;','كسر بـ john'],['── ملفات ──',''],['ls · cat &lt;f&gt; · download &lt;f&gt; · rm &lt;f&gt;','استعراض ونسخ وحذف'],['── أدوات المشغّل ──',''],['db · decrypt · evidence · mirqab · notes · send · trace','—'],['── أخرى ──',''],['ifconfig · netstat · ps · history · clear','—']];
   tprint('<span class="am">── NEXUS-7 shell — الأوامر المتاحة ──</span>');
   rows.forEach(([c,d])=>{if(!d)tprint('<span class="am">'+c+'</span>');else tprint('<div style="display:flex;gap:14px"><span style="min-width:250px;color:var(--amber)">'+c+'</span><span class="dim">'+d+'</span></div>');});
-  objDone('help');if(S.flags.live)beat('onObj','help');
+  objDone('help');
 }
-function cmdLs(T){
+function cmdLs(){
   if(S.host){
     tprint('host: <span class="am">'+NET.data[S.host].label+'</span>','dim');
     NET.data[S.host].files.forEach(n=>{
@@ -529,24 +525,22 @@ async function cmdPing(ip){
 
 /* ============ الجسور نحو story.js ============ */
 function beat(name,...args){
-  const key='n'+night;
-  const b=ST_BEATS[key];
+  const b=ST_BEATS&&ST_BEATS['n'+night];
   if(b&&typeof b[name]==='function')return b[name](...args);
   return null;
 }
 function canSendNow(){
-  const def=typeof NIGHTS!=='undefined'&&NIGHTS['n'+night];
+  const def=(typeof NIGHTS!=='undefined')&&NIGHTS['n'+night];
   if(def&&def.canSend)return def.canSend();
-  return S.flags.log&&S.flags.plate&&S.flags.root&&S.flags.key;
+  return false;
 }
 function storyHint(){
-  const key='n'+night;
-  const def=NIGHTS[key];
-  const pool=(def?def.obj:[]);
-  const o=pool.find(x=>!x.done);
+  const def=(typeof NIGHTS!=='undefined')&&NIGHTS['n'+night];
+  if(!def||!S.flags.live)return;
+  const o=(def.obj||[]).find(x=>!x.done);
   if(!o)return;
-  const h=def.hints[o.id];
-  if(S.flags.live)say('توجيه: '+(h||'اتبع سجل المهمة في هاتفك.'));
+  const h=def.hints?def.hints[o.id]:null;
+  say('توجيه: '+(h||'اتبع سجل المهمة في هاتفك.'));
 }
 
 /* ============ الملفات ============ */
@@ -557,7 +551,7 @@ const KEY_CIPHER=caesar(KEY_PLAIN,KEY_SHIFT);
 const ENC_HEX='A3F1 0C77 9B2E D440 118F 6A22\nF90C 77B1 32D4 EA05 8871 0C4E';
 const BAD_HASH='5f4dcc3b5aa765d61d8327deb882cf99';
 const FILES={
-  'README.txt':{where:'local',kb:1,kind:'text',body:'NEXUS-7 :: INTEL WORKSTATION — BUILD 7.7\n----------------------------------------\nمحطة مشغّل في وحدة الاستخبارات.\n\nأخبار: الطرفية الآن متعددة — زر «+ طرفية» أعلى أي طرفية يفتح جلسة جديدة.\n\nالأدوات:\n  TERM     الطرفية (متعددة الجلسات)\n  NET      خريطة الشبكة\n  FILES    الخزنة\n  EVIDENCE لوحة الأدلة\n  MIRQAB   مِرقاب — اعتراض الإشارات\n  DECRYPT  فك الأختام\n  DB       السجلات المدنية\n  BROWSER  الشبكة الداخلية\n  NOTES    مفكرتك — تبقى دائماً\n\nالهاتف أسفل الشاشة: اتصالات المشرف كامل وسجل المهمة.\nبعد إنهاء مهمة ليلة: تبقى حرّاً على المحطة — إعادة التشغيل تبدأ الليلة التالية.'},
+  'README.txt':{where:'local',kb:1,kind:'text',body:'NEXUS-7 :: INTEL WORKSTATION — BUILD 7.8\n----------------------------------------\nمحطة مشغّل في وحدة الاستخبارات.\n\nجديد: الطرفية متعددة — زر «+ طرفية» يفتح جلسة جديدة.\nبعد إنهاء مهمة ليلة: تبقى حرّاً على المحطة.\nإعادة التشغيل (زر الطاقة) تبدأ الليلة التالية.\n\nالأدوات:\n  TERM · NET · FILES · EVIDENCE · MIRQAB · DECRYPT · DB · BROWSER · NOTES'},
   'admin_note.txt':{where:'10.0.44.77',kb:2,kind:'text',body:'=== NOTE TO SELF — sysop/hwy16 ===\n* rotate the admin password WEEKLY (nobody does)\n* someone pulls checkpoint logs past 03:00. not me.\n* ANPR cameras log EVERYTHING. wipe nothing.\n* unit-7 asked for exit-9 footage. twice. tell no one.\n* DO NOT answer extension 44. ever.'},
   'hwy16_log.log':{where:'10.0.44.77',kb:12,kind:'log',body:'[03:07:44] CHK-3 :: VEHICLE PASS :: HWY-16 NORTH\n[03:11:02] CHK-3 :: PLATE READ :: HX-4471\n[03:12:39] CHK-5 :: SPEED 142 :: LANE 2\n[03:13:01] CHK-5 :: PLATE READ :: HX-4471\n[03:14:02] AUTH-FAIL :: sysop :: md5 :: '+BAD_HASH+'\n[03:16:44] CHK-9 :: VEHICLE PASS :: NO PLATE READ\n[04:59:59] DAILY ARCHIVE :: UPLOAD FAILED :: RETRY'},
   'cam04_frame.jpg':{where:'10.0.44.77',kb:8,kind:'photo',body:''},
@@ -876,10 +870,9 @@ function showCard(plate){
   }
 }
 
-/* ============ لوحة الأدلة — الأدلة من story.js ============ */
+/* ============ لوحة الأدلة — التعريفات من story.js ============ */
 function clueDefs(){
-  const key='n'+night;
-  const def=typeof NIGHTS!=='undefined'&&NIGHTS[key];
+  const def=(typeof NIGHTS!=='undefined')&&NIGHTS['n'+night];
   return (def&&def.clues)?def.clues:[];
 }
 let boardState={clues:[],pos:{},links:[]};
@@ -1002,12 +995,15 @@ async function attachEvidence(){
 }
 
 /* ============ مِرقاب ============ */
-const MQ={
-  active:false, tune:0, target:88.4, grabbed:{}
+const MQ={active:false,tune:0,target:88.4,grabbed:{}};
+const MQ_TARGETS={
+  mohannad:{freq:88.4,label:'MOHANNAD-H',reveal:'device near HWY-16 / DEAD-ZONE-K9',clue:'signal',obj:'mrq1'},
+  layth:{freq:104.2,label:'UNKNOWN-DEV',reveal:'contacts ping :: "LAYTH" — 14 hits this week',clue:'layth',obj:'mrq2'}
 };
 function mqNoise(x,t){return Math.sin(x*.12+t*.06)*18+Math.sin(x*.031+t*.021)*30;}
 function drawMq(){
-  const cv=$('#mqWave');if(!cv||!wins.mirqab||wins.mirqab.style.display==='none'){requestAnimationFrame(drawMq);return;}
+  const cv=$('#mqWave');
+  if(!cv||!wins.mirqab||wins.mirqab.style.display==='none'){requestAnimationFrame(drawMq);return;}
   const ctx=cv.getContext('2d');
   if(cv.width!==cv.clientWidth)cv.width=cv.clientWidth;
   if(cv.height!==cv.clientHeight)cv.height=cv.clientHeight;
@@ -1020,12 +1016,12 @@ function drawMq(){
   const strength=Math.max(0,1-dist/6);
   for(let li=0;li<3;li++){
     ctx.beginPath();
-    ctx.strokeStyle=li===0?`rgba(255,176,0,${.25+strength*.75})`:'rgba(90,110,95,.35)';
+    ctx.strokeStyle=li===0?('rgba(255,176,0,'+(.25+strength*.75)+')'):'rgba(90,110,95,.35)';
     ctx.lineWidth=li===0?2:1.2;
     for(let x=0;x<=w;x+=3){
       const base=h/2;
       let y=base+Math.sin(x*.02+t*(1.5+li)+li*2)*mqNoise(x+li*40,t)*(.25+strength*.9);
-      if(li===0&&strength>0) y+=Math.sin(x*.055+t*9)*(6+strength*22);
+      if(li===0&&strength>0)y+=Math.sin(x*.055+t*9)*(6+strength*22);
       if(x===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
     }
     ctx.stroke();
@@ -1035,11 +1031,6 @@ function drawMq(){
   ctx.beginPath();ctx.moveTo(px,0);ctx.lineTo(px,h);ctx.stroke();
   requestAnimationFrame(drawMq);
 }
-/* أهداف ليلة 2 ثابتة هنا كبيانات محرك — الأسماء من القصة */
-const MQ_TARGETS={
-  mohannad:{freq:88.4,label:'MOHANNAD-H',reveal:'device near HWY-16 / DEAD-ZONE-K9',clue:'signal',obj:'mrq1'},
-  layth:{freq:104.2,label:'UNKNOWN-DEV',reveal:'contacts ping :: "LAYTH" — 14 hits this week',clue:'layth',obj:'mrq2'}
-};
 function onTune(){
   MQ.tune=+$('#mqTune').value;
   $('#mqTuneVal').textContent=MQ.tune.toFixed(1)+' MHz';
@@ -1047,10 +1038,10 @@ function onTune(){
   const pct=Math.max(0,Math.round((1-dist/6)*100));
   $('#mqBar').style.width=pct+'%';
   $('#mqPct').textContent=pct+'%';
-  const tgt=Object.entries(MQ_TARGETS).find(([k,v])=>v.freq===MQ.target);
-  if(pct>=95){
-    $('#mqStatus').innerHTML='<span style="color:var(--green)">LOCK — إشارة ثابتة: '+tgt[1].label+'</span>';
-    $('#mqGrab').disabled=!MQ.active||!!MQ.grabbed[tgt[0]];
+  const entry=Object.entries(MQ_TARGETS).find(([k,v])=>v.freq===MQ.target);
+  if(pct>=95&&entry){
+    $('#mqStatus').innerHTML='<span style="color:var(--green)">LOCK — إشارة ثابتة: '+entry[1].label+'</span>';
+    $('#mqGrab').disabled=!MQ.active||!!MQ.grabbed[entry[0]];
   }else{
     $('#mqStatus').textContent='اقترب من التردد المستهدف… الموجة تصفو كلما دقّت.';
     $('#mqGrab').disabled=true;
@@ -1080,22 +1071,21 @@ function buildMirqab(host){
     mqLog('<span class="dim">hint: tune until wave clears on a signal, then GRAB.</span>');
     MQ.target=(night>=2)?MQ_TARGETS.mohannad.freq:MQ_TARGETS.layth.freq;
     onTune();
-    requestAnimationFrame(drawMq);
   };
   $('#mqTune').addEventListener('input',onTune);
   $('#mqGrab').onclick=()=>{
-    const [k,tgt]=Object.entries(MQ_TARGETS).find(([k,v])=>v.freq===MQ.target);
-    if(!k||MQ.grabbed[k])return;
+    const entry=Object.entries(MQ_TARGETS).find(([k,v])=>v.freq===MQ.target);
+    if(!entry||MQ.grabbed[entry[0]])return;
+    const k=entry[0],tgt=entry[1];
     MQ.grabbed[k]=true;
     sfx.unlock();glitch(1,true);
     mqLog('<span class="sig">[GRAB]</span> '+tgt.label+' :: '+tgt.reveal);
     addClue(tgt.clue);
     objDone(tgt.obj);
     if(S.flags.live){
-      if(k==='mohannad'&&night>=2)beat('grab1');
-      if(k==='layth'&&night>=2)beat('grab2');
+      if(k==='mohannad')beat('grab1');
+      if(k==='layth')beat('grab2');
     }
-    /* بعد الأول، الهدف التالي يظهر على الطيف */
     if(k==='mohannad'){MQ.target=MQ_TARGETS.layth.freq;onTune();}
     $('#mqGrab').disabled=true;
     toast('مِرقاب','إشارة مُعترَضة — راجع سجل الجهاز ولوحة الأدلة.','good');
@@ -1186,9 +1176,9 @@ function buildInfo(host){
   host.innerHTML='<div class="t-info"><h3>NEXUS-7 — محطة المشغّل</h3>'+
   '<p>محطة وحدة الاستخبارات — روح Hacknet × روح The Operator.</p>'+
   '<p><b>المشغّل:</b> <code class="ltr">'+esc(ID.name)+'</code> — الرمز: «راصد» · <b>المشرف:</b> كامل</p>'+
-  '<p><b>ميزات:</b> الطرفية متعددة الجلسات (زر «+ طرفية») · بعد إنهاء مهمة ليلة تبقى حرّاً على المحطة — إعادة التشغيل من قائمة الطاقة تبدأ الليلة التالية.</p>'+
-  '<p><b>سير ليلة 1:</b> <code>help</code> ← <code>nmap</code> ← <code>hydra</code> ← <code>connect</code> ← <code>download</code> ← <code>hashcat</code> ← DB ← <code>msfconsole</code> ← <code>decrypt</code> ← EVIDENCE ← <code>send</code></p>'+
-  '<p><b>سير ليلة 2:</b> افتح MIRQAB ← شغّل الماسح ← التقط إشارتي 88.4 ثم 104.2 ← اربط الأدلة ← أرسل.</p></div>';
+  '<p><b>ميزات:</b> الطرفية متعددة الجلسات (زر «+ طرفية») · بعد إنهاء مهمة ليلة تبقى حرّاً — إعادة التشغيل تبدأ الليلة التالية.</p>'+
+  '<p><b>ليلة 1:</b> help ← nmap ← hydra ← connect ← download ← hashcat ← DB ← msfconsole ← decrypt ← EVIDENCE ← send</p>'+
+  '<p><b>ليلة 2:</b> افتح MIRQAB ← شغّل الماسح ← التقط 88.4 ثم 104.2 ← اربط الأدلة ← أرسل.</p></div>';
 }
 
 /* ============ التطبيقات ============ */
@@ -1220,7 +1210,10 @@ const APPS={
 };
 
 /* ============ الأهداف — من story.js ============ */
-function objPool(){return (typeof NIGHTS!=='undefined'&&NIGHTS['n'+night'])?NIGHTS['n'+night].obj:[];}
+function objPool(){
+  const def=(typeof NIGHTS!=='undefined')&&NIGHTS['n'+night];
+  return (def&&def.obj)?def.obj:[];
+}
 function renderObj(){
   const pool=objPool();
   $('#phObj').innerHTML=pool.map(o=>'<li id="obj-'+o.id+'" class="'+(o.done?'done':'')+'"><span class="tick"></span><span>'+o.t+'</span></li>').join('');
@@ -1236,7 +1229,11 @@ function objDone(id){
   toast('هدف مكتمل','سجل المهمة: '+dn+'/'+pool.length,'good');
   refreshQuick();
 }
-function nextObjId(){const pool=objPool();const o=pool.find(o=>!o.done);return o?o.id:null;}
+function nextObjId(){
+  const pool=objPool();
+  const o=pool.find(o=>!o.done);
+  return o?o.id:null;
+}
 
 /* ============ الهاتف ============ */
 function setPhoneView(name){
@@ -1304,10 +1301,8 @@ function refreshQuick(){
 }
 let ringIv=null;
 function incomingCall(){
-  /* ★ ليلة حرة أو لا تعريف لليلة: لا رنة */
   if(S.flags.nightDone||!(typeof NIGHTS!=='undefined'&&NIGHTS['n'+night])){
     if(S.flags.nightDone){
-      const c=$('#tbClock').parentElement;
       toast('لا مهمات مجدولة','الليلة '+night+' مكتملة — أعد تشغيل الجهاز من زر الطاقة لليلة التالية، أو ابقَ واستكشف بحرية.');
     }
     return;
@@ -1332,9 +1327,11 @@ function stopRing(){clearInterval(ringIv);ringIv=null;$('#phone').classList.remo
 };
 async function uiCmd(text){
   const t=activeTerm();
+  if(!t){openApp('terminal');}
   tprint('<span class="usr">'+ID.name+'@nexus-7:~$</span> '+esc(text),'echo');
-  if(t.busy){sfx.err();return;}
-  await runCmd(text,t);
+  const tt=activeTerm();
+  if(tt&&tt.busy){sfx.err();return;}
+  await runCmd(text,tt);
 }
 
 /* ============ نهاية الليلة — ليلة حرة ============ */
@@ -1357,7 +1354,7 @@ function persist(){
       flags:{...S.flags,live:0},scanned:S.scanned,night,
       known:[...NET.known],files:localFiles,
       got:Object.keys(FILES).filter(k=>FILES[k].got),
-      done:(objPool()).filter(o=>o.done).map(o=>o.id)
+      done:objPool().filter(o=>o.done).map(o=>o.id)
     }));
   }catch(e){}
 }
@@ -1447,7 +1444,7 @@ function loginStart(saved){
   };
 }
 
-/* ============ الطاقة: إعادة التشغيل = الليلة التالية ============ */
+/* ============ الطاقة ============ */
 function resetAll(advanceNight){
   try{localStorage.removeItem('nexus7');}catch(e){}
   stopRing();stopTrace();
@@ -1462,7 +1459,6 @@ function resetAll(advanceNight){
   for(const k of Object.keys(wins)){wins[k].remove();delete wins[k];}
   for(const k of Object.keys(bodies)){delete bodies[k];}
   TERMS.length=0;termActive=null;termCounter=0;
-  termElDeprecated=null;
   $('#photoModal').hidden=true;
   const dr=$('#dbRes');if(dr)dr.innerHTML='';
   const dc=$('#dbCard');if(dc)dc.hidden=true;
@@ -1474,18 +1470,18 @@ function resetAll(advanceNight){
   resetPhoneIdle();
   renderFiles();renderTrash();refreshQuick();
 }
-let termElDeprecated=null;
 async function rebootSeq(){
   sfx.shutdown();
   const d=$('#desktop');
   d.classList.add('off');
   await sleep(780);
   d.classList.remove('off');
-  resetAll(true);           /* إعادة التشغيل = ليلة جديدة */
+  resetAll(true);
   d.classList.remove('boot-in');void d.offsetWidth;
   d.classList.add('boot-in');
   sfx.conn();
-  setTimeout(()=>toast('الليلة '+String(night).padStart(2,'0'),(NIGHTS['n'+night]?'مهمة جديدة بانتظارك.':'لا مهمات مجدولة — ليلة حرة.'),'good'),600);
+  const hasNight=(typeof NIGHTS!=='undefined')&&NIGHTS['n'+night];
+  setTimeout(()=>toast('الليلة '+String(night).padStart(2,'0'),hasNight?'مهمة جديدة بانتظارك.':'لا مهمات مجدولة — ليلة حرة.'),600);
   setTimeout(incomingCall,6000);
 }
  $('#powerOnBtn').onclick=()=>{
@@ -1609,6 +1605,7 @@ document.addEventListener('click',e=>{
  $$('.launch').forEach(b=>b.onclick=()=>openApp(b.dataset.app));
 
 /* ============ الانترو + سلسلة الدخول ============ */
+const INTRO_URL='https://res.cloudinary.com/rr0h5xww/video/upload/v1788782718/intro.mp4';
 function initIntro(){
   const scr=$('#introScreen'), vid=$('#introVideo'),
         playBtn=$('#introPlay'), skipBtn=$('#introSkip');
@@ -1625,7 +1622,7 @@ function initIntro(){
   scr.hidden=false;
   playBtn.onclick=()=>{
     audioInit();
-    vid.src='https://res.cloudinary.com/rr0h5xww/video/upload/v1788782718/intro.mp4';
+    vid.src=INTRO_URL;
     playBtn.hidden=true;
     skipBtn.hidden=false;
     vid.play().catch(toBoot);
@@ -1671,7 +1668,7 @@ function enterOS(){
   $('#tbClock').textContent=clockStr();
   $('#phClock').textContent=clockStr().slice(0,5);
   renderIcons();renderStart();renderObj();
-  requestAnimationFrame(drawMq); /* حلقة رسم مِرقاب دائمة (تختصر عند إخفاء النافذة) */
+  requestAnimationFrame(drawMq);
   sysSay('القناة خاملة — بانتظار اتصال المشرف');
   setTimeout(()=>toast('نظام','أهلاً '+ID.name+' — الوحدة بانتظارك. رمزك: راصد.'),700);
   setTimeout(incomingCall,3500);
