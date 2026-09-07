@@ -1371,7 +1371,7 @@ function resetPhoneIdle(){
   p.classList.toggle('fold');
   $('#tbPhone').classList.toggle('on',!p.classList.contains('fold'));
 };
- $('#tabChat').onclick=()=>{$('#tabChat').classList.add('on');$('#tabMission').classList.remove('on');setPhoneView(S.flags.live?'chat':'idle');};
+ $('#tabChat').onclick=()=>{   $('#tabChat').classList.add('on');$('#tabMission').classList.remove('on');   /* أثناء الرنين: عُد لشاشة المكالمة (قبول/رفض) بدل المحادثة */   if(ringIv||$('#phone').classList.contains('ringing'))setPhoneView('call');   else setPhoneView(S.flags.live?'chat':'idle'); };
  $('#tabMission').onclick=()=>{$('#tabMission').classList.add('on');$('#tabChat').classList.remove('on');renderObj();setPhoneView('mission');};
 function phScroll(){const c=$('#phChatLog');c.scrollTop=c.scrollHeight;}
 async function say(text,who){
@@ -1590,24 +1590,26 @@ function resetAll(advanceNight){
   renderIcons();renderStart();syncMirqabUI();
 }
 async function rebootSeq(){
+  /* يتقدم لليلة التالية فقط إذا أُنجزت مهمة الليلة الحالية */
+  const advance=(S.flags.nightDone===1);
   sfx.shutdown();
   const d=$('#desktop');
   d.classList.add('off');
   await sleep(780);
   d.classList.remove('off');
-  resetAll(true);
+  resetAll(advance);
   d.classList.remove('boot-in');void d.offsetWidth;
   d.classList.add('boot-in');
   sfx.conn();
   const hasNight=(typeof NIGHTS!=='undefined')&&NIGHTS['n'+night];
-  setTimeout(()=>toast('الليلة '+String(night).padStart(2,'0'),hasNight?'مهمة جديدة بانتظارك.':'لا مهمات مجدولة — ليلة حرة.'),600);
+  setTimeout(()=>toast('الليلة '+String(night).padStart(2,'0'),advance?(hasNight?'مهمة جديدة بانتظارك.':'لا مهمات مجدولة — ليلة حرة.'):'إعادة تشغيل — مهمتك الحالية مستمرة من جديد.'),600);
   setTimeout(incomingCall,6000);
 }
  $('#powerOnBtn').onclick=()=>{
   audioInit();
   $('#powerScreen').hidden=true;
   const d=$('#desktop');d.hidden=false;
-  resetAll(true);
+  resetAll(S.flags.nightDone===1);
   d.classList.remove('boot-in');void d.offsetWidth;
   d.classList.add('boot-in');
   sfx.conn();
