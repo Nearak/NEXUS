@@ -354,3 +354,22 @@ body.crt::after{content:'';position:fixed;inset:0;z-index:9995;pointer-events:no
 #introSkip{position:absolute;bottom:22px;left:22px;border:1px solid var(--line2);
   border-radius:6px;padding:9px 18px;font-size:12.5px;color:var(--muted);background:rgba(11,16,13,.7);transition:.15s}
 #introSkip:hover{border-color:var(--amber);color:var(--amber)}
+/* ★ لوحة الأدلة EVIDENCE */
+.t-board{flex:1;min-height:0;display:flex;flex-direction:column}
+.bd-bar{display:flex;gap:10px;align-items:center;padding:9px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.bd-bar b{font-size:12px;color:var(--amberSoft)}
+.bd-bar .hint{font-size:10px;color:var(--muted);flex:1;line-height:1.6}
+#bdAttach{border:1px solid var(--amber);color:var(--amber);border-radius:6px;padding:7px 14px;font-size:11.5px;transition:.15s;flex:none}
+#bdAttach:hover{background:var(--amber);color:#141005}
+#bdAttach:disabled{border-color:var(--line2);color:var(--muted);background:none}
+#bdCanvas{flex:1;position:relative;overflow:hidden;background:radial-gradient(600px 400px at 50% 40%,rgba(255,176,0,.04),transparent 70%),repeating-linear-gradient(45deg,rgba(46,62,52,.13) 0 12px,transparent 12px 24px)}
+#bdLinks{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+#bdLinks path.hit{pointer-events:auto;cursor:pointer;stroke:transparent;stroke-width:14;fill:none}
+.clue{position:absolute;width:152px;background:#f2e8d0;color:#241c10;border-radius:3px;padding:10px 10px 8px;cursor:grab;box-shadow:0 6px 16px rgba(0,0,0,.5),0 2px 0 #b8a67f;user-select:none;touch-action:none;transform:rotate(-1deg)}
+.clue::before{content:'';position:absolute;top:-6px;left:50%;transform:translateX(-50%);width:10px;height:10px;border-radius:50%;background:var(--red);box-shadow:0 2px 4px rgba(0,0,0,.5)}
+.clue.sel{outline:2px solid var(--cyan);outline-offset:2px}
+.clue b{display:flex;align-items:center;gap:6px;font-size:11.5px;line-height:1.4}
+.clue b svg{width:13px;height:13px;flex:none;color:#7a5c1e}
+.clue span{display:block;font-size:10px;color:#5c4f38;margin-top:3px;line-height:1.5}
+@keyframes clueIn{0%{opacity:0}100%{opacity:1}}
+.clue{animation:clueIn .4s ease}
