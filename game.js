@@ -217,7 +217,7 @@ async function runCmd(raw){
       case 'netstat':if(S.host)tprint('tcp  0  0  10.0.44.9:4471  '+S.host+':22  <span class="gr">ESTABLISHED</span>','dim');else tprint('no active tunnels','dim');tprint('tcp  0  0  127.0.0.1:8010  0.0.0.0:*  LISTEN  (ch-07 daemon)','dim');break;
       case 'ps':tprint('  PID TTY      STAT   TIME COMMAND\n    1 ?        Ss     0:02 /sbin/init\n  217 ?        S      0:44 ch07-daemon --channel=secure\n  311 ?        S      0:01 trace-spoofer --stealth\n  402 pts/0    Ss     0:00 -bash','dim');break;
       case 'browser':openApp('browser');break;
-      default:tprint(esc(cmd)+': command not found — اكتب <span class="am">help</span>','err-lite');sfx.err();
+        default:tprint(esc(cmd)+': command not found — اكتب <span class="am">help</span>','err-lite');sfx.err();penalizeTrace();
     }
   }finally{busy=false;}
 }
@@ -249,7 +249,7 @@ function cmdCat(name){
 }
 async function cmdDownload(name){
   name=(name||'').trim();
-  if(!S.host){tprint('download: not connected — لا مضيف نشط','err-lite');sfx.err();return;}
+  if(!S.host){tprint('download: not connected — لا مضيف نشط','err-lite');sfx.err();penalizeTrace();return;}
   const f=FILES[name];
   if(!f||f.where!==S.host){tprint('download: '+esc(name)+': no such file on host — استخدم ls','err-lite');sfx.err();return;}
   if(f.got){tprint(name+': already in vault','dim');return;}
@@ -338,7 +338,7 @@ async function cmdConnect(ip,user,pass){
   ip=(ip||'').trim();
   if(!ip){tprint('usage: connect &lt;ip&gt; [user pass]','dim');return;}
   if(S.host===ip){tprint('already connected to '+ip,'dim');return;}
-  if(!NET.known.has(ip)){tprint('no route to host '+esc(ip)+' — شغّل <span class="am">nmap</span> أولاً','err-lite');sfx.err();return;}
+  if(!NET.known.has(ip)){tprint('no route to host '+esc(ip)+' — شغّل <span class="am">nmap</span> أولاً','err-lite');sfx.err();penalizeTrace();return;}
   const d=NET.data[ip];
   if(d.locked){tprint(ip+' <span class="am">'+d.label+'</span>: <span class="rd">'+d.reason+'</span>','err-lite');sfx.err();toast('عقدة محصّنة',d.reason,'bad');return;}
   if(!S.flags.hydra){
@@ -589,15 +589,18 @@ function buildNet(host){
 
 /* ============ التتبع ============ */
 function startTrace(){
-  S.trace.on=true;S.trace.pct=8;
+  S.trace.on=true;S.trace.pct=0;
   $('#tracePill').hidden=false;updTrace();
-  S.trace.timer=setInterval(()=>{
-    S.trace.pct=Math.min(100,S.trace.pct+1.5);updTrace();
-    if(S.trace.pct>70&&S.trace.pct<100&&Math.round(S.trace.pct)%2===0)sfx.warn();
-    if(S.trace.pct>=100)breach();
-  },1000);
+  clearInterval(S.trace.timer); /* لا عدّاد زمني — الصعود بالأخطاء فقط */
 }
 function bumpTrace(v){if(!S.trace.on)return;S.trace.pct=Math.min(100,S.trace.pct+v);updTrace();}
+function penalizeTrace(){
+  if(!S.trace.on)return;
+  S.trace.pct=Math.min(100,S.trace.pct+8);
+  updTrace();
+  tprint('<span class="rd">[traceback +8%]</span> — ركّز، كل خطأ يقربهم منك.','dim');
+  if(S.trace.pct>=100)breach();
+}
 function updTrace(){
   $('#traceBar').style.width=S.trace.pct+'%';
   $('#tracePct').textContent=Math.round(S.trace.pct)+'%';
