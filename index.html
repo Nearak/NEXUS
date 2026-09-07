@@ -11,6 +11,61 @@
 <body class="crt">
 <div id="flash"></div>
 
+<!-- ★ الفيديو الافتتاحي — يظهر في أول زيارة بالجلسة فقط -->
+<div id="introScreen" hidden>
+  <video id="introVideo" preload="auto" playsinline></video>
+  <button id="introPlay">
+    <svg viewBox="0 0 26 26" fill="currentColor"><polygon points="7 4 21 13 7 22"/></svg>
+    <span>اضغط للبدء</span>
+  </button>
+  <button id="introSkip" hidden>تخطي ⟩⟩</button>
+</div>
+
+<!-- ★ شاشة إنشاء الهوية — أول مرة فقط -->
+<div id="setupScreen" hidden>
+  <div class="su-box">
+    <div class="su-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2l9 5v10l-9 5-9-5V7l9-5z"/><circle cx="12" cy="12" r="3.2"/></svg>
+      <b>NEXUS-7</b>
+    </div>
+    <p class="su-sub">تهيئة أولية — أنشئ هوية المشغّل</p>
+    <div class="su-row">
+      <label for="suName">اسم المشغّل</label>
+      <input id="suName" maxlength="16" autocomplete="off" spellcheck="false" placeholder="مثال: ghost">
+    </div>
+    <div class="su-row">
+      <label for="suPass">كلمة السر</label>
+      <input id="suPass" type="password" maxlength="24" autocomplete="off" placeholder="4 أحرف على الأقل">
+    </div>
+    <div class="su-row">
+      <label for="suPass2">تأكيد كلمة السر</label>
+      <input id="suPass2" type="password" maxlength="24" autocomplete="off">
+    </div>
+    <div class="su-err" id="suErr"></div>
+    <button id="suGo">إنشاء الهوية وتشغيل النظام</button>
+    <p class="su-note">تُخزَّن محلياً على هذا الجهاز فقط — تغييرها يعني جلسة جديدة (الليلة 1).</p>
+  </div>
+</div>
+
+<!-- ★ شاشة تسجيل الدخول — في الزيارات التالية -->
+<div id="loginScreen" hidden>
+  <div class="su-box">
+    <div class="su-logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2l9 5v10l-9 5-9-5V7l9-5z"/><circle cx="12" cy="12" r="3.2"/></svg>
+      <b>NEXUS-7</b>
+    </div>
+    <p class="su-sub">مطلوب تسجيل الدخول</p>
+    <div class="lg-user" id="lgUser">operator</div>
+    <div class="su-row">
+      <label for="lgPass">كلمة السر</label>
+      <input id="lgPass" type="password" maxlength="24" autocomplete="off">
+    </div>
+    <div class="su-err" id="lgErr"></div>
+    <button id="lgGo">تسجيل الدخول</button>
+    <button id="lgReset" class="su-danger">إعادة تهيئة الهوية (مسح كل شيء)</button>
+  </div>
+</div>
+
 <!-- شاشة الإقلاع -->
 <div id="boot">
   <div id="bootInner">
