@@ -16,7 +16,6 @@ NIGHTS.n1={
     {id:'hydra',t:'اكسر SSH بـ <code>hydra</code>'},
     {id:'conn',t:'اتصل بـ <code>HWY16-CAM</code>'},
     {id:'log',t:'حمّل <code>hwy16_log.log</code>'},
-    {id:'hash',t:'اكسر البصمة <code>hashcat</code>'},
     {id:'plate',t:'حدد مالك اللوحة في <code>DB</code>'},
     {id:'root',t:'جذر عبر <code>msfconsole</code>'},
     {id:'enc',t:'حمّل <code>case_file.enc</code>'},
@@ -29,8 +28,7 @@ NIGHTS.n1={
     nmap:'في الطرفية اكتب: nmap',
     hydra:'hydra -l admin -P rockyou.txt ssh://10.0.44.77',
     conn:'connect 10.0.44.77 — أو انقر العقدة في خريطة NET.',
-    log:'ls ثم download hwy16_log.log',
-    hash:'في السجل بصمة md5. جرّب: hashcat -m 0 5f4dcc3b5aa765d61d8327deb882cf99 rockyou.txt',
+    log:'ls ثم download hwy16_log.log — وفيه لوحة السيارة المطلوبة.',
     plate:'افتح DB وابحث عن HX-4471 — ثم انقر على صف النتيجة نفسه لفتح بطاقة المالك.',
     root:'msfconsole ← search hwycam ← use 0 ← set RHOSTS ← exploit',
     enc:'download case_file.enc — يحتاج جذر root.',
@@ -43,7 +41,6 @@ NIGHTS.n1={
     {id:'cam',t:'لقطة CAM-04',sub:'سيارة زرقاء — تفتيش 3',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>'},
     {id:'log',t:'سجل HWY-16',sub:'حركات فجر الحادثة',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="16" y2="12"/><line x1="4" y1="18" x2="18" y2="18"/></svg>'},
     {id:'plate',t:'اللوحة HX-4471',sub:'قُرئت عند تفتيشين متتاليين',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="8" width="20" height="8" rx="2"/><line x1="7" y1="12" x2="17" y2="12"/></svg>'},
-    {id:'hash',t:'كلمة مرور مكشوفة',sub:'admin / password',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="7.5" cy="15.5" r="4.5"/><path d="M11 12L21 2M16 7l3 3"/></svg>'},
     {id:'db',t:'السجل المدني',sub:'المالك: مهند كريم الحسني',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>'},
     {id:'dossier',t:'ملف القضية 4471-A',sub:'مطلوب — جريمة قتل',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>'}
   ]
