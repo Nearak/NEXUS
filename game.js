@@ -1588,6 +1588,8 @@ function shipmentAnim(done){
 }
 async function nightTransitionFlow(){
   if(S._transitioning)return;S._transitioning=true;
+  if(S.flags.nightDone!==1){S._transitioning=false;return;} /* لا انتقال بلا إنجاز */
+  S.flags.nightDone=2;persist(); /* قفل: لا يتكرر لحدث واحد */
   await nightTransition();
   resetAll(true);
   const d=$('#desktop');
@@ -1990,12 +1992,8 @@ function enterOS(){
   requestAnimationFrame(drawMq);
   sysSay('القناة خاملة — بانتظار اتصال المشرف');
   setTimeout(()=>toast('نظام','أهلاً '+ID.name+' — الوحدة بانتظارك. رمزك: راصد.'),700);
-  /* إن كانت الليلة السابقة منتهية ووُجدت ليلة تالية: انتقال 24 ساعة تلقائي */
-  if(S.flags.nightDone&&(typeof NIGHTS!=='undefined')&&NIGHTS['n'+(night+1)]){
-    setTimeout(nightTransitionFlow,1800);
-  }else{
-    setTimeout(incomingCall,3500);
-  }
+    /* عند الدخول: لا انتقال تلقائي — المكالمة فقط إن وجدت مهمة غير منجزة */
+  setTimeout(incomingCall,3500);
 }
 
 initIntro();
