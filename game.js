@@ -1,15 +1,13 @@
 'use strict';
 /* ============================================================
-   NEXUS-7 — سطح مكتب المشغّل (Hacknet × The Operator)
-   الملفات: index.html + style.css + game.js
-   ★ هذه النسخة: انترو أول الجلسة + إنشاء هوية أول مرة +
-     تسجيل دخول في الزيارات التالية + كل ما سبق.
+   NEXUS-7 — محطة المشغّل «راصد» (Hacknet × The Operator)
+   ★ الليلة 1: «الطريق 16» — المشرف كامل، جريمة قتل،
+     لوحة أدلة EVIDENCE مع ربط وخيوط وإرفاق بالتقرير.
    ============================================================ */
 
-/* ★ صورك الحقيقية: مسارات اختيارية. فارغ = الرسم المدمج */
 const IMG={
   camCar:'assests/car1p.png',
-  driver:'assests/person1p.png'
+  driver:'assests/person1p.png''
 };
 
 /* ============ أدوات عامة ============ */
@@ -68,7 +66,7 @@ function glitch(strength=1,red=false){
   setTimeout(()=>os.classList.remove('glitching'),460*strength);
 }
 
-/* ============ الصور — رسومات مدمجة أو صورك من IMG ============ */
+/* ============ الصور ============ */
 const CAR_SVG=`<svg viewBox="0 0 480 300" xmlns="http://www.w3.org/2000/svg">
 <defs>
 <pattern id="c-win" width="40" height="34" patternUnits="userSpaceOnUse"><rect width="40" height="34" fill="#b3b8ba"/><rect x="7" y="6" width="26" height="20" fill="#5a666e"/><rect x="7" y="6" width="26" height="6" fill="#6e7a82"/></pattern>
@@ -102,8 +100,8 @@ const CAR_SVG=`<svg viewBox="0 0 480 300" xmlns="http://www.w3.org/2000/svg">
 <rect width="480" height="300" filter="url(#c-noise)"/>
 <g font-family="monospace" font-size="13" fill="#f1f2ec" letter-spacing=".5">
 <text x="14" y="26">2024-05-15 14:32:01 UTC</text>
-<text x="466" y="26" text-anchor="end">CAM-04/PARKING_WEST</text>
-<text x="14" y="286">CAM-04/PARKING_WEST</text>
+<text x="466" y="26" text-anchor="end">CAM-04/CHK-3 HWY-16</text>
+<text x="14" y="286">CAM-04/CHK-3 HWY-16</text>
 </g>
 <circle cx="430" cy="282" r="5" fill="#ff4136"><animate attributeName="opacity" values="1;.15;1" dur="1.2s" repeatCount="indefinite"/></circle>
 <text x="444" y="287" font-family="monospace" font-size="12" fill="#ff6b60">REC</text>
@@ -120,7 +118,7 @@ const DRIVER_SVG=`<svg viewBox="0 0 460 300" xmlns="http://www.w3.org/2000/svg">
 <rect x="0" y="58" width="460" height="124" fill="url(#d-win)"/>
 <rect x="6" y="10" width="448" height="240" rx="18" fill="none" stroke="#12161a" stroke-width="14"/>
 <path d="M336 70 Q396 66 402 120 L402 300 L330 300 L326 140 Q326 92 336 70 Z" fill="#191d21"/>
-<path d="M352 176 L260 300 L352 300 L376 186 Z" fill="#22272c"/>
+<path d="M352 176 L260 300 L296 300 L376 186 Z" fill="#22272c"/>
 <path d="M110 300 Q118 232 168 214 Q196 202 210 196 L268 196 Q330 214 352 300 Z" fill="#39482f"/>
 <path d="M210 196 L268 196 L262 214 L216 214 Z" fill="#2c3925"/>
 <path d="M206 200 Q238 188 270 200 L262 176 Q238 168 214 176 Z" fill="#46563a"/>
@@ -284,11 +282,12 @@ async function runCmd(raw){
       case 'db':openApp('db');tprint('opening CIVIC RECORDS mirror…','dim');break;
       case 'decrypt':openApp('decrypt');break;
       case 'notes':openApp('notes');break;
+      case 'evidence':case 'board':openApp('board');break;
       case 'disconnect':case 'exit':cmdDisconnect();break;
       case 'trace':cmdTrace();break;
       case 'send':await cmdSend();break;
       case 'clear':case 'cls':termEl.innerHTML='';break;
-      case 'whoami':tprint('<span class="am">'+esc(ID.name)+'</span> — clearance: <span class="am">PROVISIONAL</span>');break;
+      case 'whoami':tprint('<span class="am">'+esc(ID.name)+'</span> — codename: <span class="am">RASED</span> · clearance: PROVISIONAL');break;
       case 'date':tprint(clockStr()+' — الليلة '+String(night).padStart(2,'0'));break;
       case 'pwd':tprint('/operator/nexus-7');break;
       case 'echo':tprint(esc(arg)||'');break;
@@ -303,7 +302,7 @@ async function runCmd(raw){
   }finally{busy=false;}
 }
 function cmdHelp(){
-  const rows=[['── استطلاع ──',''],['nmap','مسح الشبكة واكتشاف الخدمات'],['ping &lt;ip&gt;','اختبار وصول عقدة'],['── اختراق ──',''],['hydra -l admin -P rockyou.txt ssh://ip','كسر كلمة مرور SSH'],['connect &lt;ip&gt; [user pass]','فتح نفق (يمكن تمرير بيانات الدخول يدوياً)'],['msfconsole','إطار استغلال الثغرات — metasploit'],['hashcat -m 0 &lt;hash&gt; rockyou.txt','كسر بصمات MD5'],['john &lt;hash&gt;','كسر بـ john the ripper'],['── ملفات ──',''],['ls · cat &lt;f&gt; · download &lt;f&gt; · rm &lt;f&gt;','استعراض ونسخ وحذف (اسحب الملف لسلة المهملات أيضاً)'],['── أدوات المشغّل ──',''],['db · decrypt · notes · send · trace · disconnect','—'],['── أخرى ──',''],['ifconfig · netstat · ps · history · clear','—']];
+  const rows=[['── استطلاع ──',''],['nmap','مسح الشبكة واكتشاف الخدمات'],['ping &lt;ip&gt;','اختبار وصول عقدة'],['── اختراق ──',''],['hydra -l admin -P rockyou.txt ssh://ip','كسر كلمة مرور SSH'],['connect &lt;ip&gt; [user pass]','فتح نفق (يمكن تمرير بيانات الدخول يدوياً)'],['msfconsole','إطار استغلال الثغرات — metasploit'],['hashcat -m 0 &lt;hash&gt; rockyou.txt','كسر بصمات MD5'],['john &lt;hash&gt;','كسر بـ john the ripper'],['── ملفات ──',''],['ls · cat &lt;f&gt; · download &lt;f&gt; · rm &lt;f&gt;','استعراض ونسخ وحذف'],['── أدوات المشغّل ──',''],['db · decrypt · evidence · notes · send · trace','—'],['── أخرى ──',''],['ifconfig · netstat · ps · history · clear','—']];
   tprint('<span class="am">── NEXUS-7 shell — الأوامر المتاحة ──</span>');
   rows.forEach(([c,d])=>{if(!d)tprint('<span class="am">'+c+'</span>');else tprint('<div style="display:flex;gap:14px"><span style="min-width:250px;color:var(--amber)">'+c+'</span><span class="dim">'+d+'</span></div>');});
   objDone('help');if(S.flags.live)story.help();
@@ -336,7 +335,7 @@ async function cmdDownload(name){
   if(f.got){tprint(name+': already in vault','dim');return;}
   if(f.root&&!S.flags.root){
     tprint('download: '+esc(name)+': <span class="rd">permission denied</span> — الملف للجذر root فقط','err-lite');
-    tprint('hint: <span class="am">msfconsole</span> — ثغرة OrionCam 2.1 تمنحك جذر الشل','dim');sfx.err();return;
+    tprint('hint: <span class="am">msfconsole</span> — ثغرة HWY-CAM 2.1 تمنحك جذر الشل','dim');sfx.err();return;
   }
   await ttype('downloading '+name+' ('+f.kb+' KB)','ok');
   const pulse=setInterval(()=>netPulse(S.host),260);
@@ -347,8 +346,8 @@ async function cmdDownload(name){
   tprint('<span class="gr">saved → vault/'+esc(name)+'</span>');
   toast('الخزنة','وصل ملف جديد: '+name,'good');
   bumpTrace(10);
-  if(name==='cam_feed.log'){objDone('log');story.log();}
-  if(name==='vault.key.enc'){objDone('enc');story.enc();}
+  if(name==='hwy16_log.log'){addClue('log');addClue('plate');objDone('log');story.log();}
+  if(name==='case_file.enc'){objDone('enc');story.enc();}
 }
 function trashFile(name){
   if(!localFiles.includes(name))return false;
@@ -368,13 +367,13 @@ async function cmdNmap(){
   if(S.scanned){tprint('nmap: scan complete — راجع النتائج أعلاه أو خريطة NET','dim');return;}
   await ttype('Starting Nmap 7.94 ( https://nmap.org )','dim');
   await tprogress('scanning 10.0.44.0/24',1600);
-  for(const [ip,label,tag] of [['10.0.44.1','ISP-GATEWAY','carrier'],['10.0.44.23','ISP-BRIDGE-23','acl-locked'],['10.0.44.77','ORION-CAM','secure']]){
+  for(const [ip,label,tag] of [['10.0.44.1','ISP-GATEWAY','carrier'],['10.0.44.23','NET-BRIDGE-23','acl-locked'],['10.0.44.77','HWY16-CAM','secure']]){
     await sleep(rnd(240,460));
     tprint('Nmap scan report for <span class="am">'+ip+'</span>  ('+label+')  <span class="dim">['+tag+']</span>');
     netReveal(ip);sfx.tick();
   }
   await sleep(250);
-  tprint('PORT     STATE  SERVICE   VERSION\n22/tcp   open   ssh       OpenSSH 7.9 <span class="am">(auth: password — weak host key)</span>\n80/tcp   open   http      <span class="am">OrionCam 2.1</span> <span class="rd">(known CVEs — check msfconsole)</span>','dim');
+  tprint('PORT     STATE  SERVICE   VERSION\n22/tcp   open   ssh       OpenSSH 7.9 <span class="am">(auth: password — weak host key)</span>\n80/tcp   open   http      <span class="am">HWY-CAM 2.1</span> <span class="rd">(known CVEs — check msfconsole)</span>','dim');
   tprint('Nmap done: 3 hosts up','ok');
   S.scanned=true;persist();
   objDone('nmap');story.nmap();
@@ -397,7 +396,7 @@ async function cmdHydra(arg){
   objDone('hydra');story.hydra();
 }
 async function cmdHashcat(tool){
-  if(!FILES['cam_feed.log'].got){tprint(tool+': لا توجد بصمة — حمّل واقرأ <span class="am">cam_feed.log</span> أولاً','err-lite');sfx.err();return;}
+  if(!FILES['hwy16_log.log'].got){tprint(tool+': لا توجد بصمة — حمّل واقرأ <span class="am">hwy16_log.log</span> أولاً','err-lite');sfx.err();return;}
   if(S.flags.hash){tprint(tool+': البصمة مكسورة سابقاً → <span class="gr">password</span>','dim');return;}
   if(tool==='hashcat'){
     await ttype('hashcat (v6.2.6) starting in single-hash mode','dim');
@@ -411,6 +410,7 @@ async function cmdHashcat(tool){
     tprint('<span class="gr">password</span>         (?)\n1 password hash cracked in 00:00:07');
   }
   sfx.ok();S.flags.hash=true;persist();
+  addClue('hash');
   toast(tool,'البصمة = password — لا تعليق.','good');
   objDone('hash');story.hash();
 }
@@ -442,7 +442,8 @@ async function cmdConnect(ip,user,pass){
   tprint('<span class="rd">traceback active</span> — انسحب بـ disconnect قبل اكتمال العد.','dim');
   if(!S.flags.camShown){
     S.flags.camShown=1;persist();
-    setTimeout(()=>showPhoto('CAM-04 — بث مُعترَض · لحظة الاختراق',camMedia(),'PARKING_WEST · 2024-05-15 14:32 UTC — سيارة زرقاء، اللوحة HX-4471. النسخة محفوظة: cam04_frame.jpg'),350);
+    addClue('cam');
+    setTimeout(()=>showPhoto('CAM-04 — بث مُعترَض · الطريق 16',camMedia(),'نقطة تفتيش 3 · 2024-05-15 14:32 UTC — سيارة زرقاء، اللوحة HX-4471. النسخة محفوظة: cam04_frame.jpg'),350);
   }
   objDone('conn');story.connect();
 }
@@ -450,15 +451,15 @@ function cmdMsfStart(){
   if(!S.scanned){tprint('msfconsole: لا أهداف معروفة — شغّل <span class="am">nmap</span> أولاً','err-lite');sfx.err();return;}
   S.msf=true;
   if(promptEl)promptEl.textContent='msf6 >';
-  tprint('       =[ metasploit v6.4 — 2418 exploits\n+ -- --=[ 1289 payloads / 47 encoders\n       =[ مستعد — اكتب <span class="am">search orion</span>','dim');
+  tprint('       =[ metasploit v6.4 — 2418 exploits\n+ -- --=[ 1289 payloads / 47 encoders\n       =[ مستعد — اكتب <span class="am">search hwycam</span>','dim');
   tprint('للخروج: exit أو back','dim');
 }
 async function runMsf(line){
   const p=line.trim().toLowerCase();busy=true;
   try{
-    if(p==='exit'||p==='back'||p==='quit'){S.msf=false;if(promptEl)promptEl.textContent='operator@nexus-7:~$';tprint('back to bash.','dim');return;}
-    if(p.startsWith('search')){tprint('Matching Modules\n================\n   #  Name                                  Rank     Check\n   -  ----                                  ----     -----\n   0  exploit/linux/http/orion_cam_rce      excellent  Yes\n      <span class="am">ORION-CAM v2.x — Unauthenticated RCE (CVE-2024-1337)</span>');return;}
-    if(p==='use 0'||p.includes('orion_cam_rce')||p==='use'){tprint('Using exploit/linux/http/orion_cam_rce','dim');tprint('الخطوة التالية: <span class="am">set RHOSTS 10.0.44.77</span> ثم <span class="am">exploit</span>','dim');return;}
+    if(p==='exit'||p==='back'||p==='quit'){S.msf=false;if(promptEl)promptEl.textContent=ID.name+'@nexus-7:~$';tprint('back to bash.','dim');return;}
+    if(p.startsWith('search')){tprint('Matching Modules\n================\n   #  Name                                  Rank     Check\n   -  ----                                  ----     -----\n   0  exploit/linux/http/hwycam_rce         excellent  Yes\n      <span class="am">HWY-CAM v2.x — Unauthenticated RCE (CVE-2024-1337)</span>');return;}
+    if(p==='use 0'||p.includes('hwycam_rce')||p==='use'){tprint('Using exploit/linux/http/hwycam_rce','dim');tprint('الخطوة التالية: <span class="am">set RHOSTS 10.0.44.77</span> ثم <span class="am">exploit</span>','dim');return;}
     if(p.startsWith('set')){
       if(!S.host){tprint('[-] exploit requires an active tunnel — <span class="am">connect 10.0.44.77</span> أولاً','err-lite');sfx.err();return;}
       tprint('RHOSTS => 10.0.44.77 (from active tunnel)','dim');return;
@@ -474,7 +475,7 @@ async function runMsf(line){
       if(!S.flags.root){S.flags.root=true;persist();bumpTrace(15);toast('metasploit','جلسة root مفتوحة — الجذر لك.','good');objDone('root');story.root();}
       return;
     }
-    if(p==='info'){tprint('Name: ORION-CAM Unauthenticated RCE\nModule: exploit/linux/http/orion_cam_rce\nCVE: 2024-1337 — OrionCam 2.1\nملاحظة: يتطلب نفق نشط نحو الهدف','dim');return;}
+    if(p==='info'){tprint('Name: HWY-CAM Unauthenticated RCE\nModule: exploit/linux/http/hwycam_rce\nCVE: 2024-1337 — HWY-CAM 2.1\nملاحظة: يتطلب نفق نشط نحو الهدف','dim');return;}
     tprint(esc(p)+': unknown msf command','err-lite');sfx.err();
   }finally{busy=false;}
 }
@@ -486,14 +487,17 @@ function cmdTrace(){
   if(!S.trace.on){tprint('no active traceback — <span class="gr">you are clean.</span>');return;}
   tprint('traceback: <span class="'+(S.trace.pct>70?'rd':'am')+'">'+Math.round(S.trace.pct)+'%</span> — disconnect لتصفيره.');
 }
+async function doSend(bundle){
+  tprint('encrypting report :: AES-Q','dim');
+  await tprogress('upload to CH-07',1300);
+  tprint('<span class="gr">REPORT DELIVERED</span>'+(bundle?' — '+bundle:' — case items attached.'));
+  S.flags.sent=true;persist();
+  objDone('sent');story.sent();
+}
 async function cmdSend(){
   if(S.flags.sent){tprint('report already sent.','dim');return;}
   if(!canSend()){tprint('حزمة التقرير غير مكتملة — راجع سجل المهمة في هاتفك.','err-lite');sfx.err();story.hint(nextObjId());return;}
-  tprint('encrypting report :: AES-Q','dim');
-  await tprogress('upload to CH-07',1300);
-  tprint('<span class="gr">REPORT DELIVERED — 4 items attached.</span>');
-  S.flags.sent=true;persist();
-  objDone('sent');story.sent();
+  await doSend('');
 }
 async function cmdPing(ip){
   ip=(ip||'').trim();
@@ -524,24 +528,24 @@ function buildTerm(host){
     else if(e.key==='ArrowDown'){if(hi<hist.length-1){hi++;cmdEl.value=hist[hi];}else{hi=hist.length;cmdEl.value='';}}
   });
   out.addEventListener('click',()=>{if(!getSelection().toString())cmdEl.focus();});
-  tprint('NEXUS-7 secure shell — build 7.5','dim');
-  tprint('مرحباً يا <span class="am">'+esc(ID.name)+'</span>. اكتب <span class="am">help</span> لعرض الأوامر.','dim');
+  tprint('NEXUS-7 secure shell — build 7.6','dim');
+  tprint('أهلاً <span class="am">'+esc(ID.name)+'</span> — رمزك «راصد». اكتب <span class="am">help</span>.','dim');
 }
 
 /* ============ الملفات ============ */
-const KEY_PLAIN='== ORION-VAULT ACCESS RING ==\nGATE-2 OVERRIDE CODE :: 7714\nVALIDITY :: 24 HOURS\nISSUED BY :: MERIDIAN HOLDINGS — INT. SEC.';
+const KEY_PLAIN='== UNIT-7 CASE FILE 4471-A ==\nSUSPECT :: HUSSEINI, MOHANNAD K.\nWARRANT :: HOMICIDE - ACTIVE\nLAST PING :: HWY-16 / EXIT 9\nCLEARED BY :: DESK KAMEL';
 const KEY_SHIFT=9;
 function caesar(t,s){const A='ABCDEFGHIJKLMNOPQRSTUVWXYZ';return t.replace(/[A-Z]/g,ch=>A[(A.indexOf(ch)+s+26)%26]);}
 const KEY_CIPHER=caesar(KEY_PLAIN,KEY_SHIFT);
 const ENC_HEX='A3F1 0C77 9B2E D440 118F 6A22\nF90C 77B1 32D4 EA05 8871 0C4E';
 const BAD_HASH='5f4dcc3b5aa765d61d8327deb882cf99';
 const FILES={
-  'README.txt':{where:'local',kb:1,kind:'text',body:'NEXUS-7 :: OPERATOR WORKSTATION — BUILD 7.5\n-------------------------------------------\nسطح مكتب معزول بروح Kali. كل ما يخرج من هنا مُوقّع باسمك.\n\nالأدوات:\n  TERM     الطرفية — nmap, hydra, msfconsole, hashcat...\n  NET      خريطة الشبكة\n  FILES    الخزنة والعارض — اسحب أي ملف وأفلته على سلة المهملات\n  DECRYPT  مطرقة فك الأختام\n  DB       مرآة السجلات المدنية\n  BROWSER  نافذتك على الشبكة — راقب "0day-souq"\n  NOTES    مفكرتك الخاصة — تبقى حتى بعد إعادة الضبط\n\nالهاتف أسفل الشاشة: عليه الاتصالات والمهمة.'},
-  'admin_note.txt':{where:'10.0.44.77',kb:2,kind:'text',body:'=== NOTE TO SELF — M. ===\n* rotate the gate cipher key WEEKLY (boss insists)\n* someone keeps pinging gate-2 past 03:00\n* the new cameras log EVERYTHING. unplug them at\n  thursday "delivery". tell no one.\n* DO NOT answer extension 44. ever.'},
-  'cam_feed.log':{where:'10.0.44.77',kb:12,kind:'log',body:'[03:07:44] CAM-12 :: MOTION DETECTED :: GATE-2\n[03:11:02] CAM-07 :: VEHICLE ENTERED :: PLATE HX-4471\n[03:12:39] CAM-09 :: DOOR FORCED :: LEVEL-B\n[03:13:01] CAM-09 :: SIGNAL LOST :: 41 SEC\n[03:14:02] AUTH-FAIL :: admin :: md5 :: '+BAD_HASH+'\n[03:13:42] CAM-09 :: RESUMED :: NO FOOTAGE 03:12-03:13\n[04:59:59] DAILY ARCHIVE :: UPLOAD FAILED :: RETRY'},
+  'README.txt':{where:'local',kb:1,kind:'text',body:'NEXUS-7 :: INTEL WORKSTATION — BUILD 7.6\n----------------------------------------\nمحطة مشغّل في وحدة الاستخبارات. كل ما يخرج من هنا مُوقّع باسمك.\n\nالأدوات:\n  TERM     الطرفية — nmap, hydra, msfconsole, hashcat...\n  NET      خريطة الشبكة\n  FILES    الخزنة والعارض — اسحب أي ملف وأفلته على سلة المهملات\n  EVIDENCE لوحة الأدلة — رتّب الأدلة واربطها ثم أرفقها بالتقرير\n  DECRYPT  مطرقة فك الأختام\n  DB       قاعدة السجلات المدنية\n  BROWSER  نافذتك على الشبكة — راقب "0day-souq"\n  NOTES    مفكرتك الخاصة — تبقى حتى بعد إعادة الضبط\n\nالهاتف أسفل الشاشة: عليه اتصالات المشرف كامل وسجل المهمة.'},
+  'admin_note.txt':{where:'10.0.44.77',kb:2,kind:'text',body:'=== NOTE TO SELF — sysop/hwy16 ===\n* rotate the admin password WEEKLY (nobody does)\n* someone pulls checkpoint logs past 03:00. not me.\n* ANPR cameras log EVERYTHING. wipe nothing.\n* unit-7 asked for exit-9 footage. twice. tell no one.\n* DO NOT answer extension 44. ever.'},
+  'hwy16_log.log':{where:'10.0.44.77',kb:12,kind:'log',body:'[03:07:44] CHK-3 :: VEHICLE PASS :: HWY-16 NORTH\n[03:11:02] CHK-3 :: PLATE READ :: HX-4471\n[03:12:39] CHK-5 :: SPEED 142 :: LANE 2\n[03:13:01] CHK-5 :: PLATE READ :: HX-4471\n[03:14:02] AUTH-FAIL :: sysop :: md5 :: '+BAD_HASH+'\n[03:16:44] CHK-9 :: VEHICLE PASS :: NO PLATE READ\n[04:59:59] DAILY ARCHIVE :: UPLOAD FAILED :: RETRY'},
   'cam04_frame.jpg':{where:'10.0.44.77',kb:8,kind:'photo',body:''},
-  'vault.key.enc':{where:'10.0.44.77',kb:48,kind:'enc',root:true,body:KEY_PLAIN},
-  'vault.key':{where:'local',kb:1,kind:'key',body:KEY_PLAIN,hidden:true},
+  'case_file.enc':{where:'10.0.44.77',kb:48,kind:'enc',root:true,body:KEY_PLAIN},
+  'case_file.txt':{where:'local',kb:1,kind:'key',body:KEY_PLAIN,hidden:true},
 };
 let localFiles=['README.txt'];
 let trash=[];
@@ -558,7 +562,7 @@ function fitem(n,f){
 function renderFiles(){
   const L=$('#fileList');if(!L)return;
   let h='<div class="fl-sec"><h4>الخزنة المحلية — اسحب ملفاً لسلة المهملات</h4>';
-  localFiles.forEach(n=>h+=fitem(n,FILES[n]));
+  localFiles.forEach(n=>{if(FILES[n])h+=fitem(n,FILES[n]);});
   h+='</div>';
   if(S.host){h+='<div class="fl-sec"><h4>المضيف: '+NET.data[S.host].label+'</h4>';NET.data[S.host].files.forEach(n=>h+=fitem(n,FILES[n]));h+='</div>';}
   L.innerHTML=h;
@@ -574,7 +578,7 @@ function renderTrash(){
 let fvToken=0;
 function openFile(name){
   const f=FILES[name];if(!f)return;
-  if(f.kind==='photo'){showPhoto(name+' — أرشيف CAM-04',camMedia(),'PARKING_WEST · 2024-05-15 14:32 UTC · اللوحة HX-4471');return;}
+  if(f.kind==='photo'){showPhoto(name+' — أرشيف CHK-3',camMedia(),'HWY-16 · 2024-05-15 14:32 UTC · اللوحة HX-4471');return;}
   const tok=++fvToken;
   const v=$('#fileView');if(!v)return;
   v.innerHTML='<div class="fv-head"><b class="ltr">'+name+'</b><span>'+f.kb+' KB · '+f.kind+(f.root?' · root':'')+(f.got?' · vault':'')+'</span></div><pre id="fvBody"></pre>';
@@ -588,7 +592,7 @@ function openFile(name){
       if(tok!==fvToken)return;
       const d=document.createElement('div');body.appendChild(d);
       for(const ch of ln){if(tok!==fvToken)return;d.textContent+=ch;if(Math.random()<.1)sfx.key();await sleep(4);}
-      d.innerHTML=esc(ln).replace(/(PLATE [A-Z]+-\d+|CODE \d+|MERIDIAN[ A-Z]*|extension 44|md5 :: [a-f0-9]+)/g,'<span class="am">$1</span>');
+      d.innerHTML=esc(ln).replace(/(PLATE [A-Z]+-\d+|CODE \d+|SUSPECT[^\n]*|extension 44|md5 :: [a-f0-9]+)/g,'<span class="am">$1</span>');
       await sleep(22);
     }
   })();
@@ -614,8 +618,8 @@ const NET={
   data:{
     'SELF':{x:400,y:452,label:'NEXUS-7',self:true},
     '10.0.44.1':{x:400,y:318,label:'ISP-GATEWAY',locked:true,reason:'carrier node — رفض الوصول'},
-    '10.0.44.23':{x:158,y:170,label:'ISP-BRIDGE-23',locked:true,reason:'ACL — بصمة صوتية مطلوبة'},
-    '10.0.44.77':{x:560,y:150,label:'ORION-CAM',files:['cam_feed.log','cam04_frame.jpg','admin_note.txt','vault.key.enc']},
+    '10.0.44.23':{x:158,y:170,label:'NET-BRIDGE-23',locked:true,reason:'ACL — تصريح صيانة مطلوب'},
+    '10.0.44.77':{x:560,y:150,label:'HWY16-CAM',files:['hwy16_log.log','cam04_frame.jpg','admin_note.txt','case_file.enc']},
   },
   known:new Set(['SELF','10.0.44.1']),active:null
 };
@@ -696,19 +700,19 @@ function hostDown(){
 /* ============ فك التشفير ============ */
 function buildDec(host){
   host.innerHTML='<div class="t-dec">'+
-    '<div id="decEmpty" class="fv-empty" style="min-height:200px">لا يوجد ملف مشفر في الخزنة.<br>حمّل <b class="ltr" style="color:var(--amber)">vault.key.enc</b> من ORION-CAM (يتطلب root).</div>'+
+    '<div id="decEmpty" class="fv-empty" style="min-height:200px">لا يوجد ملف مشفر في الخزنة.<br>حمّل <b class="ltr" style="color:var(--amber)">case_file.enc</b> من HWY16-CAM (يتطلب root).</div>'+
     '<div id="decWork" hidden>'+
     '<div class="dec-lbl">CIPHERTEXT</div><pre id="decCipher" class="blob"></pre>'+
     '<div class="dec-ctl"><span class="lbl">RING&nbsp;SHIFT</span><input type="range" id="decShift" min="0" max="25" value="0" step="1"><output id="decShiftVal">00</output></div>'+
     '<div class="dec-lbl">PLAINTEXT (LIVE)</div><pre id="decPlain"></pre>'+
     '<div class="dec-meter"><div class="mbar"><i id="decBar"></i></div><b id="decPct">0%</b><span id="decStatus">حرّك الحلقة حتى يوضح النص…</span></div>'+
-    '<button id="decLock" disabled>تثبيت المفتاح</button>'+
+    '<button id="decLock" disabled>تثبيت الملف</button>'+
     '</div></div>';
   host.querySelector('#decShift').addEventListener('input',onShift);
   host.querySelector('#decLock').addEventListener('click',finalizeDecrypt);
 }
 function initDecrypt(){
-  const got=FILES['vault.key.enc'].got;
+  const got=FILES['case_file.enc'].got;
   const e=$('#decEmpty'),w=$('#decWork');if(!e||!w)return;
   e.hidden=got;w.hidden=!got;
   if(!got)return;
@@ -716,7 +720,7 @@ function initDecrypt(){
   if(S.flags.key){
     const p=$('#decPlain');p.textContent=KEY_PLAIN;p.classList.add('resolved');
     $('#decBar').style.width='100%';$('#decPct').textContent='100%';
-    $('#decStatus').textContent='KEY STABILIZED — الملف vault.key في الخزنة';
+    $('#decStatus').textContent='FILE STABILIZED — الملف case_file.txt في الخزنة';
     $('#decLock').disabled=true;return;
   }
   onShift();
@@ -731,7 +735,7 @@ function onShift(){
   const pct=valid?100:2+([...disp].reduce((a,c)=>a+c.charCodeAt(0),0)%11);
   $('#decBar').style.width=pct+'%';$('#decPct').textContent=pct+'%';
   $('#decBar').style.background=valid?'var(--green)':'var(--amber)';
-  $('#decStatus').textContent=valid?'signature match — اضغط تثبيت المفتاح':'signature drift — النص غير مقروء، واصل المحاولة';
+  $('#decStatus').textContent=valid?'signature match — اضغط تثبيت الملف':'signature drift — النص غير مقروء، واصل المحاولة';
   $('#decLock').disabled=!valid;
 }
 async function finalizeDecrypt(){
@@ -741,14 +745,15 @@ async function finalizeDecrypt(){
   sfx.unlock();glitch(1);
   await resolveText($('#decPlain'),KEY_PLAIN);
   const p=$('#decPlain');p.classList.add('resolved');
-  p.innerHTML=esc(KEY_PLAIN).replace(/(7714)/,'<span class="am" style="color:var(--amber)">$1</span>');
-  $('#decStatus').textContent='KEY STABILIZED — أُضيف vault.key إلى الخزنة';
+  p.innerHTML=esc(KEY_PLAIN).replace(/(SUSPECT :: [^\n]+)/,'<span class="am" style="color:var(--amber)">$1</span>');
+  $('#decStatus').textContent='FILE STABILIZED — أُضيف case_file.txt إلى الخزنة';
   btn.textContent='مُثبّت ✓';
   S.flags.key=true;persist();
-  const vk=FILES['vault.key'];vk.hidden=false;vk.got=true;
-  localFiles.push('vault.key');
+  const cf=FILES['case_file.txt'];cf.hidden=false;cf.got=true;
+  localFiles.push('case_file.txt');
   renderFiles();
-  toast('فك التشفير','الشفرة: GATE-2 :: 7714 — صالحة 24 ساعة','good');
+  toast('فك التشفير','ملف القضية 4471-A فُتح — اسم المشتبه به مؤكد.','good');
+  addClue('dossier');
   objDone('key');story.key();
 }
 async function resolveText(el,final){
@@ -769,7 +774,7 @@ async function resolveText(el,final){
 
 /* ============ قاعدة البيانات ============ */
 const DB=[
-  {plate:'HX-4471',name:'مهند كريم الحسني',phone:'055-2277-491',nid:'2-04-1177-092',job:'محاسب — مجموعة المرصد القابضة',addr:'شارع الملك فيصل، بناية 14 — حي الظاهر',note:'خاضع للمراقبة — وحدة الجرائم المالية',seed:17,hot:true},
+  {plate:'HX-4471',name:'مهند كريم الحسني',phone:'055-2277-491',nid:'2-04-1177-092',job:'محاسب — مجموعة المرصد القابضة',addr:'شارع الملك فيصل، بناية 14 — حي الظاهر',note:'مطلوب للتحقيق — جريمة قتل (ملف 4471-A)',seed:17,hot:true},
   {plate:'JY-9032',name:'سلمى عبد الرحمن',phone:'056-3310-204',nid:'2-05-2204-113',job:'طبيبة أسنان',addr:'طريق المطار، 3 — حي النخيل',note:'—',seed:42,hot:false},
   {plate:'KA-1188',name:'طارق منصور الدالي',phone:'050-9917-330',nid:'2-03-8811-207',job:'سائق توصيل',addr:'الشارع التجاري، 77 — المركز',note:'مخالفات مرورية مفتوحة',seed:8,hot:false},
   {plate:'BR-5561',name:'ليلى حسن مرعي',phone:'059-4402-881',nid:'2-09-1556-440',job:'مهندسة معمارية',addr:'شارع الجامعة، 21 — الغرب',note:'—',seed:71,hot:false},
@@ -777,7 +782,7 @@ const DB=[
   {plate:'MM-7703',name:'جمانة قاسم',phone:'055-6218-770',nid:'2-06-3077-621',job:'مدرّسة',addr:'شارع الورد، 9 — الشرق',note:'—',seed:55,hot:false},
   {plate:'RD-3310',name:'أنور صالح بدوي',phone:'058-1174-902',nid:'2-02-0331-117',job:'فني كهرباء',addr:'المنطقة الصناعية، مخزن 12',note:'سجل جنائي: نصب (2021)',seed:64,hot:true},
   {plate:'VF-6612',name:'ريما الحاج',phone:'053-7751-208',nid:'2-07-1662-775',job:'صحافية — جريدة المدينة',addr:'شارع الصحافة، 2 — الوسط',note:'طلبت ملفات من الأرشيف العام',seed:33,hot:false},
-  {plate:'QN-0912',name:'سامر نعيم عوض',phone:'057-3329-645',nid:'2-04-2190-332',job:'حارس أمن — شركة ميرديان',addr:'سكن الشركة — المستودع ب',note:'مقاول مع وحدة الحراسة الليلية',seed:88,hot:false},
+  {plate:'QN-0912',name:'سامر نعيم عوض',phone:'057-3329-645',nid:'2-04-2190-332',job:'حارس أمن — الطريق 16',addr:'سكن الشركة — محطة التفتيش 5',note:'مناوبة ليلية — نقاط التفتيش',seed:88,hot:false},
   {plate:'LX-4482',name:'دينا فؤاد',phone:'052-9084-517',nid:'2-08-2844-908',job:'مصممة جرافيك',addr:'شارع الفن، 18 — الوسط',note:'—',seed:12,hot:false},
 ];
 function genFluxLine(){
@@ -818,7 +823,7 @@ async function doSearch(){
     const res=DB.filter(r=>[r.plate,r.name,r.phone,r.nid].some(v=>String(v).toLowerCase().includes(q.toLowerCase())));
     if(!res.length){$('#dbRes').innerHTML='<div class="db-none">لا سجلات مطابقة — جرّب صيغة أخرى.</div>';sfx.err();return;}
     tone(700,.07,'triangle',.04);
-    $('#dbRes').innerHTML=res.map(r=>'<div class="db-row" data-p="'+r.plate+'"><span class="ltr">'+r.plate+'</span><span>'+r.name+'</span><span class="ltr">'+r.phone+'</span><span>'+(r.hot?'<i class="hot-flag">مراقَب</i>':'عادي')+'</span></div>').join('');
+    $('#dbRes').innerHTML=res.map(r=>'<div class="db-row" data-p="'+r.plate+'"><span class="ltr">'+r.plate+'</span><span>'+r.name+'</span><span class="ltr">'+r.phone+'</span><span>'+(r.hot?'<i class="hot-flag">مطلوب</i>':'عادي')+'</span></div>').join('');
     $$('#dbRes .db-row').forEach(el=>el.onclick=()=>showCard(el.dataset.p));
   }finally{dbBusy=false;}
 }
@@ -840,634 +845,25 @@ function showCard(plate){
     '<button class="close">✕</button>';
   card.querySelector('.close').onclick=()=>card.hidden=true;
   const ph=card.querySelector('#dcPhoto');
-  if(ph)ph.onclick=()=>showPhoto('السائق — اللوحة '+r.plate,driverMedia(),'مطابق لصورة رخصة القيادة — مهند كريم الحسني');
+  if(ph)ph.onclick=()=>showPhoto('المشتبه به — اللوحة '+r.plate,driverMedia(),'مطابق لصورة رخصة القيادة — مهند كريم الحسني');
   if(plate==='HX-4471'){
     if(!S.flags.driverShown){
       S.flags.driverShown=1;persist();
-      setTimeout(()=>showPhoto('السائق — اللوحة HX-4471',driverMedia(),'التقطت من كاميرا البوابة — مطابق لبطاقة السجل: مهند كريم الحسني'),300);
+      setTimeout(()=>showPhoto('المشتبه به — اللوحة HX-4471',driverMedia(),'التقطت من كاميرا الطريق — مطابق لبطاقة السجل: مهند كريم الحسني'),300);
     }
-    if(!S.flags.plate){S.flags.plate=true;objDone('plate');story.plate();}
+    if(!S.flags.plate){S.flags.plate=true;addClue('db');objDone('plate');story.plate();}
   }
 }
 
-/* ============ المتصفح ============ */
-const PAGES={
-  'nexus://home':()=>'<h1>NEXUS INTERNAL WEB</h1><p>شبكتك الداخلية — بلا رقيب تقريباً.</p>'+
-    '<span class="wlink" data-u="0day-souq.onion">0day-souq.onion</span>'+
-    '<span class="wlink" data-u="meridian-holdings.com">meridian-holdings.com</span>'+
-    '<span class="wlink" data-u="city-gov.gov/civic">city-gov.gov/civic</span>'+
-    '<span class="wlink" data-u="nexus://about">nexus://about</span>'+
-    '<p class="mono" style="color:var(--muted);font-size:11px;margin-top:20px">tip: اكتب الرابط مباشرة في شريط العنوان.</p>',
-  '0day-souq.onion':()=>'<h1>0DAY SOUQ — سوق الثغرات</h1>'+
-    '<div class="post"><div class="pmeta">thread #4471 · 2 days ago</div><h3>OrionCam 2.1 — Unauthenticated RCE</h3>'+
-    '<p>CVE-2024-1337. تعمل <code>only from inside an active tunnel</code> — يعني: <code>connect</code> أولاً ثم <code>msfconsole → search orion → use 0 → set RHOSTS → exploit</code>. جذر مضمون.</p></div>'+
-    '<div class="post"><div class="pmeta">thread #4402 · 5 days ago</div><h3>rockyou.txt mirror</h3>'+
-    '<p>نسخة كاملة على كل محطة NEXUS. استخدمها مباشرة مع <code>hydra</code> و<code>hashcat</code>.</p></div>'+
-    '<div class="post"><div class="pmeta">thread #4390 · 1 week ago</div><h3>[RUMOR] «مِرقاب»</h3>'+
-    '<p>شحنة أدوات جديدة تقول إنها ستوزّع على المشغّلين الوحيدين… من قال إنها حقيقية لم يظهر منذ ذلك اليوم.</p></div>',
-  'meridian-holdings.com':()=>'<h1>MERIDIAN HOLDINGS</h1><p>«أمن اللوجستيات الليلية — منذ 1998.»</p>'+
-    '<h2>مستودعاتنا</h2><p>12 مستودعاً — كلها بكاميرات ORION-CAM من الجيل الثاني. بوابتنا تُفتح بشفرات أسبوعية تُدار مركزياً.</p>'+
-    '<h2>إشعار صيانة</h2><p>الخميس القادم: «توصيل» خارج الجدول على المستودع ب — البوابة 2 ستكون مفتوحة بين 03:00 و04:00. لا تدخّلوا.</p>',
-  'city-gov.gov/civic':()=>'<h1>CIVIC RECORDS — MIRROR</h1>'+
-    '<p>مرآة السجلات المدنية. للبحث السريع استخدم أداة <code>DB</code> على سطح مكتبك مباشرة.</p>'+
-    '<span class="wlink" data-u="__open_db">افتح أداة DB الآن</span>',
-  'nexus://about':()=>'<h1>NEXUS-7 — ABOUT</h1>'+
-    '<p>محطة مشغّل وحيد. كل ليلة مهمة واحدة، وكل مهمة تُنسى عند الفجر.</p>'+
-    '<p>الأدوات: <code>nmap · hydra · hashcat · john · msfconsole · connect · db · decrypt · notes</code></p>'+
-    '<p style="color:var(--amberDim);font-size:12px">النموذج الأولي — الليلة '+String(night).padStart(2,'0')+'</p>',
-};
-let brHist=[];
-function brGo(url,push=true){
-  const body=$('#brBody');if(!body)return;
-  url=(url||'').trim();
-  if(url==='__open_db'){openApp('db');return;}
-  const fn=PAGES[url];
-  if(push&&fn)brHist.push(url);
-  $('#brUrl').value=url;
-  if(!fn){body.innerHTML='<div class="webpage"><div class="err">ERR_NAME_NOT_RESOLVED — '+esc(url)+'</div></div>';sfx.err();return;}
-  body.innerHTML='<div class="webpage">'+fn()+'</div>';
-  body.querySelectorAll('.wlink').forEach(l=>l.onclick=()=>brGo(l.dataset.u));
-  sfx.tick();
-}
-function buildBrowser(host){
-  host.innerHTML='<div class="t-browser"><div class="br-bar"><button id="brBack" title="رجوع">‹</button><input id="brUrl" placeholder="nexus://home"><button id="brGoBtn" title="اذهب">→</button></div><div id="brBody"></div></div>';
-  host.querySelector('#brBack').onclick=()=>{if(brHist.length>1){brHist.pop();brGo(brHist[brHist.length-1],false);}};
-  host.querySelector('#brGoBtn').onclick=()=>brGo(host.querySelector('#brUrl').value);
-  host.querySelector('#brUrl').addEventListener('keydown',e=>{if(e.key==='Enter')brGo(e.target.value);});
-  brHist=['nexus://home'];brGo('nexus://home',false);
-}
-
-/* ============ المفكرة ============ */
-function buildNotes(host){
-  host.innerHTML='<div class="t-notes"><div class="nt-head"><b>المفكرة — private_notes.txt</b><span class="mono ltr">autosave</span></div>'+
-    '<textarea id="notesTa" placeholder="اكتب ملاحظاتك… أسماء، لوحات، شيفرات، شكوك.&#10;ملاحظاتك تبقى محفوظة حتى بعد إعادة ضبط اللعبة أو إطفاء الجهاز."></textarea>'+
-    '<div class="nt-foot"><button id="ntClear">مسح الكل</button><span id="ntCount">0 حرف</span><span class="save" id="ntSaved"></span></div></div>';
-  const ta=host.querySelector('#notesTa');
-  try{ta.value=localStorage.getItem('nexus7_notes')||'';}catch(e){}
-  const cnt=host.querySelector('#ntCount'),sv=host.querySelector('#ntSaved');
-  const upd=()=>{cnt.textContent=ta.value.length+' حرف';};
-  upd();
-  let t=null;
-  ta.addEventListener('input',()=>{
-    upd();
-    sv.textContent='…يحفظ';
-    clearTimeout(t);
-    t=setTimeout(()=>{
-      try{localStorage.setItem('nexus7_notes',ta.value);}catch(e){}
-      sv.textContent='حُفظ ✓';
-      setTimeout(()=>{if(sv)sv.textContent='';},1200);
-    },500);
-  });
-  host.querySelector('#ntClear').onclick=()=>{
-    ta.value='';upd();
-    try{localStorage.removeItem('nexus7_notes');}catch(e){}
-    sfx.pop();sv.textContent='مُسحت';
-  };
-}
-
-/* ============ معلومات ============ */
-function buildInfo(host){
-  host.innerHTML='<div class="t-info"><h3>NEXUS-7 — محطة المشغّل</h3>'+
-  '<p>دمج بين روح Hacknet (الطرفية، عدّاد التتبع) وروح The Operator (المكالمات، التحقيق).</p>'+
-  '<p><b>المشغّل الحالي:</b> <code class="ltr">'+esc(ID.name)+'</code></p>'+
-  '<p><b>التحكم:</b> اسحب النوافذ من شريطها، غيّر حجمها من الزاوية، وأبسطها تُستعاد من شريط المهام. اسحب أيقونات المكتب كما تشاء، واسحب الملفات من FILES وأفلتها على سلة المهملات.</p>'+
-  '<p><b>سير المهمة:</b> <code>help</code> ← <code>nmap</code> ← <code>hydra</code> ← <code>connect</code> ← <code>download</code> ← <code>hashcat</code> ← DB ← <code>msfconsole</code> ← <code>decrypt</code> ← <code>send</code></p>'+
-  '<p style="color:var(--muted)">تقدمك يُحفظ تلقائياً في المتصفح. المفكرة تبقى دائماً.</p></div>';
-}
-
-/* ============ تعريف التطبيقات ============ */
-const IC={
-  term:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>',
-  files:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>',
-  browser:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>',
-  notes:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
-  net:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="10.6" x2="15.4" y2="6.4"/><line x1="8.6" y1="13.4" x2="15.4" y2="17.6"/></svg>',
-  db:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>',
-  dec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
-  trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
-  info:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
-};
-const APPS={
-  terminal:{title:'TERM — الطرفية',w:730,h:470,icon:IC.term,build:buildTerm},
-  files:{title:'FILES — الخزنة',w:700,h:440,icon:IC.files,build:buildFiles,onOpen:renderFiles},
-  browser:{title:'NEXUS WEB',w:740,h:500,icon:IC.browser,build:buildBrowser},
-  notes:{title:'NOTES — المفكرة',w:560,h:460,icon:IC.notes,build:buildNotes},
-  netmap:{title:'NET — خريطة الشبكة',w:680,h:480,icon:IC.net,build:buildNet,onOpen:renderNet},
-  db:{title:'DB — السجلات المدنية',w:700,h:520,icon:IC.db,build:buildDb},
-  decrypt:{title:'DECRYPT — فك الأختام',w:640,h:560,icon:IC.dec,build:buildDec,onOpen:initDecrypt},
-  trash:{title:'سلة المهملات',w:480,h:380,icon:IC.trash,build:buildTrash,onOpen:renderTrash},
-  info:{title:'عن النظام',w:560,h:400,icon:IC.info,build:buildInfo},
-};
-
-/* ============ الهاتف ============ */
-function setPhoneView(name){
-  $$('.ph-view').forEach(v=>v.classList.remove('on'));
-  const el={idle:'phIdle',call:'phCall',chat:'phChat',mission:'phMission'}[name];
-  if(el)$('#'+el).classList.add('on');
-}
-function phoneUnfold(){$('#phone').classList.remove('fold');$('#tbPhone').classList.add('on');}
-function resetPhoneIdle(){
-  $('#phChatLog').innerHTML='';$('#phChips').innerHTML='';
-  $('#phone').classList.remove('ringing');
-  $('#tabChat').classList.add('on');$('#tabMission').classList.remove('on');
-  setPhoneView('idle');
-}
- $('#phFold').onclick=()=>{$('#phone').classList.add('fold');$('#tbPhone').classList.remove('on');};
- $('#tbPhone').onclick=()=>{
-  const p=$('#phone');
-  p.classList.toggle('fold');
-  $('#tbPhone').classList.toggle('on',!p.classList.contains('fold'));
-};
- $('#tabChat').onclick=()=>{$('#tabChat').classList.add('on');$('#tabMission').classList.remove('on');setPhoneView(S.flags.live?'chat':'idle');};
- $('#tabMission').onclick=()=>{$('#tabMission').classList.add('on');$('#tabChat').classList.remove('on');setPhoneView('mission');};
-function phScroll(){const c=$('#phChatLog');c.scrollTop=c.scrollHeight;}
-async function say(text,who='برق'){
-  if(!S.flags.live)return;
-  setPhoneView('chat');
-  $('#tabChat').classList.add('on');$('#tabMission').classList.remove('on');
-  const ind=document.createElement('div');
-  ind.className='pmsg typing';
-  ind.innerHTML='<span style="font-size:10px;color:var(--muted)">'+who+'</span><i></i><i></i><i></i>';
-  $('#phChatLog').appendChild(ind);phScroll();
-  await sleep(450+Math.min(1300,text.length*12));
-  ind.remove();
-  const m=document.createElement('div');
-  m.className='pmsg them';m.textContent=text;
-  $('#phChatLog').appendChild(m);sfx.msg();phScroll();
-}
-function sysSay(html){
-  const m=document.createElement('div');m.className='pmsg sys';m.innerHTML=html;
-  $('#phChatLog').appendChild(m);phScroll();
-}
-function meSay(text){
-  const m=document.createElement('div');m.className='pmsg me';m.textContent=text;
-  $('#phChatLog').appendChild(m);phScroll();
-}
-function refreshQuick(){
-  const q=$('#phChips');if(!q)return;q.innerHTML='';
-  if(!S.flags.live)return;
-  const b1=document.createElement('button');
-  b1.className='pchip';b1.textContent='أحتاج توجيه';
-  b1.onclick=()=>{const id=nextObjId();if(id)story.hint(id);};
-  q.appendChild(b1);
-  if(canSend()&&!S.flags.sent){
-    const b2=document.createElement('button');
-    b2.className='pchip send';b2.textContent='أرسل التقرير الآن';
-    b2.onclick=()=>{meSay('أرسلت الحزمة كاملة.');uiCmd('send');};
-    q.appendChild(b2);
-  }
-}
-let ringIv=null;
-function incomingCall(){
-  const p=$('#phone');
-  p.classList.add('ringing');phoneUnfold();
-  setPhoneView('call');sfx.ring();
-  ringIv=setInterval(()=>sfx.ring(),2100);
-}
-function stopRing(){clearInterval(ringIv);ringIv=null;$('#phone').classList.remove('ringing');}
- $('#phAccept').onclick=()=>{
-  stopRing();setPhoneView('chat');sfx.conn();glitch(1);
-  sysSay('قبول الاتصال — CH-07');
-  story.start();
-};
- $('#phDecline').onclick=()=>{
-  stopRing();setPhoneView('idle');
-  toast('قناة CH-07','رفضت الاتصال.');
-  S.flags.declined++;
-  if(S.flags.declined===1)setTimeout(()=>{S.flags.live&&say('أعتقد أنك رفضت بالخطأ. أعِد الرد، وسأنسى الموقف.');},1800);
-  setTimeout(()=>{toast('قناة CH-07','اتصال وارد من جديد…');incomingCall();},4200);
-};
-
-/* ============ الأهداف والقصة ============ */
-const OBJ=[
-  {id:'help',t:'شغّل <code>help</code>'},
-  {id:'nmap',t:'امسح الشبكة <code>nmap</code>'},
-  {id:'hydra',t:'اكسر SSH بـ <code>hydra</code>'},
-  {id:'conn',t:'اتصل بـ <code>ORION-CAM</code>'},
-  {id:'log',t:'حمّل <code>cam_feed.log</code>'},
-  {id:'hash',t:'اكسر البصمة <code>hashcat</code>'},
-  {id:'plate',t:'حدد مالك اللوحة في <code>DB</code>'},
-  {id:'root',t:'جذر عبر <code>msfconsole</code>'},
-  {id:'enc',t:'حمّل <code>vault.key.enc</code>'},
-  {id:'key',t:'فك التشفير في <code>DECRYPT</code>'},
-  {id:'sent',t:'أرسل التقرير'},
+/* ============ ★ لوحة الأدلة EVIDENCE ============ */
+const CLUES=[
+  {id:'cam',t:'لقطة CAM-04',sub:'سيارة زرقاء — تفتيش 3',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>'},
+  {id:'log',t:'سجل HWY-16',sub:'حركات فجر الحادثة',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="16" y2="12"/><line x1="4" y1="18" x2="18" y2="18"/></svg>'},
+  {id:'plate',t:'اللوحة HX-4471',sub:'قُرئت عند تفتيشين متتاليين',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="8" width="20" height="8" rx="2"/><line x1="7" y1="12" x2="17" y2="12"/></svg>'},
+  {id:'hash',t:'كلمة مرور مكشوفة',sub:'admin / password',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="7.5" cy="15.5" r="4.5"/><path d="M11 12L21 2M16 7l3 3"/></svg>'},
+  {id:'db',t:'السجل المدني',sub:'المالك: مهند كريم الحسني',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>'},
+  {id:'dossier',t:'ملف القضية 4471-A',sub:'مطلوب — جريمة قتل',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>'},
 ];
-const HINTS={
-  help:'افتح الطرفية TERM واكتب help.',
-  nmap:'في الطرفية اكتب: nmap',
-  hydra:'hydra -l admin -P rockyou.txt ssh://10.0.44.77',
-  conn:'connect 10.0.44.77 — أو انقر العقدة في خريطة NET.',
-  log:'ls ثم download cam_feed.log',
-  hash:'في السجل بصمة md5. جرّب: hashcat -m 0 5f4dcc3b5aa765d61d8327deb882cf99 rockyou.txt',
-  plate:'افتح DB وابحث عن: HX-4471',
-  root:'msfconsole ← search orion ← use 0 ← set RHOSTS ← exploit',
-  enc:'download vault.key.enc — يحتاج جذر root.',
-  key:'افتح DECRYPT واضبط حلقة الإزاحة حتى يوضح النص، ثم ثبّت.',
-  sent:'اكتب send في الطرفية أو زر الإرسال في الهاتف.'
-};
-function renderObj(){
-  $('#phObj').innerHTML=OBJ.map(o=>'<li id="obj-'+o.id+'" class="'+(o.done?'done':'')+'"><span class="tick"></span><span>'+o.t+'</span></li>').join('');
-}
-function objDone(id){
-  const o=OBJ.find(x=>x.id===id);
-  if(!o||o.done)return;
-  o.done=true;persist();
-  const li=$('#obj-'+id);if(li)li.classList.add('done');
-  tone(740,.07,'triangle',.045);
-  const dn=OBJ.filter(x=>x.done).length;
-  toast('هدف مكتمل','سجل المهمة: '+dn+'/'+OBJ.length,'good');
-  refreshQuick();
-}
-function nextObjId(){const o=OBJ.find(o=>!o.done);return o?o.id:null;}
-async function uiCmd(text){
-  if(!termEl)openApp('terminal');
-  tprint('<span class="usr">'+ID.name+'@nexus-7:~$</span> '+esc(text),'echo');
-  if(busy){sfx.err();return;}
-  await runCmd(text);
-}
-const story={
-  async start(){
-    S.flags.live=true;
-    sysSay('بدأت المهمة — «اختبار التشغيل»');
-    await say('وصلت. القناة خالية — سأتحدث باختصار.');
-    await say('يُدعوني «برق». كل ليلة مهمة واحدة، ولا أسئلة على القناة.');
-    const nid=nextObjId();
-    if(nid&&nid!=='help'){
-      await say('أرى أنك لمّحت إلى الأدوات قبل اتصالي — لا بأس، هذا يريحني. الخطوة التالية: '+HINTS[nid]);
-    }else{
-      await say('الليلة: اختبار تشغيل. أريد أن أتأكد أن أدواتك تتنفس — ابدأ بالطرفية: اكتب help.');
-    }
-    renderObj();refreshQuick();
-    setPhoneView('chat');
-  },
-  async help(){if(!S.flags.live||S.flags.help)return;S.flags.help=true;await sleep(400);await say('جيد. الآن امسح شبكتنا المحلية: اكتب nmap — كل ما تجده سيُرسم على الخريطة.');},
-  async nmap(){if(!S.flags.live||S.flags.nmap)return;S.flags.nmap=true;await say('عقدتان جديدتان. تجاهل الجسر — محصّن ولن نلمسه الليلة.');await say('الهدف: ORION-CAM على 10.0.44.77. كسر كلمة مرور الـ SSH أولاً: hydra -l admin -P rockyou.txt ssh://10.0.44.77');},
-  async hydra(){if(!S.flags.live||S.flags.hydra)return;S.flags.hydra=true;await say('orion2024… كلمة مرور تُحرج صاحبها. اتصل الآن: connect 10.0.44.77 — وساعة التتبع ستعمل ضدك. لا تتمطّط.');},
-  async connect(){if(!S.flags.live||S.flags.conn)return;S.flags.conn=true;await say('أنت داخل. لقطة CAM-04 فتحت عندك — سيارة زرقاء ولوحتها HX-4471. ركّز.');await say('حمّل السجل: ls ثم download cam_feed.log');},
-  async log(){if(!S.flags.live||S.flags.log)return;S.flags.log=true;await say('اقرأ السجل فجراً: السيارة نفسها — HX-4471. وفيه بصمة md5 لفشل دخول.');await say('مهمّتان: اكسر البصمة بـ hashcat، وحدد مالك اللوحة في أداة DB.');},
-  async hash(){if(!S.flags.live||S.flags.hash)return;S.flags.hash=true;await say('password؟ حقاً؟ بعض الناس لا يستحقون حتى الأمان الضعيف. ولا تنسَ اللوحة في DB.');},
-  async plate(){
-    if(!S.flags.live)return;
-    await sleep(300);
-    await say('مهند الحسني… لم يكن على قائمتي. محاسب عند مجموعة المرصد. سجّلته.');
-    await say('نحتاج الجذر أيضاً: افتح msfconsole — الثغرة موثقة في 0day-souq: search orion ثم use 0 ثم set RHOSTS ثم exploit.');
-  },
-  async root(){if(!S.flags.live||S.flags.root)return;S.flags.root=true;await say('جذر! الآن الملفات المحمية لك. حمّل: download vault.key.enc');},
-  async enc(){if(!S.flags.live)return;await say('افتح تبويب DECRYPT واضبط حلقة الإزاحة. النص سيقف إلى وضوحه فجأة — عندها ثبّت المفتاح.');},
-  async key(){if(!S.flags.live||S.flags.key)return;S.flags.key=true;await say('شفرة بوابة! هذه هي القطعة التي ينتظرها الفريق.');await say('أرسل التقرير الآن: اكتب send في الطرفية، أو زر الإرسال هنا.');refreshQuick();},
-  async sent(){
-    if(!S.flags.live)return;
-    await say('استلمت: سجل الكاميرات، لقطة CAM-04، هوية صاحب اللوحة، البصمة المكسورة، وشفرة بوابة صالحة 24 ساعة.');
-    await say('لست مجرد صوتٍ محظوظ يا '+ID.name+'. هذه ليست إلا التسخينة — الأربعاء القادم توصلك شحنة «مِرقاب».');
-    await say('نم قليلاً. سأرنّ.');
-    sysSay('برق أغلق القناة');
-    if(S.host){hostDown();tprint('connection closed by remote host','dim');}
-    S.flags.live=false;refreshQuick();
-    toast('المهمة مكتملة','اختبار التشغيل: '+OBJ.length+'/'+OBJ.length,'good');
-    setTimeout(async()=>{
-      toast('نظام','اكتملت الجلسة — إعادة ضبط شاملة خلال لحظات…');
-      await sleep(2200);
-      sessionReset();
-    },4500);
-  },
-  async breach(){
-    if(!S.flags.live)return;
-    await sleep(600);
-    await say('كادوا يمسكونك! الملفات المحمّلة بأمان — أعد الاتصال وأكمل المهمة.');
-  },
-  async hint(id){if(!S.flags.live)return;await say('توجيه: '+(HINTS[id]||'اتبع سجل المهمة في هاتفك.'));}
-};
-
-/* ============ الحفظ والاستعادة ============ */
-function persist(){
-  try{
-    localStorage.setItem('nexus7',JSON.stringify({
-      flags:{...S.flags,live:0},scanned:S.scanned,night,
-      known:[...NET.known],files:localFiles,
-      got:Object.keys(FILES).filter(k=>FILES[k].got),
-      done:OBJ.filter(o=>o.done).map(o=>o.id)
-    }));
-  }catch(e){}
-}
-function restoreGame(){
-  let sv=null;
-  try{sv=JSON.parse(localStorage.getItem('nexus7')||'null');}catch(e){}
-  if(!sv)return;
-  Object.assign(S.flags,sv.flags||{});S.flags.live=false;
-  if(sv.scanned)S.scanned=true;
-  if(sv.night)night=sv.night;
-  (sv.known||[]).forEach(ip=>{if(NET.data[ip])NET.known.add(ip);});
-  (sv.got||[]).forEach(n=>{if(FILES[n])FILES[n].got=true;});
-  if(sv.files&&sv.files.length)localFiles=sv.files;
-  (sv.done||[]).forEach(id=>{const o=OBJ.find(x=>x.id===id);if(o)o.done=true;});
-  $('#smNight').textContent='الليلة '+String(night).padStart(2,'0');
-}
-addEventListener('beforeunload',persist);
-
-/* ============ ★ الهوية: إنشاء + تسجيل دخول ============ */
-const ID={name:'operator',hash:''};
-function hashStr(t){
-  let h=5381;
-  for(let i=0;i<t.length;i++)h=((h<<5)+h+t.charCodeAt(i))>>>0;
-  return String(h);
-}
-function idSave(){try{localStorage.setItem('nexus7_id',JSON.stringify({name:ID.name,hash:ID.hash}));}catch(e){}}
-function idLoad(){
-  try{return JSON.parse(localStorage.getItem('nexus7_id')||'null');}catch(e){return null;}
-}
-function idWipe(){
-  try{
-    localStorage.removeItem('nexus7_id');
-    localStorage.removeItem('nexus7');
-    localStorage.removeItem('nexus7_icons');
-    localStorage.removeItem('nexus7_notes');
-    sessionStorage.removeItem('nexus7_intro');
-  }catch(e){}
-}
-function setupStart(){
-  const scr=$('#setupScreen');
-  scr.hidden=false;
-  const btn=$('#suGo');
-  const go=()=>{
-    const n=$('#suName').value.trim();
-    const p=$('#suPass').value, p2=$('#suPass2').value;
-    const err=$('#suErr');
-    if(!/^[a-zA-Z0-9_-]{3,16}$/.test(n)){err.textContent='الاسم: 3-16 حرفاً إنجليزياً/رقماً بلا مسافات.';sfx.err();return;}
-    if(p.length<4){err.textContent='كلمة السر: 4 أحرف على الأقل.';sfx.err();return;}
-    if(p!==p2){err.textContent='كلمتا السر غير متطابقتين.';sfx.err();return;}
-    ID.name=n;ID.hash=hashStr(p);
-    idSave();
-    scr.hidden=true;
-    sfx.ok();
-    bootSeq();
-  };
-  btn.onclick=go;
-  $('#suPass2').addEventListener('keydown',e=>{if(e.key==='Enter')go();});
-  $('#suName').addEventListener('keydown',e=>{if(e.key==='Enter')$('#suPass').focus();});
-}
-function loginStart(saved){
-  const scr=$('#loginScreen');
-  scr.hidden=false;
-  $('#lgUser').textContent=saved.name;
-  const btn=$('#lgGo');
-  const go=()=>{
-    const p=$('#lgPass').value;
-    const err=$('#lgErr');
-    if(hashStr(p)!==saved.hash){
-      err.textContent='كلمة السر غير صحيحة — محاولة أخرى.';
-      sfx.err();
-      $('#lgPass').value='';$('#lgPass').focus();
-      glitch(1,true);
-      return;
-    }
-    ID.name=saved.name;ID.hash=saved.hash;
-    scr.hidden=true;
-    sfx.conn();
-    bootSeq();
-  };
-  btn.onclick=go;
-  $('#lgPass').addEventListener('keydown',e=>{if(e.key==='Enter')go();});
-  $('#lgReset').onclick=()=>{
-    if(confirm('سيُمسح كل شيء: الهوية، التقدم، المفكرة. هل أنت متأكد؟')){
-      idWipe();location.reload();
-    }
-  };
-}
-
-/* ============ الإعادة والإطفاء ============ */
-function resetAll(){
-  try{localStorage.removeItem('nexus7');}catch(e){}
-  stopRing();stopTrace();
-  S.host=null;S.scanned=false;S.msf=false;dbBusy=false;
-  Object.keys(S.flags).forEach(k=>S.flags[k]=0);
-  night++;
-  $('#smNight').textContent='الليلة '+String(night).padStart(2,'0');
-  Object.values(FILES).forEach(f=>{f.got=false;});
-  FILES['vault.key'].hidden=true;
-  localFiles=['README.txt'];trash=[];
-  NET.known=new Set(['SELF','10.0.44.1']);NET.active=null;NET_ALPHA.clear();
-  for(const k of Object.keys(wins)){wins[k].remove();delete wins[k];}
-  for(const k of Object.keys(bodies)){delete bodies[k];}
-  termEl=null;cmdEl=null;promptEl=null;focusId=null;spawn=0;hi=-1;hist.length=0;
-  syncTaskWindows();
-  $('#photoModal').hidden=true;
-  const dr=$('#dbRes');if(dr)dr.innerHTML='';
-  const dc=$('#dbCard');if(dc)dc.hidden=true;
-  brHist=['nexus://home'];
-  OBJ.forEach(o=>o.done=false);renderObj();
-  resetPhoneIdle();
-  renderFiles();renderTrash();refreshQuick();
-}
-async function sessionReset(){
-  glitch(1,true);sfx.shutdown();
-  await sleep(300);
-  resetAll();
-  const d=$('#desktop');
-  d.classList.remove('off','boot-in');void d.offsetWidth;
-  d.classList.add('boot-in');
-  sfx.conn();
-  setTimeout(()=>toast('الليلة '+String(night).padStart(2,'0'),'نظام أُعيد ضبطه — خزنة فارغة، شبكة غير ممسوحة.','good'),600);
-  setTimeout(incomingCall,7000);
-}
-function shutdownSeq(){
-  persist();sfx.shutdown();
-  const d=$('#desktop');
-  d.classList.add('off');
-  setTimeout(()=>{
-    d.classList.remove('off');d.hidden=true;
-    $('#powerScreen').hidden=false;
-    stopTrace();
-  },780);
-}
-async function rebootSeq(){
-  sfx.shutdown();
-  const d=$('#desktop');
-  d.classList.add('off');
-  await sleep(780);
-  d.classList.remove('off');
-  resetAll();
-  d.classList.remove('boot-in');void d.offsetWidth;
-  d.classList.add('boot-in');
-  sfx.conn();
-  setTimeout(()=>toast('الليلة '+String(night).padStart(2,'0'),'إعادة تشغيل — جلسة نظيفة.','good'),600);
-  setTimeout(incomingCall,6000);
-}
- $('#powerOnBtn').onclick=()=>{
-  audioInit();
-  $('#powerScreen').hidden=true;
-  const d=$('#desktop');d.hidden=false;
-  resetAll();
-  d.classList.remove('boot-in');void d.offsetWidth;
-  d.classList.add('boot-in');
-  sfx.conn();
-  setTimeout(()=>toast('الليلة '+String(night).padStart(2,'0'),'المحطة تعمل. بانتظار الاتصال.'),800);
-  setTimeout(incomingCall,4000);
-};
- $('#tbPower').onclick=()=>{$('#powerDlg').hidden=false;};
- $('#pdCancel').onclick=()=>{$('#powerDlg').hidden=true;};
- $('#pdOff').onclick=()=>{$('#powerDlg').hidden=true;shutdownSeq();};
- $('#pdReboot').onclick=()=>{$('#powerDlg').hidden=true;rebootSeq();};
- $('#smShutdown').onclick=()=>{$('#startMenu').hidden=true;$('#powerDlg').hidden=false;};
- $('#smReboot').onclick=()=>{$('#startMenu').hidden=true;rebootSeq();};
-
-/* ============ سطح المكتب: أيقونات قابلة للسحب + إفلات على السلة ============ */
-const ICON_ORDER=['terminal','files','browser','notes','netmap','db','decrypt','trash'];
-let iconPos={};
-try{iconPos=JSON.parse(localStorage.getItem('nexus7_icons')||'{}');}catch(e){iconPos={};}
-function persistIcons(){try{localStorage.setItem('nexus7_icons',JSON.stringify(iconPos));}catch(e){}}
-function renderIcons(){
-  $('#icons').innerHTML=ICON_ORDER.map(id=>'<div class="dicon" data-app="'+id+'">'+APPS[id].icon+'<span>'+APPS[id].title.split('—')[0].trim()+'</span></div>').join('');
-  let i=0;
-  ICON_ORDER.forEach(id=>{
-    const el=$('.dicon[data-app="'+id+'"]');
-    if(!iconPos[id]){
-      let x=innerWidth-116,y=16+i*100;
-      if(id==='trash'){x=24;y=16;}
-      iconPos[id]={x,y};
-    }
-    i++;
-    el.style.left=iconPos[id].x+'px';
-    el.style.top=iconPos[id].y+'px';
-    bindIconDrag(el);
-  });
-  const tEl=$('.dicon[data-app="trash"]');
-  if(tEl&&!tEl.dataset.dnd){
-    tEl.dataset.dnd='1';
-    tEl.addEventListener('dragover',e=>{e.preventDefault();tEl.classList.add('droptarget');});
-    tEl.addEventListener('dragleave',()=>tEl.classList.remove('droptarget'));
-    tEl.addEventListener('drop',e=>{
-      e.preventDefault();tEl.classList.remove('droptarget');
-      const name=e.dataTransfer.getData('text/nexus-file');
-      if(name&&localFiles.includes(name)){
-        if(trashFile(name))toast('سلة المهملات','نُقل إلى السلة: '+name);
-      }
-    });
-  }
-}
-function bindIconDrag(el){
-  let sx,sy,ox,oy,drag=false,pid=null;
-  el.addEventListener('pointerdown',e=>{
-    if(e.button!==0)return;
-    pid=e.pointerId;sx=e.clientX;sy=e.clientY;
-    ox=iconPos[el.dataset.app].x;oy=iconPos[el.dataset.app].y;
-    drag=false;
-    $$('#icons .dicon').forEach(x=>x.classList.remove('sel'));
-    el.classList.add('sel');
-    try{el.setPointerCapture(pid);}catch(_){}
-  });
-  el.addEventListener('pointermove',e=>{
-    if(pid===null||e.pointerId!==pid)return;
-    const dx=e.clientX-sx,dy=e.clientY-sy;
-    if(!drag&&Math.hypot(dx,dy)>6){drag=true;el.classList.add('dragging');}
-    if(drag){
-      const nx=Math.max(4,Math.min(innerWidth-104,ox+dx));
-      const ny=Math.max(4,Math.min(innerHeight-170,oy+dy));
-      iconPos[el.dataset.app]={x:nx,y:ny};
-      el.style.left=nx+'px';el.style.top=ny+'px';
-    }
-  });
-  el.addEventListener('pointerup',e=>{
-    if(pid===null)return;
-    try{el.releasePointerCapture(pid);}catch(_){}
-    pid=null;
-    if(drag){drag=false;el.classList.remove('dragging');persistIcons();}
-    else openApp(el.dataset.app);
-  });
-}
-function renderStart(){
-  const list=[...ICON_ORDER,'info'];
-  $('#smGrid').innerHTML=list.map(id=>'<div class="sm-app" data-app="'+id+'">'+APPS[id].icon+'<span>'+APPS[id].title.split('—')[0].trim()+'</span></div>').join('');
-  $$('#smGrid .sm-app').forEach(a=>a.onclick=()=>{$('#startMenu').hidden=true;openApp(a.dataset.app);});
-}
- $('#tbStart').onclick=e=>{e.stopPropagation();$('#startMenu').hidden=!$('#startMenu').hidden;};
-document.addEventListener('click',e=>{
-  if(!e.target.closest('#startMenu,#tbStart'))$('#startMenu').hidden=true;
-  if(!e.target.closest('#ctxMenu'))$('#ctxMenu').hidden=true;
-  if(!e.target.closest('.dicon'))$$('#icons .dicon').forEach(x=>x.classList.remove('sel'));
-});
- $('#wm').addEventListener('contextmenu',e=>{
-  if(e.target.closest('.win,#icons,#phone'))return;
-  e.preventDefault();
-  const m=$('#ctxMenu');
-  m.innerHTML='<button id="cxTerm">فتح الطرفية</button><button id="cxNotes">المفكرة</button><button id="cxStart">قائمة التطبيقات</button><hr><button id="cxInfo">معلومات النظام</button><button id="cxOff" class="danger">إيقاف التشغيل</button>';
-  m.hidden=false;
-  m.style.left=Math.min(e.clientX,innerWidth-200)+'px';
-  m.style.top=Math.min(e.clientY,innerHeight-260)+'px';
-  $('#cxTerm').onclick=()=>{m.hidden=true;openApp('terminal');};
-  $('#cxNotes').onclick=()=>{m.hidden=true;openApp('notes');};
-  $('#cxStart').onclick=()=>{m.hidden=true;$('#startMenu').hidden=false;};
-  $('#cxInfo').onclick=()=>{m.hidden=true;openApp('info');};
-  $('#cxOff').onclick=()=>{m.hidden=true;$('#powerDlg').hidden=false;};
-});
- $$('.launch').forEach(b=>b.onclick=()=>openApp(b.dataset.app));
-
-/* ============ ★ الانترو + سلسلة الدخول ============ */
-function initIntro(){
-  const scr=$('#introScreen'), vid=$('#introVideo'),
-        playBtn=$('#introPlay'), skipBtn=$('#introSkip');
-  if(!scr||!vid){ afterIntro(); return; }
-  let introDone=false;
-  const toBoot=()=>{
-    if(introDone)return; introDone=true;
-    try{sessionStorage.setItem('nexus7_intro','1');}catch(e){}
-    scr.classList.add('fadeout');
-    setTimeout(()=>{ scr.remove(); afterIntro(); }, 480);
-  };
-  /* ملف الفيديو إن وُجد: assets/intro.mp4 */
-  vid.addEventListener('error',()=>{ try{scr.remove();}catch(e){} afterIntro(); },{once:true});
-  if(sessionStorage.getItem('nexus7_intro')){ try{scr.remove();}catch(e){} afterIntro(); return; }
-  scr.hidden=false;
- playBtn.onclick=()=>{
-  audioInit();
-  vid.src='https://files.catbox.moe/477j6l.mp4';   /* يُحمَّل الآن فقط عند الطلب */
-  playBtn.hidden=true;
-  skipBtn.hidden=false;
-  vid.play().catch(toBoot);
-};
-  skipBtn.onclick=toBoot;
-  vid.addEventListener('ended',toBoot);
-}
-function afterIntro(){
-  const saved=idLoad();
-  if(saved&&saved.hash)loginStart(saved);
-  else setupStart();
-}
-
-/* ============ الإقلاع ============ */
-const BOOT_LINES=['NEXUS-7 SECURE SHELL — BIOS v4.12','MEM CHECK .................... 64K OK','PHOSPHOR DRIVER .............. OK','CRYPTO MODULE ................ OK','TRACE SPOOFER ................ OK','MOUNTING /dev/vault .......... OK','UPLINK ....................... 10.0.44.1','OPERATOR INTERFACE ........... READY'];
-async function bootSeq(){
-  restoreGame();
-  const log=$('#bootLog');
-  for(let i=0;i<BOOT_LINES.length;i++){
-    log.innerHTML+=BOOT_LINES[i]+'\n';
-    $('#bootBar').style.width=((i+1)/BOOT_LINES.length*100)+'%';
-    await sleep(rnd(130,340));
-  }
-  $('#bootBtn').hidden=false;
-}
- $('#bootBtn').onclick=()=>{
-  audioInit();sfx.conn();
-  $('#boot').classList.add('off');
-  setTimeout(()=>{
-    $('#boot').remove();
-    const d=$('#desktop');d.hidden=false;
-    d.classList.add('boot-in');
-    enterOS();
-  },380);
-};
-function enterOS(){
-  setInterval(()=>{
-    gSec=(gSec+1)%86400;
-    const c=clockStr();
-    $('#tbClock').textContent=c;
-    $('#phClock').textContent=c.slice(0,5);
-  },1000);
-  $('#tbClock').textContent=clockStr();
-  $('#phClock').textContent=clockStr().slice(0,5);
-  renderIcons();renderStart();renderObj();
-  sysSay('القناة خاملة — في انتظار أول عميل');
-  setTimeout(()=>toast('نظام','مرحباً يا '+ID.name+'. واجهة المشغّل جاهزة.'),700);
-  setTimeout(incomingCall,3500);
-}
-
-initIntro();
+let boardState={clues:[],pos:{},links:[]};
+try{const bs=JSON.parse(localStorage.getItem('nexus7_board')||'null');if(bs&&bs.clues)boardState=bs;}catch(e){}
+let sel
