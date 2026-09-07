@@ -277,7 +277,7 @@ async function runCmd(raw,t){
       case 'decrypt':openApp('decrypt');break;
       case 'notes':openApp('notes');break;
       case 'evidence':case 'board':openApp('board');break;
-      case 'mirqab':case 'mrq':openApp('mirqab');break;
+      case 'mirqab':case 'mrq':         if(night<2){tprint('mirqab: command not found','err-lite');sfx.err();break;}         openApp('mirqab');break;
       case 'disconnect':case 'exit':cmdDisconnect();break;
       case 'trace':cmdTrace();break;
       case 'send':await cmdSend();break;
@@ -485,7 +485,7 @@ function cmdTrace(){
 async function cmdSend(){
   if(S.flags.sent){tprint('report already sent.','dim');return;}
   if(!canSendNow()){
-    tprint('حزمة التقرير غير مكتملة — راجع سجل المهمة في هاتفك.','err-lite');sfx.err();
+    tprint('حزمة التقرير غير مكتملة. المفقود: '+missingForSend(),'err-lite');sfx.err();
     if(S.flags.live)storyHint();
     return;
   }
@@ -517,6 +517,19 @@ function canSendNow(){
   const def=(typeof NIGHTS!=='undefined')&&NIGHTS['n'+night];
   if(def&&def.canSend)return def.canSend();
   return false;
+}
+function missingForSend(){
+  const m=[];
+  if(night===1){
+    if(!S.flags.log)m.push('سجل الطريق (download hwy16_log.log)');
+    if(!S.flags.plate)m.push('فتح بطاقة المالك في DB (انقر صف النتيجة HX-4471 نفسه)');
+    if(!S.flags.root)m.push('جذر الشل (msfconsole ← exploit)');
+    if(!S.flags.key)m.push('فك ملف القضية (DECRYPT)');
+  }else{
+    if(!S.flags.mrq1)m.push('التقاط إشارة مهند بمِرقاب');
+    if(!S.flags.mrq2)m.push('التقاط إشارة «ليث» بمِرقاب');
+  }
+  return m.length?m.join(' · '):'شرط غير معروف';
 }
 function storyHint(){
   const def=(typeof NIGHTS!=='undefined')&&NIGHTS['n'+night];
@@ -859,18 +872,29 @@ function clueDefs(){
   const def=(typeof NIGHTS!=='undefined')&&NIGHTS['n'+night];
   return (def&&def.clues)?def.clues:[];
 }
+let boardNight=1;
 let boardState={clues:[],pos:{},links:[]};
-try{const bs=JSON.parse(localStorage.getItem('nexus7_board')||'null');if(bs&&bs.clues)boardState=bs;}catch(e){}
 let selClue=null;
-function persistBoard(){try{localStorage.setItem('nexus7_board',JSON.stringify(boardState));}catch(e){}}
+function boardKey(){return 'nexus7_board_n'+boardNight;}
+function loadBoard(){
+  try{
+    const bs=JSON.parse(localStorage.getItem(boardKey())||'null');
+    boardState=(bs&&bs.clues)?bs:{clues:[],pos:{},links:[]};
+  }catch(e){boardState={clues:[],pos:{},links:[]};}
+  selClue=null;
+}
+function persistBoard(){try{localStorage.setItem(boardKey(),JSON.stringify(boardState));}catch(e){}}
 function addClue(id){
   const cl=clueDefs().find(c=>c.id===id);
-  if(!cl||boardState.clues.includes(id))return;
+  if(!cl)return;
+  const already=boardState.clues.includes(id);
   boardState.clues.push(id);
   persistBoard();
-  toast('لوحة الأدلة','دليل جديد: '+cl.t,'good');
-  sfx.pop();
-  if(wins.board&&wins.board.style.display!=='none')renderBoardCards();
+  if(!already){
+    toast('لوحة الأدلة','دليل جديد: '+cl.t,'good');
+    sfx.pop();
+    if(wins.board&&wins.board.style.display!=='none')renderBoardCards();
+  }
 }
 function buildBoard(host){
   host.innerHTML='<div class="t-board"><div class="bd-bar"><b>لوحة الأدلة</b><span class="hint">انقر دليلين متتاليين لربطهما — انقر الخيط لحذفه — اسحب البطاقات كما تشاء</span><button id="bdAttach">إرفاق الأدلة وإرسالها</button></div><div id="bdCanvas"><svg id="bdLinks"></svg></div></div>';
@@ -969,7 +993,7 @@ function bindClueDrag(el){
 async function attachEvidence(){
   if(S.flags.sent){toast('التقرير','أُرسل مسبقاً.','good');return;}
   if(!canSendNow()){
-    toast('ناقص أدلة','أكمل بقية المهمة قبل الإرفاق.','bad');
+    toast('ناقص للإرسال','مفقود: '+missingForSend(),'bad');
     if(S.flags.live)storyHint();
     return;
   }
@@ -1032,6 +1056,10 @@ function onTune(){
   }
 }
 function buildMirqab(host){
+  if(night<2){
+    host.innerHTML='<div class="t-mrq"><div id="mqEmpty" style="display:flex">لا يوجد جهاز بهذا الاسم موصولاً بهذه المحطة.<br><span style="font-size:11px">PROBE MIRQAB :: connection refused — device unknown to unit inventory.</span></div></div>';
+    return;
+  }
   host.innerHTML='<div class="t-mrq">'+
     '<div class="mq-head"><b>مِرقاب — اعتراض الإشارات القريبة</b><span class="st" id="mqSt">خامل</span></div>'+
     '<div id="mqEmpty">الجهاز خامل. اضغط <b>تشغيل الماسح</b> لبدء رصد الطيف.<br><span style="font-size:11px">مِرقاب تلتقط إشارات الهواتف القريبة — حوّل التردد حتى تصفو الموجة على هدف، ثم التقط.</span></div>'+
@@ -1348,7 +1376,7 @@ function restoreGame(){
   if(!sv)return;
   Object.assign(S.flags,sv.flags||{});S.flags.live=false;
   if(sv.scanned)S.scanned=true;
-  if(sv.night)night=sv.night;
+  if(sv.night)night=sv.night;   boardNight=night;
   (sv.known||[]).forEach(ip=>{if(NET.data[ip])NET.known.add(ip);});
   (sv.got||[]).forEach(n=>{if(FILES[n])FILES[n].got=true;});
   if(sv.files&&sv.files.length)localFiles=sv.files.filter(n=>FILES[n]);
@@ -1374,7 +1402,7 @@ function idWipe(){
     localStorage.removeItem('nexus7');
     localStorage.removeItem('nexus7_icons');
     localStorage.removeItem('nexus7_notes');
-    localStorage.removeItem('nexus7_board');
+    for(let i=1;i<10;i++)localStorage.removeItem('nexus7_board_n'+i);     localStorage.removeItem('nexus7_board');
     sessionStorage.removeItem('nexus7_intro');
   }catch(e){}
 }
@@ -1436,6 +1464,7 @@ function resetAll(advanceNight){
   Object.keys(S.flags).forEach(k=>S.flags[k]=0);
   if(advanceNight)night++;
   $('#smNight').textContent='الليلة '+String(night).padStart(2,'0');
+  boardNight=night;loadBoard();
   Object.values(FILES).forEach(f=>{f.got=false;});
   FILES['case_file.txt'].hidden=true;
   localFiles=['README.txt'];trash=[];
@@ -1447,12 +1476,11 @@ function resetAll(advanceNight){
   const dr=$('#dbRes');if(dr)dr.innerHTML='';
   const dc=$('#dbCard');if(dc)dc.hidden=true;
   brHist=['nexus://home'];
-  boardState={clues:[],pos:{},links:[]};selClue=null;
-  try{localStorage.removeItem('nexus7_board');}catch(e){}
   MQ.grabbed={};MQ.active=false;
   renderObj();
   resetPhoneIdle();
   renderFiles();renderTrash();refreshQuick();
+  renderIcons();renderStart();syncMirqabUI();
 }
 async function rebootSeq(){
   sfx.shutdown();
@@ -1501,8 +1529,13 @@ const ICON_ORDER=['terminal','files','browser','notes','netmap','db','board','mi
 let iconPos={};
 try{iconPos=JSON.parse(localStorage.getItem('nexus7_icons')||'{}');}catch(e){iconPos={};}
 function persistIcons(){try{localStorage.setItem('nexus7_icons',JSON.stringify(iconPos));}catch(e){}}
+function syncMirqabUI(){
+  const b=document.querySelector('#taskbar .launch[data-app="mirqab"]');
+  if(b)b.style.display=(night>=2)?'':'none';
+}
 function renderIcons(){
-  $('#icons').innerHTML=ICON_ORDER.map(id=>'<div class="dicon" data-app="'+id+'">'+APPS[id].icon+'<span>'+APPS[id].title.split('—')[0].trim()+'</span></div>').join('');
+  const order=ICON_ORDER.filter(id=>id!=='mirqab'||night>=2);
+  $('#icons').innerHTML=order.map(id=>'<div class="dicon" data-app="'+id+'">'+APPS[id].icon+'<span>'+APPS[id].title.split('—')[0].trim()+'</span></div>').join('');
   let i=0;
   ICON_ORDER.forEach(id=>{
     const el=$('.dicon[data-app="'+id+'"]');
@@ -1561,7 +1594,7 @@ function bindIconDrag(el){
   });
 }
 function renderStart(){
-  const list=[...ICON_ORDER,'info'];
+  const list=[...ICON_ORDER,'info'].filter(id=>id==='info'||id!=='mirqab'||night>=2);
   $('#smGrid').innerHTML=list.map(id=>'<div class="sm-app" data-app="'+id+'">'+APPS[id].icon+'<span>'+APPS[id].title.split('—')[0].trim()+'</span></div>').join('');
   $$('#smGrid .sm-app').forEach(a=>a.onclick=()=>{$('#startMenu').hidden=true;openApp(a.dataset.app);});
 }
@@ -1625,6 +1658,7 @@ function afterIntro(){
 const BOOT_LINES=['NEXUS-7 SECURE SHELL — BIOS v4.12','MEM CHECK .................... 64K OK','PHOSPHOR DRIVER .............. OK','CRYPTO MODULE ................ OK','TRACE SPOOFER ................ OK','MOUNTING /dev/vault .......... OK','UPLINK ....................... 10.0.44.1','OPERATOR INTERFACE ........... READY'];
 async function bootSeq(){
   restoreGame();
+  boardNight=night;loadBoard();
   const log=$('#bootLog');
   for(let i=0;i<BOOT_LINES.length;i++){
     log.innerHTML+=BOOT_LINES[i]+'\n';
@@ -1652,7 +1686,7 @@ function enterOS(){
   },1000);
   $('#tbClock').textContent=clockStr();
   $('#phClock').textContent=clockStr().slice(0,5);
-  renderIcons();renderStart();renderObj();
+  renderIcons();renderStart();renderObj();syncMirqabUI();
   requestAnimationFrame(drawMq); /* حلقة مِرقاب — تختصر نفسها عند إخفاء النافذة */
   sysSay('القناة خاملة — بانتظار اتصال المشرف');
   setTimeout(()=>toast('نظام','أهلاً '+ID.name+' — الوحدة بانتظارك. رمزك: راصد.'),700);
