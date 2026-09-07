@@ -8,7 +8,7 @@
    واكتب المسار هنا. فارغ = يُستخدم الرسم المدمج */
 const IMG={
   camCar:'assests/car1p.png',   // مثال: 'assets/cam04.jpg'
-  driver:'assests/person1p/png'    // مثال: 'assets/driver.jpg'
+  driver:'assests/person1p.png'    // مثال: 'assets/driver.jpg'
 };
 
 /* ============ أدوات عامة ============ */
