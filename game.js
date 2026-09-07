@@ -333,7 +333,7 @@ async function cmdDownload(name){
   tprint('<span class="gr">saved → vault/'+esc(name)+'</span>');
   toast('الخزنة','وصل ملف جديد: '+name,'good');
   bumpTrace(10);
-  if(name==='hwy16_log.log'){addClue('log');addClue('plate');objDone('log');}
+  if(name==='hwy16_log.log'){S.flags.log=1;persist();addClue('log');addClue('plate');objDone('log');}
   if(name==='case_file.enc'){objDone('enc');}
 }
 function trashFile(name){
