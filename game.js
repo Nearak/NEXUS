@@ -381,7 +381,7 @@ async function cmdHydra(arg){
   objDone('hydra');
 }
 async function cmdHashcat(tool){
-  if(!FILES['hwy16_log.log'].got){tprint(tool+': لا توجد بصمة — حمّل واقرأ <span class="am">hwy16_log.log</span> أولاً','err-lite');sfx.err();return;}
+  if(!FILES['hwy16_log.log'].got){tprint(tool+': لا بصمة في الخزنة بعد — البصمة التي في السجل مُقفلة على ملف لم يصل إلينا بعد.','err-lite');sfx.err();return;}
   if(S.flags.hash){tprint(tool+': البصمة مكسورة سابقاً → <span class="gr">password</span>','dim');return;}
   if(tool==='hashcat'){
     await ttype('hashcat (v6.2.6) starting in single-hash mode','dim');
@@ -395,7 +395,6 @@ async function cmdHashcat(tool){
     tprint('<span class="gr">password</span>         (?)\n1 password hash cracked in 00:00:07');
   }
   sfx.ok();S.flags.hash=true;persist();
-  addClue('hash');
   toast(tool,'البصمة = password — لا تعليق.','good');
   objDone('hash');
 }
