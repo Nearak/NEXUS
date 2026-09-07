@@ -882,6 +882,22 @@ function persistBoard(){try{localStorage.setItem(boardKey(),JSON.stringify(board
 function boardLinksNeeded(){
   return Math.min(2,Math.max(1,boardState.clues.length-1));
 }
+/* هدف «اربط الأدلة» يُقيم دائماً من واقع اللوحة:
+   يُشطب عند بلوغ العدد المطلوب، ويُفك إن حذفت الخيوط */
+function evalBoardObj(){
+  const pool=objPool();
+  const o=pool.find(x=>x.id==='board');
+  if(!o)return;
+  const need=boardLinksNeeded();
+  const ok=boardState.links.length>=need;
+  if(ok&&!o.done){o.done=true;objDone('board');}
+  else if(!ok&&o.done){
+    o.done=false;persist();
+    const li=$('#obj-board');if(li)li.classList.remove('done');
+    if(!canSendNow()&&S.flags.sent){/* نادر: لا يتراجع الإرسال */}
+    refreshQuick();
+  }
+}
 function addClue(id){
   const cl=clueDefs().find(c=>c.id===id);
   if(!cl)return;
@@ -943,8 +959,9 @@ function renderBoardLinks(){
   svg.innerHTML=h;
   svg.querySelectorAll('.hit').forEach(p=>{
     p.onclick=()=>{
-      boardState.links.splice(+p.dataset.i,1);
+       boardState.links.splice(+p.dataset.i,1);
       persistBoard();renderBoardLinks();sfx.pop();
+      evalBoardObj();
     };
   });
 }
@@ -980,9 +997,9 @@ function bindClueDrag(el){
     const a=selClue;selClue=null;
     $$('.clue.sel').forEach(x=>x.classList.remove('sel'));
     if(!boardState.links.some(l=>(l[0]===a&&l[1]===id)||(l[0]===id&&l[1]===a))){
-      boardState.links.push([a,id]);
+           boardState.links.push([a,id]);
       persistBoard();renderBoardLinks();sfx.pop();
-      if(S.flags.live&&boardState.links.length>=boardLinksNeeded())objDone('board');
+      evalBoardObj();
     }else{
       toast('لوحة الأدلة','هذا الرابط موجود بالفعل.');
     }
@@ -1375,6 +1392,8 @@ function objDone(id){
   const pool=objPool();
   const o=pool.find(x=>x.id===id);
   if(!o||o.done)return;
+  /* حارس: هدف الربط لا يُشطب إلا بشرط فعلي على اللوحة */
+  if(id==='board'&&boardState.links.length<boardLinksNeeded())return;
   o.done=true;persist();
   const li=$('#obj-'+id);if(li)li.classList.add('done');
   tone(740,.07,'triangle',.045);
@@ -1578,7 +1597,7 @@ function restoreGame(){
   (sv.known||[]).forEach(ip=>{if(NET.data[ip])NET.known.add(ip);});
   (sv.got||[]).forEach(n=>{if(FILES[n])FILES[n].got=true;});
   if(sv.files&&sv.files.length)localFiles=sv.files.filter(n=>FILES[n]);
-  (sv.done||[]).forEach(id=>{const o=objPool().find(x=>x.id===id);if(o)o.done=true;});
+  (sv.done||[]).forEach(id=>{     if(id==='board')return; /* هدف الربط يُحسم بشرط حي، لا من الذاكرة */     const o=objPool().find(x=>x.id===id);if(o)o.done=true;   });
   $('#smNight').textContent='الليلة '+String(night).padStart(2,'0');
 }
 addEventListener('beforeunload',persist);
@@ -1819,7 +1838,27 @@ function bindIconDrag(el){
     if(pid===null)return;
     try{el.releasePointerCapture(pid);}catch(_){}
     pid=null;
-    if(drag){drag=false;el.classList.remove('dragging');persistIcons();}
+    if(drag){
+      drag=false;el.classList.remove('dragging');
+      /* منع التصادم عند الإفلات: انزلاق لأول خلية حرة إن لمس أخرى */
+      let p=clampPos(iconPos[el.dataset.app]);
+      const others=Object.entries(iconPos).filter(([k,v])=>k!==el.dataset.app);
+      const hits=p2=>others.some(([k,v])=>Math.abs(v.x-p2.x)<104&&Math.abs(v.y-p2.y)<92);
+      if(hits(p)){
+        const rows=Math.max(4,Math.floor((innerHeight-70)/100));
+        outer:
+        for(let c=0;c<10;c++){
+          for(let r=0;r<rows;r++){
+            const cx=innerWidth-116-c*112, cy=16+r*100;
+            if(cx<4)break;
+            if(!hits({x:cx,y:cy})){p={x:cx,y:cy};break outer;}
+          }
+        }
+      }
+      iconPos[el.dataset.app]=p;
+      el.style.left=p.x+'px';el.style.top=p.y+'px';
+      persistIcons();
+    }
     else openApp(el.dataset.app);
   });
 }
