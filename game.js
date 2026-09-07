@@ -1414,7 +1414,7 @@ function initIntro(){
     setTimeout(()=>{ scr.remove(); afterIntro(); }, 480);
   };
   /* ملف الفيديو إن وُجد: assets/intro.mp4 */
-  vid.src='assests/intro.mp4';
+  vid.src='https://files.catbox.moe/477j6l.mp4';
   vid.addEventListener('error',()=>{ try{scr.remove();}catch(e){} afterIntro(); },{once:true});
   if(sessionStorage.getItem('nexus7_intro')){ try{scr.remove();}catch(e){} afterIntro(); return; }
   scr.hidden=false;
