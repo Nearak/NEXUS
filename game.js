@@ -2,13 +2,14 @@
 /* ============================================================
    NEXUS-7 — سطح مكتب المشغّل (Hacknet × The Operator)
    الملفات: index.html + style.css + game.js
+   ★ هذه النسخة: انترو أول الجلسة + إنشاء هوية أول مرة +
+     تسجيل دخول في الزيارات التالية + كل ما سبق.
    ============================================================ */
 
-/* ★ صورك الحقيقية: ضعها بجانب الملفات أو في مجلد assets/
-   واكتب المسار هنا. فارغ = يُستخدم الرسم المدمج */
+/* ★ صورك الحقيقية: مسارات اختيارية. فارغ = الرسم المدمج */
 const IMG={
-  camCar:'assests/car1p.png',   // مثال: 'assets/cam04.jpg'
-  driver:'assests/person1p.png'    // مثال: 'assets/driver.jpg'
+  camCar:'assests/car1p.png',
+  driver:'assests/person1p.png'
 };
 
 /* ============ أدوات عامة ============ */
@@ -119,7 +120,7 @@ const DRIVER_SVG=`<svg viewBox="0 0 460 300" xmlns="http://www.w3.org/2000/svg">
 <rect x="0" y="58" width="460" height="124" fill="url(#d-win)"/>
 <rect x="6" y="10" width="448" height="240" rx="18" fill="none" stroke="#12161a" stroke-width="14"/>
 <path d="M336 70 Q396 66 402 120 L402 300 L330 300 L326 140 Q326 92 336 70 Z" fill="#191d21"/>
-<path d="M352 176 L260 300 L296 300 L376 186 Z" fill="#22272c"/>
+<path d="M352 176 L260 300 L352 300 L376 186 Z" fill="#22272c"/>
 <path d="M110 300 Q118 232 168 214 Q196 202 210 196 L268 196 Q330 214 352 300 Z" fill="#39482f"/>
 <path d="M210 196 L268 196 L262 214 L216 214 Z" fill="#2c3925"/>
 <path d="M206 200 Q238 188 270 200 L262 176 Q238 168 214 176 Z" fill="#46563a"/>
@@ -183,7 +184,6 @@ function openApp(id){
   win.innerHTML='<header class="win-h"><span style="display:flex">'+a.icon+'</span><b>'+a.title+'</b><span class="win-btns"><button data-a="min" title="تصغير">–</button><button data-a="max" title="تكبير">▢</button><button data-a="close" title="إغلاق">×</button></span></header><div class="win-b"></div><div class="win-rz" title="تغيير الحجم"></div>';
   $('#winLayer').appendChild(win);
   wins[id]=win;
-  /* الإصلاح الجوهري: نُدخل جسم النافذة إلى الصفحة أولاً ثم نبنيه */
   const host=win.querySelector('.win-b');
   let body=bodies[id];
   if(!body){body=bodies[id]=document.createElement('div');body.style.cssText='display:flex;flex-direction:column;flex:1;min-height:0';}
@@ -288,7 +288,7 @@ async function runCmd(raw){
       case 'trace':cmdTrace();break;
       case 'send':await cmdSend();break;
       case 'clear':case 'cls':termEl.innerHTML='';break;
-      case 'whoami':tprint('operator — clearance: <span class="am">PROVISIONAL</span>');break;
+      case 'whoami':tprint('<span class="am">'+esc(ID.name)+'</span> — clearance: <span class="am">PROVISIONAL</span>');break;
       case 'date':tprint(clockStr()+' — الليلة '+String(night).padStart(2,'0'));break;
       case 'pwd':tprint('/operator/nexus-7');break;
       case 'echo':tprint(esc(arg)||'');break;
@@ -506,7 +506,7 @@ function buildTerm(host){
   host.innerHTML='';
   const out=document.createElement('div');out.className='t-out';out.id='termOut';
   const row=document.createElement('div');row.className='t-in';
-  promptEl=document.createElement('span');promptEl.className='prompt';promptEl.textContent='operator@nexus-7:~$';
+  promptEl=document.createElement('span');promptEl.className='prompt';promptEl.textContent=ID.name+'@nexus-7:~$';
   cmdEl=document.createElement('input');cmdEl.id='cmd';cmdEl.autocomplete='off';cmdEl.spellcheck=false;
   row.append(promptEl,cmdEl);
   const wrap=document.createElement('div');wrap.className='t-term';
@@ -517,7 +517,7 @@ function buildTerm(host){
       const v=cmdEl.value;cmdEl.value='';
       if(!v.trim())return;
       hist.push(v);hi=hist.length;
-      tprint('<span class="usr">'+(S.msf?'msf6 >':'operator@nexus-7:~$')+'</span> '+esc(v),'echo');
+      tprint('<span class="usr">'+(S.msf?'msf6 >':ID.name+'@nexus-7:~$')+'</span> '+esc(v),'echo');
       if(busy){tprint('…busy','dim');return;}
       await runCmd(v);
     }else if(e.key==='ArrowUp'){if(hi>0){hi--;cmdEl.value=hist[hi];}}
@@ -525,7 +525,7 @@ function buildTerm(host){
   });
   out.addEventListener('click',()=>{if(!getSelection().toString())cmdEl.focus();});
   tprint('NEXUS-7 secure shell — build 7.5','dim');
-  tprint('اكتب <span class="am">help</span> لعرض الأوامر.','dim');
+  tprint('مرحباً يا <span class="am">'+esc(ID.name)+'</span>. اكتب <span class="am">help</span> لعرض الأوامر.','dim');
 }
 
 /* ============ الملفات ============ */
@@ -929,6 +929,7 @@ function buildNotes(host){
 function buildInfo(host){
   host.innerHTML='<div class="t-info"><h3>NEXUS-7 — محطة المشغّل</h3>'+
   '<p>دمج بين روح Hacknet (الطرفية، عدّاد التتبع) وروح The Operator (المكالمات، التحقيق).</p>'+
+  '<p><b>المشغّل الحالي:</b> <code class="ltr">'+esc(ID.name)+'</code></p>'+
   '<p><b>التحكم:</b> اسحب النوافذ من شريطها، غيّر حجمها من الزاوية، وأبسطها تُستعاد من شريط المهام. اسحب أيقونات المكتب كما تشاء، واسحب الملفات من FILES وأفلتها على سلة المهملات.</p>'+
   '<p><b>سير المهمة:</b> <code>help</code> ← <code>nmap</code> ← <code>hydra</code> ← <code>connect</code> ← <code>download</code> ← <code>hashcat</code> ← DB ← <code>msfconsole</code> ← <code>decrypt</code> ← <code>send</code></p>'+
   '<p style="color:var(--muted)">تقدمك يُحفظ تلقائياً في المتصفح. المفكرة تبقى دائماً.</p></div>';
@@ -1080,7 +1081,7 @@ function objDone(id){
 function nextObjId(){const o=OBJ.find(o=>!o.done);return o?o.id:null;}
 async function uiCmd(text){
   if(!termEl)openApp('terminal');
-  tprint('<span class="usr">operator@nexus-7:~$</span> '+esc(text),'echo');
+  tprint('<span class="usr">'+ID.name+'@nexus-7:~$</span> '+esc(text),'echo');
   if(busy){sfx.err();return;}
   await runCmd(text);
 }
@@ -1117,7 +1118,7 @@ const story={
   async sent(){
     if(!S.flags.live)return;
     await say('استلمت: سجل الكاميرات، لقطة CAM-04، هوية صاحب اللوحة، البصمة المكسورة، وشفرة بوابة صالحة 24 ساعة.');
-    await say('لست مجرد صوت محظوظ يا مشغّل. هذه ليست إلا التسخينة — الأربعاء القادم توصلك شحنة «مِرقاب».');
+    await say('لست مجرد صوتٍ محظوظ يا '+ID.name+'. هذه ليست إلا التسخينة — الأربعاء القادم توصلك شحنة «مِرقاب».');
     await say('نم قليلاً. سأرنّ.');
     sysSay('برق أغلق القناة');
     if(S.host){hostDown();tprint('connection closed by remote host','dim');}
@@ -1162,6 +1163,76 @@ function restoreGame(){
   $('#smNight').textContent='الليلة '+String(night).padStart(2,'0');
 }
 addEventListener('beforeunload',persist);
+
+/* ============ ★ الهوية: إنشاء + تسجيل دخول ============ */
+const ID={name:'operator',hash:''};
+function hashStr(t){
+  let h=5381;
+  for(let i=0;i<t.length;i++)h=((h<<5)+h+t.charCodeAt(i))>>>0;
+  return String(h);
+}
+function idSave(){try{localStorage.setItem('nexus7_id',JSON.stringify({name:ID.name,hash:ID.hash}));}catch(e){}}
+function idLoad(){
+  try{return JSON.parse(localStorage.getItem('nexus7_id')||'null');}catch(e){return null;}
+}
+function idWipe(){
+  try{
+    localStorage.removeItem('nexus7_id');
+    localStorage.removeItem('nexus7');
+    localStorage.removeItem('nexus7_icons');
+    localStorage.removeItem('nexus7_notes');
+    sessionStorage.removeItem('nexus7_intro');
+  }catch(e){}
+}
+function setupStart(){
+  const scr=$('#setupScreen');
+  scr.hidden=false;
+  const btn=$('#suGo');
+  const go=()=>{
+    const n=$('#suName').value.trim();
+    const p=$('#suPass').value, p2=$('#suPass2').value;
+    const err=$('#suErr');
+    if(!/^[a-zA-Z0-9_-]{3,16}$/.test(n)){err.textContent='الاسم: 3-16 حرفاً إنجليزياً/رقماً بلا مسافات.';sfx.err();return;}
+    if(p.length<4){err.textContent='كلمة السر: 4 أحرف على الأقل.';sfx.err();return;}
+    if(p!==p2){err.textContent='كلمتا السر غير متطابقتين.';sfx.err();return;}
+    ID.name=n;ID.hash=hashStr(p);
+    idSave();
+    scr.hidden=true;
+    sfx.ok();
+    bootSeq();
+  };
+  btn.onclick=go;
+  $('#suPass2').addEventListener('keydown',e=>{if(e.key==='Enter')go();});
+  $('#suName').addEventListener('keydown',e=>{if(e.key==='Enter')$('#suPass').focus();});
+}
+function loginStart(saved){
+  const scr=$('#loginScreen');
+  scr.hidden=false;
+  $('#lgUser').textContent=saved.name;
+  const btn=$('#lgGo');
+  const go=()=>{
+    const p=$('#lgPass').value;
+    const err=$('#lgErr');
+    if(hashStr(p)!==saved.hash){
+      err.textContent='كلمة السر غير صحيحة — محاولة أخرى.';
+      sfx.err();
+      $('#lgPass').value='';$('#lgPass').focus();
+      glitch(1,true);
+      return;
+    }
+    ID.name=saved.name;ID.hash=saved.hash;
+    scr.hidden=true;
+    sfx.conn();
+    bootSeq();
+  };
+  btn.onclick=go;
+  $('#lgPass').addEventListener('keydown',e=>{if(e.key==='Enter')go();});
+  $('#lgReset').onclick=()=>{
+    if(confirm('سيُمسح كل شيء: الهوية، التقدم، المفكرة. هل أنت متأكد؟')){
+      idWipe();location.reload();
+    }
+  };
+}
 
 /* ============ الإعادة والإطفاء ============ */
 function resetAll(){
@@ -1251,7 +1322,7 @@ function renderIcons(){
     const el=$('.dicon[data-app="'+id+'"]');
     if(!iconPos[id]){
       let x=innerWidth-116,y=16+i*100;
-      if(id==='trash'){x=24;y=16;} /* السلة ثابتة أسهل للإفلات */
+      if(id==='trash'){x=24;y=16;}
       iconPos[id]={x,y};
     }
     i++;
@@ -1330,6 +1401,38 @@ document.addEventListener('click',e=>{
 });
  $$('.launch').forEach(b=>b.onclick=()=>openApp(b.dataset.app));
 
+/* ============ ★ الانترو + سلسلة الدخول ============ */
+function initIntro(){
+  const scr=$('#introScreen'), vid=$('#introVideo'),
+        playBtn=$('#introPlay'), skipBtn=$('#introSkip');
+  if(!scr||!vid){ afterIntro(); return; }
+  let introDone=false;
+  const toBoot=()=>{
+    if(introDone)return; introDone=true;
+    try{sessionStorage.setItem('nexus7_intro','1');}catch(e){}
+    scr.classList.add('fadeout');
+    setTimeout(()=>{ scr.remove(); afterIntro(); }, 480);
+  };
+  /* ملف الفيديو إن وُجد: assets/intro.mp4 */
+  vid.src='assets/intro.mp4';
+  vid.addEventListener('error',()=>{ try{scr.remove();}catch(e){} afterIntro(); },{once:true});
+  if(sessionStorage.getItem('nexus7_intro')){ try{scr.remove();}catch(e){} afterIntro(); return; }
+  scr.hidden=false;
+  playBtn.onclick=()=>{
+    audioInit();
+    playBtn.hidden=true;
+    skipBtn.hidden=false;
+    vid.play().catch(toBoot);
+  };
+  skipBtn.onclick=toBoot;
+  vid.addEventListener('ended',toBoot);
+}
+function afterIntro(){
+  const saved=idLoad();
+  if(saved&&saved.hash)loginStart(saved);
+  else setupStart();
+}
+
 /* ============ الإقلاع ============ */
 const BOOT_LINES=['NEXUS-7 SECURE SHELL — BIOS v4.12','MEM CHECK .................... 64K OK','PHOSPHOR DRIVER .............. OK','CRYPTO MODULE ................ OK','TRACE SPOOFER ................ OK','MOUNTING /dev/vault .......... OK','UPLINK ....................... 10.0.44.1','OPERATOR INTERFACE ........... READY'];
 async function bootSeq(){
@@ -1363,7 +1466,8 @@ function enterOS(){
   $('#phClock').textContent=clockStr().slice(0,5);
   renderIcons();renderStart();renderObj();
   sysSay('القناة خاملة — في انتظار أول عميل');
-  setTimeout(()=>toast('نظام','واجهة المشغّل جاهزة. انتظر أول رنّة من الهاتف.'),700);
+  setTimeout(()=>toast('نظام','مرحباً يا '+ID.name+'. واجهة المشغّل جاهزة.'),700);
   setTimeout(incomingCall,3500);
 }
-bootSeq();
+
+initIntro();
