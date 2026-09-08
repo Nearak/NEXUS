@@ -1,34 +1,32 @@
 'use strict';
 /* ============================================================
-   NEXUS-7 — engine.js v12 (نظام FACTS محصّن)
-   إصلاحات هذه النسخة:
-   1) كتابة الحقائق لا تضيع أبداً — buffer مؤجل إن لم يكن جاهزاً
-   2) فحص مزدوج: فوري بعد كل كتابة + دوري 400ms
-   3) جسر قصة موحد على ST_TEXT بنقاط استدعاء صريحة بعد كل نجاح
-   4) كل الحالة موحدة على World (لا S.old)
-   5) NET-3D مطوّر: نجوم، جزيئات بيانات، هالات، نبض
+   NEXUS-7 — engine.js v12.1 (كامل — نظام FACTS محصّن)
+   1) قاعدة حقائق: كتابة مضمونة + فحص فوري ودوري 400ms
+   2) جسر قصة موحد على ST_TEXT — بلا ST_BEATS
+   3) استمرارية كاملة: F5/إغلاق في منتصف مهمة يستعيد كل شيء
+   4) NET-3D مطوّر: نجوم، جزيئات بيانات، هالات، نبض
    ============================================================ */
 
 const IMG={camCar:'assests/car1p.png',driver:'assests/person1p.png'};
 
-/* ============ أدوات ============ */
+/* ============ أدوات عامة ============ */
 const $=s=>document.querySelector(s);
 const $$=s=>[...document.querySelectorAll(s)];
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const rnd=(a,b)=>a+Math.random()*(b-a);
 const esc=t=>String(t).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 
-/* ============ نواة FACTS المحصّنة ============ */
+/* ============ نواة FACTS ============ */
 const Facts={
   data:{},
-  ready:false,          // يصير true بعد أول bootSeq
-  pending:[],           // حقائق كُتبت قبل الجاهزية — تُعاد كتابتها
+  ready:false,
+  pending:[],
   set(name,val){
     this.data[name]=val;
     if(!this.ready){this.pending.push([name,val]);return false;}
     return true;
   },
-  flush(){              // إعادة كتابة الحقائق المعلّقة بعد الجاهزية
+  flush(){
     this.ready=true;
     const p=this.pending;this.pending=[];
     p.forEach(([k,v])=>{this.data[k]=v;});
@@ -61,7 +59,6 @@ const Facts={
   },
   reset(){this.data={};this.pending=[];}
 };
-/* الفحص الدوري — شبكة الأمان */
 setInterval(()=>{try{Facts.checkAll();}catch(e){console.error('[Facts]',e);}},400);
 
 /* ============ قراءة النظام ============ */
@@ -88,14 +85,14 @@ function renderObj(){
     :'<li style="color:var(--muted)"><span class="tick"></span><span>لا مهمة نشطة — بانتظار اتصال المشرف…</span></li>';
 }
 
-/* ============ جسر القصة — نقاط استدعاء صريحة بعد كل نجاح ============ */
+/* ============ جسر القصة — يشتعل عند شطب أهداف محددة ============ */
 function storyTrigger(goalId){
   const key='n'+World.night;
   const T=ST_TEXT[key];if(!T)return;
   const map={
-    n1:{g_hydra:null,g_conn:null,g_log:null,g_plate:null,g_root:null,g_enc:null,g_key:null,g_board:null},
+    n1:{},
     n2:{g_mrq1:'grab1',g_mrq2:'grab2'},
-    n3:{g_lynx1:'dossiers',g_social:null,g_router:'router',g_crack:'cookies',g_login:'login'}
+    n3:{g_lynx1:'dossiers',g_router:'router',g_crack:'cookies',g_login:'login'}
   };
   const m=map[key];if(!m)return;
   const textKey=m[goalId];
@@ -316,7 +313,7 @@ async function tprogress(label,dur=1400){
 function buildTerm(host){
   const t=mkTermSession(host,'sh-1');
   TERMS.push(t);termActive=t;
-  tprintTo(t,'NEXUS-7 secure shell — build 12.0','dim');
+  tprintTo(t,'NEXUS-7 secure shell — build 12.1','dim');
   tprintTo(t,'أهلاً <span class="am">'+esc(ID.name)+'</span> — رمزك «راصد». اكتب <span class="am">help</span>.','dim');
   tprintTo(t,'<span class="am">tip:</span> «+ نافذة» طرفية مستقلة · Tab يكمل الأوامر.','dim');
 }
@@ -550,11 +547,7 @@ async function runMsf(line,T){
       await sleep(400);glitch(1);sfx.unlock();
       tprint('<span class="gr">[+] Meterpreter session 1 opened — uid=0(root)</span>');
       tprint('<span class="gr">[+] root shell obtained — الملفات المحمية متاحة الآن</span>');
-      if(!World.flags.rootDone){
-        World.flags.rootDone=true;persist();bumpTrace(15);
-        toast('metasploit','جلسة root مفتوحة — الجذر لك.','good');
-        Facts.set('rootAchieved',true);
-      }
+      if(!World.flags.rootDone){World.flags.rootDone=true;persist();bumpTrace(15);toast('metasploit','جلسة root مفتوحة — الجذر لك.','good');Facts.set('rootAchieved',true);}
       return;
     }
     if(p==='info'){tprint('Name: HWY-CAM Unauthenticated RCE\nCVE: 2024-1337 — HWY-CAM 2.1','dim');return;}
@@ -609,7 +602,7 @@ const CK_SHIFT=13;
 const COOKIES_CIPHER=caesar(COOKIES_PLAIN,CK_SHIFT);
 const BAD_HASH='5f4dcc3b5aa765d61d8327deb882cf99';
 const FILES={
-  'README.txt':{where:'local',kb:1,kind:'text',body:'NEXUS-7 :: INTEL WORKSTATION — BUILD 12.0\n----------------------------------------\nمحطة مشغّل في وحدة الاستخبارات.\n\nالأدوات:\n  TERM (نوافذ متعددة + Tab) · NET · NET-3D · FILES · EVIDENCE\n  MIRQAB (ليلة 2+) · LYNX (ليلة 3+) · DECRYPT · DB · BROWSER · NOTES'},
+  'README.txt':{where:'local',kb:1,kind:'text',body:'NEXUS-7 :: INTEL WORKSTATION — BUILD 12.1\n----------------------------------------\nمحطة مشغّل في وحدة الاستخبارات.\n\nالأدوات:\n  TERM (نوافذ متعددة + Tab) · NET · NET-3D · FILES · EVIDENCE\n  MIRQAB (ليلة 2+) · LYNX (ليلة 3+) · DECRYPT · DB · BROWSER · NOTES'},
   'admin_note.txt':{where:'10.0.44.77',kb:2,kind:'text',body:'=== NOTE TO SELF — sysop/hwy16 ===\n* rotate the admin password WEEKLY (nobody does)\n* someone pulls checkpoint logs past 03:00. not me.\n* ANPR cameras log EVERYTHING. wipe nothing.\n* unit-7 asked for exit-9 footage. twice. tell no one.\n* DO NOT answer extension 44. ever.'},
   'hwy16_log.log':{where:'10.0.44.77',kb:12,kind:'log',body:'[03:07:44] CHK-3 :: VEHICLE PASS :: HWY-16 NORTH\n[03:11:02] CHK-3 :: PLATE READ :: HX-4471\n[03:12:39] CHK-5 :: SPEED 142 :: LANE 2\n[03:13:01] CHK-5 :: PLATE READ :: HX-4471\n[03:14:02] AUTH-FAIL :: sysop :: md5 :: '+BAD_HASH+'\n[03:16:44] CHK-9 :: VEHICLE PASS :: NO PLATE READ\n[04:59:59] DAILY ARCHIVE :: UPLOAD FAILED :: RETRY'},
   'cam04_frame.jpg':{where:'10.0.44.77',kb:8,kind:'photo',body:''},
@@ -732,7 +725,7 @@ function netPulse(ip){
   c.appendChild(an);svg.appendChild(c);setTimeout(()=>c.remove(),950);
 }
 function buildNet(host){
-  host.innerHTML='<div class="t-net"><div class="nm-head"><span>LOCAL SUBNET — 10.0.44.0/24</span><b id="nmHost">—</b></div><svg id="netSvg" viewBox="0 0 800 520" preserveAspectRatio="xMidYMid meet"></svg><div class="nm-foot">جرّب أيضاً NET-3D — الشبكة المجسمة</div></div>';
+  host.innerHTML='<div class="t-net"><div class="nm-head"><span>LOCAL SUBNET — 10.0.44.0/24</span><b id="nmHost">—</b></div><svg id="netSvg" viewBox="0 0 800 520" preserveAspectRatio="xMidYMid meet"></svg><div class="nm-foot">انقر عقدة لفتح نفق — جرّب أيضاً NET-3D</div></div>';
   renderNet();
 }
 
@@ -1571,7 +1564,7 @@ const IC={
   notes:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
   music:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>',
   net:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="10.6" x2="15.4" y2="6.4"/><line x1="8.6" y1="13.4" x2="15.4" y2="17.6"/></svg>',
-  net3d:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="6" r="2.5"/><circle cx="5" cy="14" r="2.5"/><circle cx="19" cy="14" r="2.5"/><circle cx="12" cy="19" r="2.5"/><line x1="10" y1="8" x2="6.5" y2="12"/><line x1="14" y1="8" x2="17.5" y2="12"/><line x1="12" y1="8.5" x2="12" y2="16.5"/></svg>',
+  net3d:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="6" r="2.5"/><circle cx="5" cy="14" r="2.5"/><circle cx="19" cy="14" r="2.5"/><circle cx="12" cy="19" r="2.5"/><line x1="10" y1="8" x2="6.5" y2="12"/><line x1="14" y1="8" x2="17.5" y2="12"/><line x1="12" y1="8.5" x2="12" y2="16.5"/><line x1="7" y1="15.5" x2="10.5" y2="18"/><line x1="17" y1="15.5" x2="13.5" y2="18"/></svg>',
   db:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>',
   dec:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
   board:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1z"/></svg>',
@@ -1605,7 +1598,7 @@ const APPS={
   info:{title:'عن النظام',w:560,h:420,icon:IC.info,build:buildInfo}
 };
 
-/* ============ الهاتف ============ */
+/* ============ الهاتف — القناة ============ */
 function setPhoneView(name){
   $$('.ph-view').forEach(v=>v.classList.remove('on'));
   const el={idle:'phIdle',call:'phCall',chat:'phChat',mission:'phMission'}[name];
@@ -1677,6 +1670,7 @@ function refreshQuick(){
 }
 let ringIv=null;
 function incomingCall(){
+  /* ليلة 3: رنّة واحدة تنقطع ثم رسالة نصية */
   if(World.night===3&&!World.flags.n3ring){
     World.flags.n3ring=1;persist();
     const p=$('#phone');
@@ -1695,6 +1689,14 @@ function incomingCall(){
         setPhoneView('chat');
       },1500);
     },6000);
+    return;
+  }
+  /* استمرارية: مهمة جارية مسبقاً → استئناف القناة دون رنّة ترحيب */
+  if(World.flags.sessionStarted&&!World.flags.nightDone&&(typeof NIGHTS!=='undefined'||NIGHTS['n'+World.night])){
+    World.flags.live=true;
+    renderObj();refreshQuick();
+    sysSay('استُؤديت الجلسة — القناة مفتوحة، المهمة قائمة');
+    setPhoneView('chat');
     return;
   }
   if(World.flags.nightDone||!(typeof NIGHTS!=='undefined'&&NIGHTS['n'+World.night])){
@@ -1729,7 +1731,7 @@ function stopRing(){
   stopRing();setPhoneView('idle');
   toast('قناة '+STORY_META.channel,'رفضت اتصال المشرف.');
   World.flags.declined++;
-  if(World.flags.declined===1)setTimeout(()=>{if(World.flags.live)storyBeat('n'+World.night,'decline');},1800);
+  if(World.flags.declined===1)setTimeout(()=>{if(World.flags.live)beat('decline');},1800);
   setTimeout(()=>{toast('قناة '+STORY_META.channel,'اتصال وارد من جديد…');incomingCall();},4200);
 };
 async function uiCmd(text){
@@ -1738,15 +1740,15 @@ async function uiCmd(text){
   if(termActive&&termActive.busy){sfx.err();return;}
   await runCmd(text,termActive);
 }
-function storyBeat(nightKey,trigger){
-  const T=ST_TEXT[nightKey];if(!T)return;
-  const map={n1start2:null,n1nmap:null,n1hydra:null,n1conn:null,n1log:null,n1plate:null,n1root:null,n1enc:null,n1key:null,n1board:null,
-    n2open:null,n2grab1:'grab1',n2grab2:'grab2',
-    n3lynx:'dossiers',n3social:null,n3router:'router',n3crack:'cookies',n3login:'login'};
-  const textKey=map[trigger];
-  if(textKey&&T[textKey]){
-    sayLines(T[textKey]).catch(e=>console.error('[STORY:'+nightKey+'/'+textKey+']',e));
+function beat(name){
+  const key='n'+World.night;
+  const T=ST_TEXT[key];if(!T)return;
+  if(name==='start'){
+    World.flags.live=true;
+    renderObj();refreshQuick();setPhoneView('chat');
+    return sayLines(T.start).catch(e=>console.error('[STORY:start]',e));
   }
+  if(T[name]&&World.flags.live)return sayLines(T[name]).catch(e=>console.error('[STORY:'+key+'/'+name+']',e));
 }
 
 /* ============ نهاية الليلة → 24 ساعة → التالية ============ */
@@ -1818,7 +1820,7 @@ async function nightTransitionFlow(){
   World._transitioning=false;
 }
 
-/* ============ الحفظ والاستعادة ============ */
+/* ============ الحفظ والاستعادة — قاعدة الحقائق نفسها ============ */
 function persist(){
   try{
     const done=[];
@@ -2036,7 +2038,7 @@ function syncLynxUI(){
 }
 function syncNet3dUI(){
   const b=document.querySelector('#taskbar .launch[data-app="net3d"]');
-  if(b)b.style.display=(World.night>=1)?'':'none';
+  if(b)b.style.display='';
 }
 function renderIcons(){
   const order=iconOrderNow();
@@ -2161,375 +2163,6 @@ document.addEventListener('click',e=>{
 });
  $$('.launch').forEach(b=>b.onclick=()=>openApp(b.dataset.app));
 
-/* ============ NET-3D — طبقة WebGL مطوّرة ============ */
-const TD3={scene:null,cam:null,ren:null,nodes:[],links:[],parts:[],stars:[],ray:null,mouse:new THREE.Vector2(),rotY:0,rotX:0.25,zoom:130,isDown:false,px:0,py:0};
-function buildNet3D(host){
-  host.innerHTML='<div class="t-3d"><div class="t3d-head"><b>NET-3D — شبكة العقد المجسمة</b><span class="mono ltr" style="font-size:9.5px;color:var(--muted)">drag=rotate · wheel=zoom · click=node</span></div>'+
-    '<div class="t3d-frame" id="td3Frame"></div>'+
-    '<div class="t3d-foot">انقر عقدة للاتصال — الكرات الداكنة غير مكتشفة بعد · الجزيئات الذهبية = حزم بيانات حية</div></div>';
-  if(typeof THREE==='undefined'){
-    host.querySelector('#td3Frame').innerHTML='<div class="fv-empty">مكتبة Three.js لم تُحمَّل — تحقق من الاتصال بالإنترنت ثم أعد فتح النافذة</div>';
-    return;
-  }
-  initNet3D(host.querySelector('#td3Frame'));
-}
-function initNet3D(frame){
-  if(TD3.ren&&TD3.ren.domElement.parentElement===frame)return;
-  const W=frame.clientWidth||600,H=frame.clientHeight||400;
-  TD3.scene=new THREE.Scene();
-  TD3.scene.background=new THREE.Color(0x040605);
-  TD3.scene.fog=new THREE.Fog(0x040605,130,340);
-  TD3.cam=new THREE.PerspectiveCamera(55,W/H,0.1,1000);
-  TD3.ren=new THREE.WebGLRenderer({antialias:true});
-  TD3.ren.setSize(W,H);
-  TD3.ren.setPixelRatio(Math.min(devicePixelRatio,2));
-  frame.appendChild(TD3.ren.domElement);
-  /* إضاءة نيون ثلاثية */
-  TD3.scene.add(new THREE.AmbientLight(0x2a352c,1.4));
-  const key=new THREE.PointLight(0xffb000,2.4,320);key.position.set(50,70,70);TD3.scene.add(key);
-  const rim=new THREE.PointLight(0x4fd6c2,1.6,320);rim.position.set(-70,-40,-60);TD3.scene.add(rim);
-  const back=new THREE.PointLight(0xff5252,0.7,250);back.position.set(0,40,-120);TD3.scene.add(back);
-  /* أرضية شبكية */
-  const grid=new THREE.GridHelper(420,42,0x1d2822,0x101612);
-  grid.position.y=-48;TD3.scene.add(grid);
-  /* سماء نجوم — 600 نجمة عشوائية */
-  const starGeo=new THREE.BufferGeometry();
-  const starPos=[];
-  for(let i=0;i<600;i++)starPos.push((Math.random()-0.5)*700,(Math.random()-0.2)*400,-100-Math.random()*300);
-  starGeo.setAttribute('position',new THREE.Float32BufferAttribute(starPos,3));
-  TD3.stars=new THREE.Points(starGeo,new THREE.PointsMaterial({color:0x6a7a6f,size:1.1,transparent:true,opacity:.75}));
-  TD3.scene.add(TD3.stars);
-  /* العقد من بيانات الشبكة الحقيقية */
-  TD3.nodes=[];
-  const posMap={'SELF':[0,0,0],'10.0.44.1':[0,14,-80],'10.0.44.23':[-62,28,-36],'10.0.44.77':[62,34,-40]};
-  Object.keys(NET.data).forEach((ip,i)=>{
-    const d=NET.data[ip];
-    const known=NET.known.has(ip);
-    const p0=posMap[ip]||[(i%2?70:-70)*(1+i*0.25),22+i*13,-65-i*16];
-    const p=known?p0:[p0[0]+18,p0[1]+10,p0[2]+22];
-    const geo=new THREE.SphereGeometry(d.self?6.5:4.8,28,28);
-    const col=known?(d.self?0x4fd6c2:(d.locked?0x8a6f2e:0xffb000)):0x2c3b31;
-    const mat=new THREE.MeshStandardMaterial({color:col,emissive:col,emissiveIntensity:d.self?1:0.5,roughness:.3,metalness:.25});
-    const mesh=new THREE.Mesh(geo,mat);
-    mesh.position.set(p[0],p[1],p[2]);
-    mesh.userData={ip:ip,label:d.label,known:known,locked:d.locked,self:d.self};
-    /* هالة حول كل عقدة مكتشفة */
-    if(known){
-      const halo=new THREE.Mesh(
-        new THREE.SphereGeometry((d.self?8.5:6.2),20,20),
-        new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:0.14,side:THREE.BackSide})
-      );
-      mesh.add(halo);
-      mesh.userData.halo=halo;
-    }
-    TD3.scene.add(mesh);TD3.nodes.push(mesh);
-  });
-  /* وصلات + جزيئات بيانات متدفقة */
-  const selfN=TD3.nodes.find(n=>n.userData.ip==='SELF');
-  TD3.links=[];
-  TD3.nodes.forEach(n=>{
-    if(n===selfN)return;
-    const g=new THREE.BufferGeometry().setFromPoints([selfN.position,n.position]);
-    const active=NET.active===n.userData.ip;
-    const line=new THREE.Line(g,new THREE.LineBasicMaterial({color:active?0xffb000:0x24332a,transparent:true,opacity:active?.95:.55}));
-    TD3.scene.add(line);TD3.links.push(line);
-    /* جزيئات بيانات تسرُّ على الوصلات للمكتشفة */
-    if(n.userData.known){
-      for(let p=0;p<4;p++){
-        const dot=new THREE.Mesh(new THREE.SphereGeometry(0.8,8,8),new THREE.MeshBasicMaterial({color:active?0xffd35c:0x4fd6c2}));
-        dot.userData={from:selfN.position.clone(),to:n.position.clone(),t:Math.random()};
-        TD3.scene.add(dot);TD3.parts.push(dot);
-      }
-    }
-  });
-  /* تفاعل */
-  const dom=TD3.ren.domElement;
-  dom.style.cursor='grab';
-  dom.addEventListener('pointerdown',e=>{TD3.isDown=true;TD3.px=e.clientX;TD3.py=e.clientY;dom.style.cursor='grabbing';});
-  addEventListener('pointerup',()=>{TD3.isDown=false;dom.style.cursor='grab';});
-  addEventListener('pointermove',e=>{
-    if(TD3.isDown){
-      TD3.rotY+=(e.clientX-TD3.px)*0.005;
-      TD3.rotX+=(e.clientY-TD3.py)*0.005;
-      TD3.rotX=Math.max(-0.95,Math.min(0.95,TD3.rotX));
-      TD3.px=e.clientX;TD3.py=e.clientY;
-    }
-    const r=dom.getBoundingClientRect();
-    if(r.width>0){
-      TD3.mouse.x=((e.clientX-r.left)/r.width)*2-1;
-      TD3.mouse.y=-((e.clientY-r.top)/r.height)*2+1;
-    }
-  });
-  dom.addEventListener('wheel',e=>{e.preventDefault();TD3.zoom=Math.max(55,Math.min(230,TD3.zoom+e.deltaY*0.16));},{passive:false});
-  TD3.ray=new THREE.Raycaster();
-  dom.addEventListener('click',()=>{
-    TD3.ray.setFromCamera(TD3.mouse,TD3.cam);
-    const hits=TD3.ray.intersectObjects(TD3.nodes);
-    if(hits.length){
-      const n=hits[0].object;
-      if(!n.userData.known){toast('NET-3D','عقدة غير مكتشفة — شغّل nmap أولاً.','bad');sfx.err();return;}
-      if(n.userData.locked){toast('NET-3D','عقدة محصّنة — اتصال مرفوض.','bad');sfx.err();return;}
-      uiCmd('connect '+n.userData.ip);
-    }
-  });
-  /* حلقة الرسم */
-  (function loop3d(){
-    requestAnimationFrame(loop3d);
-    if(!wins.net3d||wins.net3d.style.display==='none')return;
-    TD3.cam.position.set(
-      Math.sin(TD3.rotY)*TD3.zoom*Math.cos(TD3.rotX),
-      10+TD3.zoom*Math.sin(TD3.rotX),
-      Math.cos(TD3.rotY)*TD3.zoom*Math.cos(TD3.rotX)
-    );
-    TD3.cam.lookAt(0,6,-40);
-    /* نبض وهالات */
-    TD3.nodes.forEach(n=>{
-      const act=NET.active===n.userData.ip;
-      const s=n.userData.self?1:(act?1.14+Math.sin(Date.now()/170)*0.13:1);
-      n.scale.setScalar(s);
-      if(n.userData.halo)n.userData.halo.material.opacity=act?0.24+Math.sin(Date.now()/300)*0.1:0.14;
-    });
-    /* تدفق الجزيئات على الوصلات */
-    TD3.parts.forEach(dot=>{
-      dot.userData.t+=0.006;
-      if(dot.userData.t>1)dot.userData.t=0;
-      dot.position.lerpVectors(dot.userData.from,dot.userData.to,dot.userData.t);
-    });
-    TD3.stars.rotation.y+=0.0002;
-    TD3.ren.render(TD3.scene,TD3.cam);
-  })();
-  addEventListener('resize',()=>{
-    const fr=$('#td3Frame');
-    if(!fr||!fr.clientWidth)return;
-    TD3.cam.aspect=fr.clientWidth/fr.clientHeight;
-    TD3.cam.updateProjectionMatrix();
-    TD3.ren.setSize(fr.clientWidth,fr.clientHeight);
-  });
-}
-function syncNet3dUI(){
-  const b=document.querySelector('#taskbar .launch[data-app="net3d"]');
-  if(b)b.style.display='';
-}
-addEventListener('resize',()=>{
-  if($('#desktop')&&!$('#desktop').hidden)renderIcons();
-});
-function bindIconDrag(el){
-  let sx,sy,ox,oy,drag=false,pid=null;
-  el.addEventListener('pointerdown',e=>{
-    if(e.button!==0)return;
-    pid=e.pointerId;sx=e.clientX;sy=e.clientY;
-    ox=iconPos[el.dataset.app].x;oy=iconPos[el.dataset.app].y;
-    drag=false;
-    $$('#icons .dicon').forEach(x=>x.classList.remove('sel'));
-    el.classList.add('sel');
-    try{el.setPointerCapture(pid);}catch(_){}
-  });
-  el.addEventListener('pointermove',e=>{
-    if(pid===null||e.pointerId!==pid)return;
-    const dx=e.clientX-sx,dy=e.clientY-sy;
-    if(!drag&&Math.hypot(dx,dy)>6){drag=true;el.classList.add('dragging');}
-    if(drag){
-      const nx=Math.max(4,Math.min(innerWidth-104,ox+dx));
-      const ny=Math.max(4,Math.min(innerHeight-180,oy+dy));
-      iconPos[el.dataset.app]={x:nx,y:ny};
-      el.style.left=nx+'px';el.style.top=ny+'px';
-    }
-  });
-  el.addEventListener('pointerup',e=>{
-    if(pid===null)return;
-    try{el.releasePointerCapture(pid);}catch(_){}
-    pid=null;
-    if(drag){
-      drag=false;el.classList.remove('dragging');
-      let p=clampPos(iconPos[el.dataset.app]);
-      const others=Object.entries(iconPos).filter(([k,v])=>k!==el.dataset.app);
-      const hits=p2=>others.some(([k,v])=>Math.abs(v.x-p2.x)<104&&Math.abs(v.y-p2.y)<92);
-      if(hits(p)){
-        const rows=Math.max(4,Math.floor((innerHeight-70)/100));
-        outer:
-        for(let c=0;c<10;c++){
-          for(let r=0;r<rows;r++){
-            const cx=innerWidth-116-c*112, cy=16+r*100;
-            if(cx<4)break;
-            if(!hits({x:cx,y:cy})){p={x:cx,y:cy};break outer;}
-          }
-        }
-      }
-      iconPos[el.dataset.app]=p;
-      el.style.left=p.x+'px';el.style.top=p.y+'px';
-      persistIcons();
-    }
-    else openApp(el.dataset.app);
-  });
-}
-function renderStart(){
-  const list=[...iconOrderNow(),'info'];
-  $('#smGrid').innerHTML=list.map(id=>APPS[id]?'<div class="sm-app" data-app="'+id+'">'+APPS[id].icon+'<span>'+APPS[id].title.split('—')[0].trim()+'</span></div>':'').join('');
-  $$('#smGrid .sm-app').forEach(a=>a.onclick=()=>{$('#startMenu').hidden=true;openApp(a.dataset.app);});
-}
- $('#tbStart').onclick=e=>{e.stopPropagation();$('#startMenu').hidden=!$('#startMenu').hidden;};
-document.addEventListener('click',e=>{
-  if(!e.target.closest('#startMenu,#tbStart'))$('#startMenu').hidden=true;
-  if(!e.target.closest('#ctxMenu'))$('#ctxMenu').hidden=true;
-  if(!e.target.closest('.dicon'))$$('#icons .dicon').forEach(x=>x.classList.remove('sel'));
-});
- $('#wm').addEventListener('contextmenu',e=>{
-  if(e.target.closest('.win,#icons,#phone'))return;
-  e.preventDefault();
-  const m=$('#ctxMenu');
-  m.innerHTML='<button id="cxTerm">فتح الطرفية</button><button id="cxTermNew">طرفية جديدة (نافذة مستقلة)</button><button id="cxNotes">المفكرة</button><button id="cxBoard">لوحة الأدلة</button><button id="cxSort">ترتيب الأيقونات</button><button id="cxStart">قائمة التطبيقات</button><hr><button id="cxInfo">معلومات النظام</button><button id="cxOff" class="danger">إيقاف التشغيل</button>';
-  m.hidden=false;
-  m.style.left=Math.min(e.clientX,innerWidth-200)+'px';
-  m.style.top=Math.min(e.clientY,innerHeight-340)+'px';
-  $('#cxTerm').onclick=()=>{m.hidden=true;openApp('terminal');};
-  $('#cxTermNew').onclick=()=>{m.hidden=true;newTerminalWindow();};
-  $('#cxNotes').onclick=()=>{m.hidden=true;openApp('notes');};
-  $('#cxBoard').onclick=()=>{m.hidden=true;openApp('board');};
-  $('#cxSort').onclick=()=>{m.hidden=true;iconPos={};persistIcons();renderIcons();sfx.pop();};
-  $('#cxStart').onclick=()=>{m.hidden=true;$('#startMenu').hidden=false;};
-  $('#cxInfo').onclick=()=>{m.hidden=true;openApp('info');};
-  $('#cxOff').onclick=()=>{m.hidden=true;$('#powerDlg').hidden=false;};
-});
- $$('.launch').forEach(b=>b.onclick=()=>openApp(b.dataset.app));
-
-/* ============ NET-3D — طبقة WebGL مطوّرة ============ */
-const TD3={scene:null,cam:null,ren:null,nodes:[],links:[],parts:[],stars:[],ray:null,mouse:new THREE.Vector2(),rotY:0,rotX:0.25,zoom:130,isDown:false,px:0,py:0};
-function buildNet3D(host){
-  host.innerHTML='<div class="t-3d"><div class="t3d-head"><b>NET-3D — شبكة العقد المجسمة</b><span class="mono ltr" style="font-size:9.5px;color:var(--muted)">drag=rotate · wheel=zoom · click=node</span></div>'+
-    '<div class="t3d-frame" id="td3Frame"></div>'+
-    '<div class="t3d-foot">انقر عقدة للاتصال — الكرات الداكنة غير مكتشفة بعد · الجزيئات الذهبية = حزم بيانات حية</div></div>';
-  if(typeof THREE==='undefined'){
-    host.querySelector('#td3Frame').innerHTML='<div class="fv-empty">مكتبة Three.js لم تُحمَّل — تحقق من الاتصال بالإنترنت ثم أعد فتح النافذة</div>';
-    return;
-  }
-  initNet3D(host.querySelector('#td3Frame'));
-}
-function initNet3D(frame){
-  if(TD3.ren&&TD3.ren.domElement.parentElement===frame)return;
-  const W=frame.clientWidth||600,H=frame.clientHeight||400;
-  TD3.scene=new THREE.Scene();
-  TD3.scene.background=new THREE.Color(0x040605);
-  TD3.scene.fog=new THREE.Fog(0x040605,130,340);
-  TD3.cam=new THREE.PerspectiveCamera(55,W/H,0.1,1000);
-  TD3.ren=new THREE.WebGLRenderer({antialias:true});
-  TD3.ren.setSize(W,H);
-  TD3.ren.setPixelRatio(Math.min(devicePixelRatio,2));
-  frame.appendChild(TD3.ren.domElement);
-  const key=new THREE.PointLight(0xffb000,2.4,320);key.position.set(50,70,70);TD3.scene.add(key);
-  const rim=new THREE.PointLight(0x4fd6c2,1.6,320);rim.position.set(-70,-40,-60);TD3.scene.add(rim);
-  const back=new THREE.PointLight(0xff5252,0.7,250);back.position.set(0,40,-120);TD3.scene.add(back);
-  const grid=new THREE.GridHelper(420,42,0x1d2822,0x101612);
-  grid.position.y=-48;TD3.scene.add(grid);
-  const starGeo=new THREE.BufferGeometry();
-  const starPos=[];
-  for(let i=0;i<600;i++)starPos.push((Math.random()-0.5)*700,(Math.random()-0.2)*400,-100-Math.random()*300);
-  starGeo.setAttribute('position',new THREE.Float32BufferAttribute(starPos,3));
-  TD3.stars=new THREE.Points(starGeo,new THREE.PointsMaterial({color:0x6a7a6f,size:1.1,transparent:true,opacity:.75}));
-  TD3.scene.add(TD3.stars);
-  TD3.nodes=[];
-  const posMap={'SELF':[0,0,0],'10.0.44.1':[0,14,-80],'10.0.44.23':[-62,28,-36],'10.0.44.77':[62,34,-40]};
-  Object.keys(NET.data).forEach((ip,i)=>{
-    const d=NET.data[ip];
-    const known=NET.known.has(ip);
-    const p0=posMap[ip]||[(i%2?70:-70)*(1+i*0.25),22+i*13,-65-i*16];
-    const p=known?p0:[p0[0]+18,p0[1]+10,p0[2]+22];
-    const geo=new THREE.SphereGeometry(d.self?6.5:4.8,28,28);
-    const col=known?(d.self?0x4fd6c2:(d.locked?0x8a6f2e:0xffb000)):0x2c3b31;
-    const mat=new THREE.MeshStandardMaterial({color:col,emissive:col,emissiveIntensity:d.self?1:0.5,roughness:.3,metalness:.25});
-    const mesh=new THREE.Mesh(geo,mat);
-    mesh.position.set(p[0],p[1],p[2]);
-    mesh.userData={ip:ip,label:d.label,known:known,locked:d.locked,self:d.self};
-    if(known){
-      const halo=new THREE.Mesh(
-        new THREE.SphereGeometry((d.self?8.5:6.2),20,20),
-        new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:0.14,side:THREE.BackSide})
-      );
-      mesh.add(halo);
-      mesh.userData.halo=halo;
-    }
-    TD3.scene.add(mesh);TD3.nodes.push(mesh);
-  });
-  const selfN=TD3.nodes.find(n=>n.userData.ip==='SELF');
-  TD3.links=[];
-  TD3.nodes.forEach(n=>{
-    if(n===selfN)return;
-    const g=new THREE.BufferGeometry().setFromPoints([selfN.position,n.position]);
-    const active=NET.active===n.userData.ip;
-    const line=new THREE.Line(g,new THREE.LineBasicMaterial({color:active?0xffb000:0x24332a,transparent:true,opacity:active?.95:.55}));
-    TD3.scene.add(line);TD3.links.push(line);
-    if(n.userData.known){
-      for(let p=0;p<4;p++){
-        const dot=new THREE.Mesh(new THREE.SphereGeometry(0.8,8,8),new THREE.MeshBasicMaterial({color:active?0xffd35c:0x4fd6c2}));
-        dot.userData={from:selfN.position.clone(),to:n.position.clone(),t:Math.random()};
-        TD3.scene.add(dot);TD3.parts.push(dot);
-      }
-    }
-  });
-  const dom=TD3.ren.domElement;
-  dom.style.cursor='grab';
-  dom.addEventListener('pointerdown',e=>{TD3.isDown=true;TD3.px=e.clientX;TD3.py=e.clientY;dom.style.cursor='grabbing';});
-  addEventListener('pointerup',()=>{TD3.isDown=false;dom.style.cursor='grab';});
-  addEventListener('pointermove',e=>{
-    if(TD3.isDown){
-      TD3.rotY+=(e.clientX-TD3.px)*0.005;
-      TD3.rotX+=(e.clientY-TD3.py)*0.005;
-      TD3.rotX=Math.max(-0.95,Math.min(0.95,TD3.rotX));
-      TD3.px=e.clientX;TD3.py=e.clientY;
-    }
-    const r=dom.getBoundingClientRect();
-    if(r.width>0){
-      TD3.mouse.x=((e.clientX-r.left)/r.width)*2-1;
-      TD3.mouse.y=-((e.clientY-r.top)/r.height)*2+1;
-    }
-  });
-  dom.addEventListener('wheel',e=>{e.preventDefault();TD3.zoom=Math.max(55,Math.min(230,TD3.zoom+e.deltaY*0.16));},{passive:false});
-  TD3.ray=new THREE.Raycaster();
-  dom.addEventListener('click',()=>{
-    TD3.ray.setFromCamera(TD3.mouse,TD3.cam);
-    const hits=TD3.ray.intersectObjects(TD3.nodes);
-    if(hits.length){
-      const n=hits[0].object;
-      if(!n.userData.known){toast('NET-3D','عقدة غير مكتشفة — شغّل nmap أولاً.','bad');sfx.err();return;}
-      if(n.userData.locked){toast('NET-3D','عقدة محصّنة — اتصال مرفوض.','bad');sfx.err();return;}
-      uiCmd('connect '+n.userData.ip);
-    }
-  });
-  (function loop3d(){
-    requestAnimationFrame(loop3d);
-    if(!wins.net3d||wins.net3d.style.display==='none')return;
-    TD3.cam.position.set(
-      Math.sin(TD3.rotY)*TD3.zoom*Math.cos(TD3.rotX),
-      10+TD3.zoom*Math.sin(TD3.rotX),
-      Math.cos(TD3.rotY)*TD3.zoom*Math.cos(TD3.rotX)
-    );
-    TD3.cam.lookAt(0,6,-40);
-    TD3.nodes.forEach(n=>{
-      const act=NET.active===n.userData.ip;
-      const s=n.userData.self?1:(act?1.14+Math.sin(Date.now()/170)*0.13:1);
-      n.scale.setScalar(s);
-      if(n.userData.halo)n.userData.halo.material.opacity=act?0.24+Math.sin(Date.now()/300)*0.1:0.14;
-    });
-    TD3.parts.forEach(dot=>{
-      dot.userData.t+=0.006;
-      if(dot.userData.t>1)dot.userData.t=0;
-      dot.position.lerpVectors(dot.userData.from,dot.userData.to,dot.userData.t);
-    });
-    TD3.stars.rotation.y+=0.0002;
-    TD3.ren.render(TD3.scene,TD3.cam);
-  })();
-  addEventListener('resize',()=>{
-    const fr=$('#td3Frame');
-    if(!fr||!fr.clientWidth)return;
-    TD3.cam.aspect=fr.clientWidth/fr.clientHeight;
-    TD3.cam.updateProjectionMatrix();
-    TD3.ren.setSize(fr.clientWidth,fr.clientHeight);
-  });
-}
-function syncNet3dUI(){
-  const b=document.querySelector('#taskbar .launch[data-app="net3d"]');
-  if(b)b.style.display='';
-}
-
 /* ============ الصور المدمجة ============ */
 const CAR_SVG=`<svg viewBox="0 0 480 300" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="c-vig" cx="50%" cy="45%" r="78%"><stop offset="55%" stop-color="rgba(0,0,0,0)"/><stop offset="100%" stop-color="rgba(0,0,0,.55)"/></radialGradient><filter id="c-noise"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2"/><feColorMatrix type="matrix" values="0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 .07 0"/></filter></defs><rect width="480" height="300" fill="#c6caca"/><rect x="0" y="144" width="480" height="156" fill="#4c514d"/><ellipse cx="240" cy="268" rx="128" ry="12" fill="rgba(0,0,0,.35)"/><rect x="140" y="192" width="200" height="62" rx="14" fill="#2e4a7a"/><path d="M172 194 L186 160 Q190 154 200 154 L280 154 Q290 154 294 160 L308 194 Z" fill="#27406b"/><path d="M196 166 L284 166 L296 190 L184 190 Z" fill="#1c2937"/><rect x="146" y="196" width="36" height="11" rx="4" fill="#a8282a"/><rect x="298" y="196" width="36" height="11" rx="4" fill="#a8282a"/><rect x="142" y="228" width="196" height="22" rx="9" fill="#263d66"/><rect x="214" y="226" width="52" height="17" rx="3" fill="#e6c437" stroke="#8a7a20"/><text x="240" y="239" text-anchor="middle" font-family="monospace" font-size="10" font-weight="bold" fill="#1c1c14">HX-4471</text><rect x="152" y="248" width="40" height="15" rx="6" fill="#17130f"/><rect x="288" y="248" width="40" height="15" rx="6" fill="#17130f"/><rect width="480" height="300" fill="url(#c-vig)"/><rect width="480" height="300" filter="url(#c-noise)"/><g font-family="monospace" font-size="13" fill="#f1f2ec"><text x="14" y="26">2024-05-15 14:32:01 UTC</text><text x="466" y="26" text-anchor="end">CAM-04/CHK-3 HWY-16</text><text x="14" y="286">CAM-04/CHK-3 HWY-16</text></g><circle cx="430" cy="282" r="5" fill="#ff4136"><animate attributeName="opacity" values="1;.15;1" dur="1.2s" repeatCount="indefinite"/></circle><text x="444" y="287" font-family="monospace" font-size="12" fill="#ff6b60">REC</text></svg>`;
 const DRIVER_SVG=`<svg viewBox="0 0 460 300" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="d-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#cdd2d4"/><stop offset="1" stop-color="#aab1b4"/></linearGradient><radialGradient id="d-vig" cx="50%" cy="45%" r="80%"><stop offset="60%" stop-color="rgba(0,0,0,0)"/><stop offset="100%" stop-color="rgba(0,0,0,.45)"/></radialGradient><filter id="d-noise"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2"/><feColorMatrix type="matrix" values="0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 .06 0"/></filter></defs><rect width="460" height="300" fill="url(#d-sky)"/><rect x="0" y="58" width="460" height="124" fill="#9aa1a5"/><rect x="6" y="10" width="448" height="240" rx="18" fill="none" stroke="#12161a" stroke-width="14"/><path d="M336 70 Q396 66 402 120 L402 300 L330 300 L326 140 Q326 92 336 70 Z" fill="#191d21"/><path d="M110 300 Q118 232 168 214 Q196 202 210 196 L268 196 Q330 214 352 300 Z" fill="#39482f"/><rect x="222" y="168" width="36" height="26" rx="10" fill="#c99a76"/><ellipse cx="240" cy="130" rx="47" ry="55" fill="#d8a884"/><ellipse cx="284" cy="136" rx="9" ry="14" fill="#c99a76"/><path d="M193 118 Q196 70 240 66 Q284 70 287 118 Q288 96 274 84 Q240 74 206 84 Q192 96 193 118 Z" fill="#4a3a2c"/><line x1="212" y1="118" x2="232" y2="116" stroke="#3c2f24" stroke-width="4" stroke-linecap="round"/><line x1="246" y1="116" x2="264" y2="118" stroke="#3c2f24" stroke-width="4" stroke-linecap="round"/><ellipse cx="222" cy="130" rx="7" ry="6" fill="#2c241d"/><ellipse cx="254" cy="130" rx="7" ry="6" fill="#2c241d"/><path d="M236 132 Q232 144 236 150 Q240 153 244 150" fill="none" stroke="#b98a67" stroke-width="3" stroke-linecap="round"/><path d="M203 142 Q206 176 226 186 Q240 192 254 186 Q274 176 277 142 Q276 168 262 178 Q240 190 218 178 Q204 168 203 142 Z" fill="#4e3d2c"/><path d="M206 146 Q210 172 228 181 Q240 186 252 181 Q270 172 274 146 Q272 164 258 173 Q240 182 222 173 Q208 164 206 146 Z" fill="#5b4935"/><path d="M228 166 Q240 172 252 166" stroke="#3a2d20" stroke-width="3" fill="none" stroke-linecap="round"/><rect x="0" y="244" width="460" height="56" fill="#14181c"/><rect x="0" y="240" width="460" height="8" rx="4" fill="#1d2227"/><rect width="460" height="300" fill="url(#d-vig)"/><rect width="460" height="300" filter="url(#d-noise)"/></svg>`;
@@ -2541,6 +2174,144 @@ function showPhoto(title,media,meta){
 }
  $('#pmClose').onclick=()=>{$('#photoModal').hidden=true;};
  $('#photoModal').addEventListener('click',e=>{if(e.target.id==='photoModal')$('#photoModal').hidden=true;});
+
+/* ============ NET-3D — طبقة WebGL مطوّرة ============ */
+const TD3={scene:null,cam:null,ren:null,nodes:[],links:[],parts:[],stars:[],ray:null,mouse:new THREE.Vector2(),rotY:0,rotX:0.25,zoom:130,isDown:false,px:0,py:0};
+function buildNet3D(host){
+  host.innerHTML='<div class="t-3d"><div class="t3d-head"><b>NET-3D — شبكة العقد المجسمة</b><span class="mono ltr" style="font-size:9.5px;color:var(--muted)">drag=rotate · wheel=zoom · click=node</span></div>'+
+    '<div class="t3d-frame" id="td3Frame"></div>'+
+    '<div class="t3d-foot">انقر عقدة للاتصال — الكرات الداكنة غير مكتشفة بعد · الجزيئات الذهبية = حزم بيانات حية</div></div>';
+  if(typeof THREE==='undefined'){
+    host.querySelector('#td3Frame').innerHTML='<div class="fv-empty">مكتبة Three.js لم تُحمَّل — تحقق من الاتصال بالإنترنت ثم أعد فتح النافذة</div>';
+    return;
+  }
+  initNet3D(host.querySelector('#td3Frame'));
+}
+function initNet3D(frame){
+  if(TD3.ren&&TD3.ren.domElement.parentElement===frame)return;
+  const W=frame.clientWidth||600,H=frame.clientHeight||400;
+  TD3.scene=new THREE.Scene();
+  TD3.scene.background=new THREE.Color(0x040605);
+  TD3.scene.fog=new THREE.Fog(0x040605,130,340);
+  TD3.cam=new THREE.PerspectiveCamera(55,W/H,0.1,1000);
+  TD3.ren=new THREE.WebGLRenderer({antialias:true});
+  TD3.ren.setSize(W,H);
+  TD3.ren.setPixelRatio(Math.min(devicePixelRatio,2));
+  frame.appendChild(TD3.ren.domElement);
+  const key=new THREE.PointLight(0xffb000,2.4,320);key.position.set(50,70,70);TD3.scene.add(key);
+  const rim=new THREE.PointLight(0x4fd6c2,1.6,320);rim.position.set(-70,-40,-60);TD3.scene.add(rim);
+  const back=new THREE.PointLight(0xff5252,0.7,250);back.position.set(0,40,-120);TD3.scene.add(back);
+  const grid=new THREE.GridHelper(420,42,0x1d2822,0x101612);
+  grid.position.y=-48;TD3.scene.add(grid);
+  const starGeo=new THREE.BufferGeometry();
+  const starPos=[];
+  for(let i=0;i<600;i++)starPos.push((Math.random()-0.5)*700,(Math.random()-0.2)*400,-100-Math.random()*300);
+  starGeo.setAttribute('position',new THREE.Float32BufferAttribute(starPos,3));
+  TD3.stars=new THREE.Points(starGeo,new THREE.PointsMaterial({color:0x6a7a6f,size:1.1,transparent:true,opacity:.75}));
+  TD3.scene.add(TD3.stars);
+  TD3.nodes=[];
+  const posMap={'SELF':[0,0,0],'10.0.44.1':[0,14,-80],'10.0.44.23':[-62,28,-36],'10.0.44.77':[62,34,-40]};
+  Object.keys(NET.data).forEach((ip,i)=>{
+    const d=NET.data[ip];
+    const known=NET.known.has(ip);
+    const p0=posMap[ip]||[(i%2?70:-70)*(1+i*0.25),22+i*13,-65-i*16];
+    const p=known?p0:[p0[0]+18,p0[1]+10,p0[2]+22];
+    const geo=new THREE.SphereGeometry(d.self?6.5:4.8,28,28);
+    const col=known?(d.self?0x4fd6c2:(d.locked?0x8a6f2e:0xffb000)):0x2c3b31;
+    const mat=new THREE.MeshStandardMaterial({color:col,emissive:col,emissiveIntensity:d.self?1:0.5,roughness:.3,metalness:.25});
+    const mesh=new THREE.Mesh(geo,mat);
+    mesh.position.set(p[0],p[1],p[2]);
+    mesh.userData={ip:ip,label:d.label,known:known,locked:d.locked,self:d.self};
+    if(known){
+      const halo=new THREE.Mesh(
+        new THREE.SphereGeometry((d.self?8.5:6.2),20,20),
+        new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:0.14,side:THREE.BackSide})
+      );
+      mesh.add(halo);
+      mesh.userData.halo=halo;
+    }
+    TD3.scene.add(mesh);TD3.nodes.push(mesh);
+  });
+  const selfN=TD3.nodes.find(n=>n.userData.ip==='SELF');
+  TD3.links=[];
+  TD3.nodes.forEach(n=>{
+    if(n===selfN)return;
+    const g=new THREE.BufferGeometry().setFromPoints([selfN.position,n.position]);
+    const active=NET.active===n.userData.ip;
+    const line=new THREE.Line(g,new THREE.LineBasicMaterial({color:active?0xffb000:0x24332a,transparent:true,opacity:active?.95:.55}));
+    TD3.scene.add(line);TD3.links.push(line);
+    if(n.userData.known){
+      for(let p=0;p<4;p++){
+        const dot=new THREE.Mesh(new THREE.SphereGeometry(0.8,8,8),new THREE.MeshBasicMaterial({color:active?0xffd35c:0x4fd6c2}));
+        dot.userData={from:selfN.position.clone(),to:n.position.clone(),t:Math.random()};
+        TD3.scene.add(dot);TD3.parts.push(dot);
+      }
+    }
+  });
+  const dom=TD3.ren.domElement;
+  dom.style.cursor='grab';
+  dom.addEventListener('pointerdown',e=>{TD3.isDown=true;TD3.px=e.clientX;TD3.py=e.clientY;dom.style.cursor='grabbing';});
+  addEventListener('pointerup',()=>{TD3.isDown=false;dom.style.cursor='grab';});
+  addEventListener('pointermove',e=>{
+    if(TD3.isDown){
+      TD3.rotY+=(e.clientX-TD3.px)*0.005;
+      TD3.rotX+=(e.clientY-TD3.py)*0.005;
+      TD3.rotX=Math.max(-0.95,Math.min(0.95,TD3.rotX));
+      TD3.px=e.clientX;TD3.py=e.clientY;
+    }
+    const r=dom.getBoundingClientRect();
+    if(r.width>0){
+      TD3.mouse.x=((e.clientX-r.left)/r.width)*2-1;
+      TD3.mouse.y=-((e.clientY-r.top)/r.height)*2+1;
+    }
+  });
+  dom.addEventListener('wheel',e=>{e.preventDefault();TD3.zoom=Math.max(55,Math.min(230,TD3.zoom+e.deltaY*0.16));},{passive:false});
+  TD3.ray=new THREE.Raycaster();
+  dom.addEventListener('click',()=>{
+    TD3.ray.setFromCamera(TD3.mouse,TD3.cam);
+    const hits=TD3.ray.intersectObjects(TD3.nodes);
+    if(hits.length){
+      const n=hits[0].object;
+      if(!n.userData.known){toast('NET-3D','عقدة غير مكتشفة — شغّل nmap أولاً.','bad');sfx.err();return;}
+      if(n.userData.locked){toast('NET-3D','عقدة محصّنة — اتصال مرفوض.','bad');sfx.err();return;}
+      uiCmd('connect '+n.userData.ip);
+    }
+  });
+  (function loop3d(){
+    requestAnimationFrame(loop3d);
+    if(!wins.net3d||wins.net3d.style.display==='none')return;
+    TD3.cam.position.set(
+      Math.sin(TD3.rotY)*TD3.zoom*Math.cos(TD3.rotX),
+      10+TD3.zoom*Math.sin(TD3.rotX),
+      Math.cos(TD3.rotY)*TD3.zoom*Math.cos(TD3.rotX)
+    );
+    TD3.cam.lookAt(0,6,-40);
+    TD3.nodes.forEach(n=>{
+      const act=NET.active===n.userData.ip;
+      const s=n.userData.self?1:(act?1.14+Math.sin(Date.now()/170)*0.13:1);
+      n.scale.setScalar(s);
+      if(n.userData.halo)n.userData.halo.material.opacity=act?0.24+Math.sin(Date.now()/300)*0.1:0.14;
+    });
+    TD3.parts.forEach(dot=>{
+      dot.userData.t+=0.006;
+      if(dot.userData.t>1)dot.userData.t=0;
+      dot.position.lerpVectors(dot.userData.from,dot.userData.to,dot.userData.t);
+    });
+    TD3.stars.rotation.y+=0.0002;
+    TD3.ren.render(TD3.scene,TD3.cam);
+  })();
+  addEventListener('resize',()=>{
+    const fr=$('#td3Frame');
+    if(!fr||!fr.clientWidth)return;
+    TD3.cam.aspect=fr.clientWidth/fr.clientHeight;
+    TD3.cam.updateProjectionMatrix();
+    TD3.ren.setSize(fr.clientWidth,fr.clientHeight);
+  });
+}
+function syncNet3dUI(){
+  const b=document.querySelector('#taskbar .launch[data-app="net3d"]');
+  if(b)b.style.display='';
+}
 
 /* ============ الانترو + الدخول ============ */
 const INTRO_URL='https://res.cloudinary.com/rr0h5xww/video/upload/v1788782718/intro.mp4';
@@ -2609,7 +2380,7 @@ function enterOS(){
   $('#phClock').textContent=clockStr().slice(0,5);
   renderIcons();renderStart();renderObj();syncMirqabUI();syncLynxUI();syncNet3dUI();
   requestAnimationFrame(drawMq);
-  Facts.checkAll();
+  Facts.ready=true;Facts.flush();Facts.checkAll();
   sysSay('القناة خاملة — بانتظار اتصال المشرف');
   setTimeout(()=>toast('نظام','أهلاً '+ID.name+' — الوحدة بانتظارك. رمزك: راصد.'),700);
   setTimeout(incomingCall,3500);
