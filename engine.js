@@ -1701,7 +1701,7 @@ const APPS={
   browser:{title:'NEXUS WEB',w:740,h:500,icon:IC.browser,build:buildBrowser},
   notes:{title:'NOTES — المفكرة',w:560,h:460,icon:IC.notes,build:buildNotes},
   music:{title:'RADIO — راديو NEXUS',w:430,h:470,icon:IC.music,build:buildMusic},
-  netmap:{title:'NET — خريطة الشبكة',w:680,h:480,icon:IC.net,build:buildNet,onOpen:renderNet},
+  netmap:{title:'NET — خريطة الشبكة',w:680,h:480,icon:IC.net,build:buildNet,onOpen:renderNet},   net3d:{title:'NET-3D — شبكة مجسمة',w:760,h:560,icon:IC.net,build:buildNet3D},
   db:{title:'DB — السجلات المدنية',w:700,h:520,icon:IC.db,build:buildDb},
   board:{title:'EVIDENCE — لوحة الأدلة',w:740,h:540,icon:IC.board,build:buildBoard,onOpen:renderBoardCards},
   mirqab:{title:'MIRQAB — مِرقاب',w:700,h:520,icon:IC.mirqab,build:buildMirqab},
