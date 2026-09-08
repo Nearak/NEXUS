@@ -1,7 +1,7 @@
 'use strict';
 /* ============================================================
-   NEXUS-7 — story.js (نظام مهام تصريحي)
-   كل هدف: when:{ev, ...شروط} — المحرك يبث الأحداث والنظام يطابق.
+   NEXUS-7 — story.js (مهام تصريحية — متوافقة مع محرك v9.1)
+   كل هدف: when:{ev, ...شروط مطابقة على بيانات الحدث}
    ============================================================ */
 const STORY_META={boss:'كامل',codename:'راصد',channel:'CH-07'};
 const NIGHTS={};
@@ -18,7 +18,7 @@ NIGHTS.n1={
     {id:'root',t:'جذر عبر <code>msfconsole</code>',when:{ev:'root'}},
     {id:'enc',t:'حمّل <code>case_file.enc</code>',when:{ev:'download',file:'case_file.enc'}},
     {id:'key',t:'فك التشفير في <code>DECRYPT</code>',when:{ev:'decrypt',what:'case'},clue:'dossier'},
-    {id:'board',t:'اربط الأدلة في <code>EVIDENCE</code> — رابطان',when:{ev:'board',test:d=>d.links>=2}},
+    {id:'board',t:'اربط الأدلة في <code>EVIDENCE</code> — رابطان',when:{ev:'board',linksMin:2}},
     {id:'sent',t:'أرسل التقرير إلى المشرف كامل',when:{ev:'sent'}}
   ],
   hints:{
@@ -32,7 +32,7 @@ NIGHTS.n1={
     enc:'download case_file.enc — يحتاج جذر root.',
     key:'افتح DECRYPT واضبط حلقة الإزاحة حتى يوضح النص، ثم ثبّت.',
     board:'افتح EVIDENCE — انقر دليلين متتاليين لربطهما. رابطان على الأقل.',
-    sent:'زر «إرفاق الأدلة وإرسالها» في اللوحة، أو send في الطرفية.'
+    sent:'زر «إرفاق الأدلة وإرسالها» في اللوحة، أو اكتب send في الطرفية.'
   },
   clues:[
     {id:'cam',t:'لقطة CAM-04',sub:'سيارة زرقاء — تفتيش 3',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>'},
@@ -49,7 +49,7 @@ NIGHTS.n2={
     {id:'open',t:'استلم شحنة <code>مِرقاب</code> وشغّل الماسح',when:{ev:'mqscan'}},
     {id:'mrq1',t:'التقط إشارة <code>مهند</code> — 88.4',when:{ev:'mqgrab',key:'mohannad'},clue:'signal'},
     {id:'mrq2',t:'التقط إشارة <code>ليث</code> — 104.2',when:{ev:'mqgrab',key:'layth'},clue:'layth'},
-    {id:'board',t:'اربط الأدلة في <code>EVIDENCE</code> — خيط واحد',when:{ev:'board',test:d=>d.links>=1}},
+    {id:'board',t:'اربط الأدلة في <code>EVIDENCE</code> — خيط واحد',when:{ev:'board',linksMin:1}},
     {id:'sent',t:'أرسل تقرير الليلة',when:{ev:'sent'}}
   ],
   hints:{
@@ -68,7 +68,7 @@ NIGHTS.n2={
 NIGHTS.n3={
   title:'lynx',
   goals:[
-    {id:'lynx1',t:'اجمع معلومات مهند و«ليث» بـ <code>lynx</code>',when:{ev:'lynx',test:d=>d.mohannad&&d.layth}},
+    {id:'lynx1',t:'اجمع معلومات مهند و«ليث» بـ <code>lynx</code>',when:{ev:'lynxdone'}},
     {id:'social',t:'اعثر على حسابه الاجتماعي وشبكته المنزلية',when:{ev:'lynxdeep',deep:'social'},clue:'lynxdossier'},
     {id:'router',t:'اخترق شبكته ← جهازه ← <code>سرق الكوكيز</code>',when:{ev:'hijack'},clue:'cookies'},
     {id:'crack',t:'فك تشفير <code>session_cookies.enc</code>',when:{ev:'decrypt',what:'cookies'}},
@@ -144,7 +144,6 @@ const ST_BEATS={
     }
   },
   n3:{
-    async start(){ /* ليلة 3 تفتح بالرنّة الواحدة — لا start */ },
     async breach(){ if(!S.flags.live)return; await sleep(600); await say('اقطع الاتصال فوراً! أكمل… بحذر.'); },
     async decline(){ if(!S.flags.live)return; await say('راصد. لا وقت للتجاهل الآن.'); },
     async dossiers(){
