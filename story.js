@@ -1,31 +1,29 @@
 'use strict';
 /* ============================================================
-   NEXUS-7 — story.js (الطبقة الثانية: قصص ومحتوى)
-   قاعدة صارمة: بيانات نقية فقط — لا دوال هنا.
-   الأهداف تصريحية: when:{ev:..., ثم مفاتيح مطابقة بسيطة}
-   المطابقة كلها في المحرك (engine.js).
+   NEXUS-7 — story.js (v11 — نظام قاعدة الحقائق)
+   قاعدة صارمة: بيانات نقية فقط. لا دوال.
+   كل هدف: need = {factName: expectedValue}
+   المحرك يفحص دورياً: هل كل حقائق الهدف محققة؟
    ============================================================ */
 
 const STORY_META={boss:'كامل',bossFull:'كمال الأنباري',codename:'راصد',channel:'CH-07'};
 
 const NIGHTS={};
 
-/* ===== الليلة 1 — الطريق 16 ===== */
 NIGHTS.n1={
   title:'الطريق 16',
-  introMsg:'القناة خاملة — بانتظار اتصال المشرف',
   goals:[
-    {id:'g_help', t:'شغّل <code>help</code>',                       when:{ev:'cmd',cmd:'help'}},
-    {id:'g_nmap', t:'امسح شبكة الطريق 16 <code>nmap</code>',        when:{ev:'cmd',cmd:'nmap'}},
-    {id:'g_hydra',t:'اكسر SSH بـ <code>hydra</code>',               when:{ev:'cracked',target:'hwy'}},
-    {id:'g_conn', t:'اتصل بـ <code>HWY16-CAM</code>',               when:{ev:'connect',ip:'10.0.44.77'},clues:['cam']},
-    {id:'g_log',  t:'حمّل <code>hwy16_log.log</code>',              when:{ev:'download',file:'hwy16_log.log'},clues:['log','plate']},
-    {id:'g_plate',t:'حدد مالك اللوحة في <code>DB</code>',           when:{ev:'dbcard',plate:'HX-4471'},clues:['db']},
-    {id:'g_root', t:'جذر عبر <code>msfconsole</code>',              when:{ev:'root'}},
-    {id:'g_enc',  t:'حمّل <code>case_file.enc</code>',              when:{ev:'download',file:'case_file.enc'}},
-    {id:'g_key',  t:'فك التشفير في <code>DECRYPT</code>',           when:{ev:'decrypt',what:'case'},clues:['dossier']},
-    {id:'g_board',t:'اربط الأدلة في <code>EVIDENCE</code> — رابطان',when:{ev:'board',linksMin:2}},
-    {id:'g_sent', t:'أرسل التقرير إلى المشرف كامل',                 when:{ev:'sent'}}
+    {id:'g_help', t:'شغّل <code>help</code>',                       need:{helpUsed:true}},
+    {id:'g_nmap', t:'امسح شبكة الطريق 16 <code>nmap</code>',        need:{nmapDone:true}},
+    {id:'g_hydra',t:'اكسر SSH بـ <code>hydra</code>',               need:{hydraCracked:true}},
+    {id:'g_conn', t:'اتصل بـ <code>HWY16-CAM</code>',               need:{connected:true},clues:['cam']},
+    {id:'g_log',  t:'حمّل <code>hwy16_log.log</code>',              need:{logDownloaded:true},clues:['log','plate']},
+    {id:'g_plate',t:'حدد مالك اللوحة في <code>DB</code>',           need:{plateIdentified:true},clues:['db']},
+    {id:'g_root', t:'جذر عبر <code>msfconsole</code>',              need:{rootAchieved:true}},
+    {id:'g_enc',  t:'حمّل <code>case_file.enc</code>',              need:{encDownloaded:true}},
+    {id:'g_key',  t:'فك التشفير في <code>DECRYPT</code>',           need:{caseDecrypted:true},clues:['dossier']},
+    {id:'g_board',t:'اربط الأدلة في <code>EVIDENCE</code> — رابطان',need:{boardLinks:2}, min:true},
+    {id:'g_sent', t:'أرسل التقرير إلى المشرف كامل',                 need:{reportSent:true}}
   ],
   hints:{
     g_help:'افتح الطرفية TERM واكتب help.',
@@ -49,15 +47,14 @@ NIGHTS.n1={
   ]
 };
 
-/* ===== الليلة 2 — مِرقاب ===== */
 NIGHTS.n2={
   title:'مِرقاب',
   goals:[
-    {id:'g_open', t:'استلم شحنة <code>مِرقاب</code> وشغّل الماسح',when:{ev:'mqscan'}},
-    {id:'g_mrq1', t:'التقط إشارة <code>مهند</code> — 88.4',      when:{ev:'mqgrab',key:'mohannad'},clues:['signal']},
-    {id:'g_mrq2', t:'التقط إشارة <code>ليث</code> — 104.2',       when:{ev:'mqgrab',key:'layth'},clues:['layth']},
-    {id:'g_board',t:'اربط الأدلة في <code>EVIDENCE</code> — خيط', when:{ev:'board',linksMin:1}},
-    {id:'g_sent', t:'أرسل تقرير الليلة',                          when:{ev:'sent'}}
+    {id:'g_open', t:'استلم شحنة <code>مِرقاب</code> وشغّل الماسح',when:{mirqabScanned:true}},
+    {id:'g_mrq1', t:'التقط إشارة <code>مهند</code> — 88.4',      need:{mqMohannad:true},clues:['signal']},
+    {id:'g_mrq2', t:'التقط إشارة <code>ليث</code> — 104.2',       need:{mqLayth:true},clues:['layth']},
+    {id:'g_board',t:'اربط الأدلة في <code>EVIDENCE</code> — خيط', when:{boardLinks:1}, min:true},
+    {id:'g_sent', t:'أرسل تقرير الليلة',                          need:{reportSent:true}}
   ],
   hints:{
     g_open:'افتح MIRQAB من شريط المهام واضغط «تشغيل الماسح».',
@@ -72,16 +69,15 @@ NIGHTS.n2={
   ]
 };
 
-/* ===== الليلة 3 — lynx ===== */
 NIGHTS.n3={
   title:'lynx',
   goals:[
-    {id:'g_lynx1',  t:'اجمع معلومات مهند و«ليث» بـ <code>lynx</code>',when:{ev:'lynxdone'}},
-    {id:'g_social', t:'اعثر على حسابه الاجتماعي وشبكته المنزلية',    when:{ev:'lynxdeep',deep:'social'},clues:['lynxdossier']},
-    {id:'g_router', t:'اخترق شبكته ← جهازه ← <code>سرق الكوكيز</code>',when:{ev:'hijack'},clues:['cookies']},
-    {id:'g_crack',  t:'فك تشفير <code>session_cookies.enc</code>',   when:{ev:'decrypt',what:'cookies'}},
-    {id:'g_login',  t:'سجّل الدخول لحسابه واعثر على الرسالة',        when:{ev:'login'},clues:['meet']},
-    {id:'g_sent',   t:'أرسل التقرير — القبض',                        when:{ev:'sent'},clues:['watched']}
+    {id:'g_lynx1', t:'اجمع معلومات مهند و«ليث» بـ <code>lynx</code>',need:{lynxMohannad:true,lynxLayth:true}},
+    {id:'g_social', t:'اعثر على حسابه الاجتماعي وشبكته المنزلية',    need:{socialFound:true},clues:['lynxdossier']},
+    {id:'g_router', t:'اخترق شبكته ← جهازه ← <code>سرق الكوكيز</code>',need:{cookiesStolen:true},clues:['cookies']},
+    {id:'g_crack',  t:'فك تشفير <code>session_cookies.enc</code>',   need:{cookiesDecrypted:true}},
+    {id:'g_login',  t:'سجّل الدخول لحسابه واعثر على الرسالة',        need:{loggedIn:true},clues:['meet']},
+    {id:'g_sent',   t:'أرسل التقرير — القبض',                        need:{reportSent:true},clues:['watched']}
   ],
   hints:{
     g_lynx1:'افتح LYNX وابحث: مهند الحسني — ثم ابحث: ليث',
@@ -100,7 +96,7 @@ NIGHTS.n3={
   ]
 };
 
-/* ===== نصوص القصة — كل نص موقّع بمستوى الليلة واللحظة ===== */
+/* ===== نصوص القصة (كل نص مربوط بمستوى ولحظة) ===== */
 const ST_TEXT={
   n1:{
     start:[
