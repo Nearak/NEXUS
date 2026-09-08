@@ -1,56 +1,38 @@
 'use strict';
 /* ============================================================
-   NEXUS-7 — game.js v9.1 (محرك أحداث — مطابقة مصححة)
-   emit(ev,data) تبث للحدث + للمستمع العام '*' بالبنية الصحيحة
+   NEXUS-7 — engine.js v10.0 (المحرك)
+   قاعدة المعمارية:
+   1) المصدر الوحيد للحالة = GOALS في nightDef() + World
+   2) المحرك يبث أحداثاً — نظام المهام يطابقها تصريحياً
+   3) الحفظ/الاستعادة طبقة واحدة تُستدعى من نقاط محددة فقط
+   4) المسح الشامل فقط بعد إنهاء مهمة (nightDone)
    ============================================================ */
 
 const IMG={camCar:'assests/car1p.png',driver:'assests/person1p.png'};
+
+/* ============ 1. أدوات عامة ============ */
 const $=s=>document.querySelector(s);
 const $$=s=>[...document.querySelectorAll(s)];
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const rnd=(a,b)=>a+Math.random()*(b-a);
 const esc=t=>String(t).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+function sayLines(lines,who){return (async()=>{for(const L of lines||[])await say(L,who);})();}
 
-/* ============ ناقل الأحداث + مطابقة المهام ============ */
-const BUS={map:{}};
-BUS.on=function(ev,fn){(this.map[ev]=this.map[ev]||[]).push(fn);};
-BUS.fire=function(ev,data){(this.map[ev]||[]).forEach(fn=>{try{fn(data||{});}catch(e){console.error('[BUS:'+ev+']',e);}});};
-/* emit: يبث للحدث المحدد، ثم يمرر على كل الأهداف للتطابق */
-function emit(ev,data){
-  BUS.fire(ev,data||{});
-  matchGoals(ev,data||{});
-}
-/* نظام المهام: يفحص كل أهداف الليلة الحالية ضد الحدث */
-function matchGoals(ev,data){
-  const d=nightDef();if(!d||!d.goals)return;
-  d.goals.forEach(g=>{
-    if(g.done||!g.when||g.when.ev!==ev)return;
-    const D=data||{};
-    let ok=true;
-    if(g.when.cmd!==undefined&&D.cmd!==g.when.cmd)ok=false;
-    if(g.when.file!==undefined&&D.file!==g.when.file)ok=false;
-    if(g.when.ip!==undefined&&D.ip!==g.when.ip)ok=false;
-    if(g.when.plate!==undefined&&D.plate!==g.when.plate)ok=false;
-    if(g.when.target!==undefined&&D.target!==g.when.target)ok=false;
-    if(g.when.key!==undefined&&D.key!==g.when.key)ok=false;
-    if(g.when.deep!==undefined&&D.deep!==g.when.deep)ok=false;
-    if(g.when.what!==undefined&&D.what!==g.when.what)ok=false;
-    if(g.when.subject!==undefined&&D.subject!==g.when.subject)ok=false;
-    if(g.when.linksMin!==undefined&&(D.links||0)<g.when.linksMin)ok=false;
-    if(!ok)return;
-    g.done=true;
-    const li=$('#obj-'+g.id);if(li)li.classList.add('done');
-    tone(740,.07,'triangle',.045);
-    const dn=d.goals.filter(x=>x.done).length;
-    toast('هدف مكتمل','سجل المهمة: '+dn+'/'+d.goals.length,'good');
-    if(g.clue){
-      (Array.isArray(g.clue)?g.clue:[g.clue]).forEach(cid=>addClue(cid));
-    }
-    persist();refreshQuick();
-  });
-}
+/* ============ 2. العالم — مصدر الحقيقة الوحيد للجلسة ============ */
+const World={
+  night:1,
+  gSec:2*3600+58*60,
+  files:['README.txt'],          // ملفات الخزنة
+  trash:[],
+  got:{},                        // أسماء الملفات التي حمّلها اللاعب
+  scanDone:false,
+  host:null,                     // العقدة المتصلة
+  board:{},                      // لوحة أدلة لكل ليلة: {n1:{clues,links,pos},...}
+  flags:{live:false,nightDone:0,shipmentShown:0,n3ring:0,camShown:0,driverShown:0,declined:0,routerCracked:0,hash:0,hydraDone:0,rootDone:false,caseDecrypted:false,cookiesDecrypted:false}
+};
+function clockStr(){const p=n=>String(n).padStart(2,'0');const g=World.gSec;return p(Math.floor(g/3600)%24)+':'+p(Math.floor(g/60)%60)+':'+p(g%60);}
 
-/* ============ الصوت ============ */
+/* ============ 3. الصوت ============ */
 let AC=null,gMaster=null,muted=false;
 function audioInit(){if(AC)return;try{AC=new(window.AudioContext||window.webkitAudioContext)();gMaster=AC.createGain();gMaster.gain.value=.55;gMaster.connect(AC.destination);}catch(e){}}
 function tone(f=880,dur=.07,type='square',vol=.05,delay=0,slideTo=0){
@@ -77,13 +59,7 @@ const sfx={
 };
  $('#tbSound').onclick=()=>{muted=!muted;$('#tbSound').classList.toggle('off',muted);if(!muted)tone(880,.06,'sine',.05);};
 
-/* ============ الحالة ============ */
-const S={host:null,scanned:false,
-  flags:{live:false,nightDone:0,shipmentShown:0,n3ring:0,camShown:0,driverShown:0,declined:0,routerCracked:0,hash:0,hydraDone:0,rootEv:0,key:0},
-  trace:{on:false,pct:0,timer:null}};
-let night=1;
-let gSec=2*3600+58*60;
-function clockStr(){const p=n=>String(n).padStart(2,'0');return p(Math.floor(gSec/3600)%24)+':'+p(Math.floor(gSec/60)%60)+':'+p(gSec%60);}
+/* ============ 4. التوست + Glitch ============ */
 function toast(title,msg,kind='info'){
   const t=document.createElement('div');t.className='toast '+kind;
   t.innerHTML='<b>'+esc(title)+'</b><span>'+esc(msg)+'</span>';
@@ -97,21 +73,19 @@ function glitch(strength=1,red=false){
   setTimeout(()=>os.classList.remove('glitching'),460*strength);
 }
 
-/* ============ نظام المهام — قراءة فقط ============ */
-function nightDef(){return (typeof NIGHTS!=='undefined')&&NIGHTS['n'+night];}
+/* ============ 5. نظام المهام — المطابقة التصريحية ============ */
+/* القاعدة: nightDef() يقرأ من story.js — المحرك لا يعرف قصة، يطابق فقط */
+function nightDef(){return (typeof NIGHTS!=='undefined')&&NIGHTS['n'+World.night];}
 function goalById(id){const d=nightDef();return d&&d.goals?d.goals.find(g=>g.id===id):null;}
 function goalDone(id){const g=goalById(id);return !!(g&&g.done);}
-function canSendNow(){
-  const d=nightDef();if(!d||!d.goals)return false;
-  return d.goals.every(g=>g.done);
-}
+function canSendNow(){const d=nightDef();return d&&d.goals?d.goals.every(g=>g.done):false;}
 function missingForSend(){
   const d=nightDef();if(!d)return'—';
   const m=(d.goals||[]).filter(g=>!g.done).map(g=>(d.hints&&d.hints[g.id])?d.hints[g.id].split('—')[0].split('.')[0]:g.id);
   return m.length?m.join(' · '):'—';
 }
 function storyHint(){
-  const d=nightDef();if(!d||!S.flags.live)return;
+  const d=nightDef();if(!d||!World.flags.live)return;
   const o=(d.goals||[]).find(g=>!g.done);
   if(!o)return;
   say('توجيه: '+((d.hints&&d.hints[o.id])||'اتبع سجل المهمة.'));
@@ -123,20 +97,52 @@ function renderObj(){
     ?pool.map(o=>'<li id="obj-'+o.id+'" class="'+(o.done?'done':'')+'"><span class="tick"></span><span>'+o.t+'</span></li>').join('')
     :'<li style="color:var(--muted)"><span class="tick"></span><span>لا مهمة نشطة — بانتظار اتصال المشرف…</span></li>';
 }
-
-/* ============ الصور المدمجة ============ */
-const CAR_SVG=`<svg viewBox="0 0 480 300" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="c-vig" cx="50%" cy="45%" r="78%"><stop offset="55%" stop-color="rgba(0,0,0,0)"/><stop offset="100%" stop-color="rgba(0,0,0,.55)"/></radialGradient><filter id="c-noise"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2"/><feColorMatrix type="matrix" values="0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 .07 0"/></filter></defs><rect width="480" height="300" fill="#c6caca"/><rect x="0" y="144" width="480" height="156" fill="#4c514d"/><ellipse cx="240" cy="268" rx="128" ry="12" fill="rgba(0,0,0,.35)"/><rect x="140" y="192" width="200" height="62" rx="14" fill="#2e4a7a"/><path d="M172 194 L186 160 Q190 154 200 154 L280 154 Q290 154 294 160 L308 194 Z" fill="#27406b"/><path d="M196 166 L284 166 L296 190 L184 190 Z" fill="#1c2937"/><rect x="146" y="196" width="36" height="11" rx="4" fill="#a8282a"/><rect x="298" y="196" width="36" height="11" rx="4" fill="#a8282a"/><rect x="142" y="228" width="196" height="22" rx="9" fill="#263d66"/><rect x="214" y="226" width="52" height="17" rx="3" fill="#e6c437" stroke="#8a7a20"/><text x="240" y="239" text-anchor="middle" font-family="monospace" font-size="10" font-weight="bold" fill="#1c1c14">HX-4471</text><rect x="152" y="248" width="40" height="15" rx="6" fill="#17130f"/><rect x="288" y="248" width="40" height="15" rx="6" fill="#17130f"/><rect width="480" height="300" fill="url(#c-vig)"/><rect width="480" height="300" filter="url(#c-noise)"/><g font-family="monospace" font-size="13" fill="#f1f2ec"><text x="14" y="26">2024-05-15 14:32:01 UTC</text><text x="466" y="26" text-anchor="end">CAM-04/CHK-3 HWY-16</text><text x="14" y="286">CAM-04/CHK-3 HWY-16</text></g><circle cx="430" cy="282" r="5" fill="#ff4136"><animate attributeName="opacity" values="1;.15;1" dur="1.2s" repeatCount="indefinite"/></circle><text x="444" y="287" font-family="monospace" font-size="12" fill="#ff6b60">REC</text></svg>`;
-const DRIVER_SVG=`<svg viewBox="0 0 460 300" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="d-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#cdd2d4"/><stop offset="1" stop-color="#aab1b4"/></linearGradient><radialGradient id="d-vig" cx="50%" cy="45%" r="80%"><stop offset="60%" stop-color="rgba(0,0,0,0)"/><stop offset="100%" stop-color="rgba(0,0,0,.45)"/></radialGradient><filter id="d-noise"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2"/><feColorMatrix type="matrix" values="0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 .06 0"/></filter></defs><rect width="460" height="300" fill="url(#d-sky)"/><rect x="0" y="58" width="460" height="124" fill="#9aa1a5"/><rect x="6" y="10" width="448" height="240" rx="18" fill="none" stroke="#12161a" stroke-width="14"/><path d="M336 70 Q396 66 402 120 L402 300 L330 300 L326 140 Q326 92 336 70 Z" fill="#191d21"/><path d="M110 300 Q118 232 168 214 Q196 202 210 196 L268 196 Q330 214 352 300 Z" fill="#39482f"/><rect x="222" y="168" width="36" height="26" rx="10" fill="#c99a76"/><ellipse cx="240" cy="130" rx="47" ry="55" fill="#d8a884"/><ellipse cx="284" cy="136" rx="9" ry="14" fill="#c99a76"/><path d="M193 118 Q196 70 240 66 Q284 70 287 118 Q288 96 274 84 Q240 74 206 84 Q192 96 193 118 Z" fill="#4a3a2c"/><line x1="212" y1="118" x2="232" y2="116" stroke="#3c2f24" stroke-width="4" stroke-linecap="round"/><line x1="246" y1="116" x2="264" y2="118" stroke="#3c2f24" stroke-width="4" stroke-linecap="round"/><ellipse cx="222" cy="130" rx="7" ry="6" fill="#2c241d"/><ellipse cx="254" cy="130" rx="7" ry="6" fill="#2c241d"/><path d="M236 132 Q232 144 236 150 Q240 153 244 150" fill="none" stroke="#b98a67" stroke-width="3" stroke-linecap="round"/><path d="M203 142 Q206 176 226 186 Q240 192 254 186 Q274 176 277 142 Q276 168 262 178 Q240 190 218 178 Q204 168 203 142 Z" fill="#4e3d2c"/><path d="M206 146 Q210 172 228 181 Q240 186 252 181 Q270 172 274 146 Q272 164 258 173 Q240 182 222 173 Q208 164 206 146 Z" fill="#5b4935"/><path d="M228 166 Q240 172 252 166" stroke="#3a2d20" stroke-width="3" fill="none" stroke-linecap="round"/><rect x="0" y="244" width="460" height="56" fill="#14181c"/><rect x="0" y="240" width="460" height="8" rx="4" fill="#1d2227"/><rect width="460" height="300" fill="url(#d-vig)"/><rect width="460" height="300" filter="url(#d-noise)"/></svg>`;
-const camMedia=()=>IMG.camCar?'<img src="'+IMG.camCar+'" alt="CAM-04">':CAR_SVG;
-const driverMedia=()=>IMG.driver?'<img src="'+IMG.driver+'" alt="driver">':DRIVER_SVG;
-function showPhoto(title,media,meta){
-  $('#pmMedia').innerHTML=media;$('#pmTitle').textContent=title;$('#pmMeta').textContent=meta||'';
-  $('#photoModal').hidden=false;sfx.shutter();
+/* المطابقة: مقارنات قياسية فقط — بلا دوال ديناميكية (الدرس من v9.0) */
+function matchGoals(ev,data){
+  const d=nightDef();if(!d||!d.goals)return;
+  const D=data||{};
+  d.goals.forEach(g=>{
+    if(g.done||!g.when||g.when.ev!==ev)return;
+    let ok=true;
+    for(const k in g.when){
+      if(k==='ev')continue;
+      const want=g.when[k],got=D[k];
+      if(want===undefined)continue;
+      if(typeof want==='number'&&k==='linksMin'){ if((D.links||0)<want){ok=false;break;} continue; }
+      if(got!==want){ok=false;break;}
+    }
+    if(!ok)return;
+    g.done=true;
+    const li=$('#obj-'+g.id);if(li)li.classList.add('done');
+    tone(740,.07,'triangle',.045);
+    const dn=d.goals.filter(x=>x.done).length;
+    toast('هدف مكتمل','سجل المهمة: '+dn+'/'+d.goals.length,'good');
+    if(g.clues)g.clues.forEach(cid=>addClue(cid));
+    persist();refreshQuick();refreshPage();
+  });
 }
- $('#pmClose').onclick=()=>{$('#photoModal').hidden=true;};
- $('#photoModal').addEventListener('click',e=>{if(e.target.id==='photoModal')$('#photoModal').hidden=true;});
+/* بث حدث: للنظام، وللحظات القصصية */
+function emit(ev,data){
+  matchGoals(ev,data||{});
+  if(!World.flags.live)return;   // لحظات القصة تعمل فقط أثناء مهمة نشطة
+  const d=nightDef();if(!d)return;
+  const key='n'+World.night;
+  const beats={
+    connect:()=>T('start'),
+    breach:()=>T('breach'),
+    decline:()=>T('decline'),
+    mqgrab:d2=>{if(d2.key==='mohannad')T('grab1');if(d2.key==='layth')T('grab2');},
+    lynx:d2=>{if(d2.subject==='mohannad')T('dossiers');},
+    hijack:()=>T('router'),
+    decrypt:d2=>{if(d2.what==='cookies')T('cookies');},
+    login:()=>T('login'),
+    dbcard:d2=>{}
+  };
+  function T(name){const b=ST_BEATS[key];if(b&&typeof b[name]==='function')b[name]().catch(e=>console.error('[STORY:'+key+'/'+name+']',e));}
+  if(beats[ev])beats[ev](data||{});
+}
 
-/* ============ مدير النوافذ ============ */
+/* ============ 6. مدير النوافذ ============ */
 let zTop=50,spawn=0,focusId=null;
 const wins={},bodies={};
 function focusWin(id){
@@ -211,8 +217,14 @@ function syncTaskWindows(){
     c.appendChild(b);
   });
 }
+function closeAllWins(){
+  for(const k of Object.keys(wins)){wins[k].remove();delete wins[k];}
+  for(const k of Object.keys(bodies)){delete bodies[k];}
+  Object.keys(APPS).filter(k=>/^terminal\d+$/.test(k)).forEach(k=>delete APPS[k]);
+  TERMS.length=0;termActive=null;termCounter=0;
+}
 
-/* ============ الطرفية — نوافذ متعددة + Tab ============ */
+/* ============ 7. الطرفية — نوافذ متعددة + Tab ============ */
 let termCounter=0,termActive=null;
 const TERMS=[];
 const CMD_LIST=['help','ls','cat','open','download','dl','rm','nmap','hydra','hashcat','john','connect','ssh','msfconsole','db','decrypt','notes','evidence','board','mirqab','mrq','lynx','osint','disconnect','exit','trace','send','clear','cls','whoami','date','pwd','echo','history','ping','ifconfig','netstat','ps','browser'];
@@ -277,7 +289,7 @@ async function tprogress(label,dur=1400){
 function buildTerm(host){
   const t=mkTermSession(host,'sh-1');
   TERMS.push(t);termActive=t;
-  tprintTo(t,'NEXUS-7 secure shell — build 9.1','dim');
+  tprintTo(t,'NEXUS-7 secure shell — build 10.0','dim');
   tprintTo(t,'أهلاً <span class="am">'+esc(ID.name)+'</span> — رمزك «راصد». اكتب <span class="am">help</span>.','dim');
   tprintTo(t,'<span class="am">tip:</span> «+ نافذة» طرفية مستقلة · Tab يكمل الأوامر.','dim');
 }
@@ -295,7 +307,7 @@ function newTerminalWindow(){
   openApp(id);renderIcons();persistIcons();
 }
 
-/* ============ الأوامر — كل نجاح يبث حدثاً ============ */
+/* ============ 8. الأوامر — كل نجاح يبث حدثاً ============ */
 async function runCmd(raw,t){
   const T=t||termActive;if(!T)return;
   const line=raw.trim();if(!line)return;
@@ -322,24 +334,24 @@ async function runCmd(raw,t){
       case 'notes':openApp('notes');break;
       case 'evidence':case 'board':openApp('board');break;
       case 'mirqab':case 'mrq':
-        if(night<2){tprint('mirqab: command not found','err-lite');sfx.err();break;}
+        if(World.night<2){tprint('mirqab: command not found','err-lite');sfx.err();break;}
         openApp('mirqab');break;
       case 'lynx':case 'osint':
-        if(night<3){tprint('lynx: command not found','err-lite');sfx.err();break;}
+        if(World.night<3){tprint('lynx: command not found','err-lite');sfx.err();break;}
         openApp('lynx');break;
       case 'disconnect':case 'exit':cmdDisconnect();break;
       case 'trace':cmdTrace();break;
       case 'send':await cmdSend();break;
       case 'clear':case 'cls':T.out.innerHTML='';break;
       case 'whoami':tprint('<span class="am">'+esc(ID.name)+'</span> — codename: <span class="am">RASED</span>');break;
-      case 'date':tprint(clockStr()+' — الليلة '+String(night).padStart(2,'0'));break;
+      case 'date':tprint(clockStr()+' — الليلة '+String(World.night).padStart(2,'0'));break;
       case 'pwd':tprint('/operator/nexus-7');break;
       case 'echo':tprint(esc(arg)||'');break;
       case 'history':T.hist.forEach((h,i)=>tprint('  '+String(i+1).padStart(3)+'  '+esc(h),'dim'));break;
       case 'ping':await cmdPing(parts[1]||'');break;
       case 'ifconfig':tprint('eth0: flags=4163<UP,BROADCAST,RUNNING>\n    inet <span class="am">10.0.44.9</span>  netmask 255.255.255.0','dim');break;
-      case 'netstat':if(S.host)tprint('tcp  0  0  10.0.44.9:4471  '+S.host+':22  <span class="gr">ESTABLISHED</span>','dim');else tprint('no active tunnels','dim');tprint('tcp  0  0  127.0.0.1:8010  0.0.0.0:*  LISTEN  (ch-07 daemon)','dim');break;
-      case 'ps':tprint('  PID TTY      STAT   TIME COMMAND\n    1 ?        Ss     0:02 /sbin/init\n  217 ?        S      0:44 ch07-daemon\n  311 ?        S      0:01 trace-spoofer\n  402 pts/0    Ss     0:00 -bash','dim');break;
+      case 'netstat':if(S.host)tprint('tcp  0  0  10.0.44.9:4471  '+S.host+':22  <span class="gr">ESTABLISHED</span>','dim');else tprint('no active tunnels','dim');break;
+      case 'ps':tprint('  PID TTY      STAT   TIME COMMAND\n    1 ?        Ss     0:02 /sbin/init\n  217 ?        S      0:44 ch07-daemon\n  402 pts/0    Ss     0:00 -bash','dim');break;
       case 'browser':openApp('browser');break;
       default:known=false;tprint(esc(cmd)+': command not found — اكتب <span class="am">help</span>','err-lite');sfx.err();penalizeTrace();
     }
@@ -361,7 +373,7 @@ function cmdLs(){
     });
   }
   tprint('vault: <span class="gr">local</span>','dim');
-  localFiles.forEach(n=>{const f=FILES[n];if(f)tprint(n.padEnd(20)+' '+String(f.kb).padStart(3)+' KB  <span class="gr">['+f.kind+']</span>');});
+  World.files.forEach(n=>{const f=FILES[n];if(f)tprint(n.padEnd(20)+' '+String(f.kb).padStart(3)+' KB  <span class="gr">['+f.kind+']</span>');});
 }
 function cmdCat(name){
   name=(name||'').trim();
@@ -377,22 +389,24 @@ async function cmdDownload(name){
   const f=FILES[name];
   if(!f||f.where!==S.host){tprint('download: '+esc(name)+': no such file on host — استخدم ls','err-lite');sfx.err();return;}
   if(f.got){tprint(name+': already in vault','dim');return;}
-  if(f.root&&!S.flags.rootEv){tprint('download: '+esc(name)+': <span class="rd">permission denied</span> — الملف للجذر root فقط','err-lite');tprint('hint: <span class="am">msfconsole</span> — ثغرة HWY-CAM 2.1','dim');sfx.err();return;}
+  if(f.root&&!World.flags.rootDone){tprint('download: '+esc(name)+': <span class="rd">permission denied</span> — الملف للجذر root فقط','err-lite');tprint('hint: <span class="am">msfconsole</span> — ثغرة HWY-CAM 2.1','dim');sfx.err();return;}
   await ttype('downloading '+name+' ('+f.kb+' KB)','ok');
   const pulse=setInterval(()=>netPulse(S.host),260);
   await tprogress('transfer',1500);
   clearInterval(pulse);
-  f.got=true;localFiles.push(name);persist();renderFiles();
+  f.got=true;
+  if(!World.files.includes(name))World.files.push(name);
+  persist();renderFiles();
   tprint('<span class="gr">saved → vault/'+esc(name)+'</span>');
   toast('الخزنة','وصل ملف جديد: '+name,'good');
   bumpTrace(10);
   emit('download',{file:name});
 }
 function trashFile(name){
-  if(!localFiles.includes(name))return false;
+  if(!World.files.includes(name))return false;
   if(name==='README.txt'){tprint('rm: لن تحذف ملاحظاتي يا عزيزي','err-lite');return false;}
-  localFiles=localFiles.filter(x=>x!==name);
-  FILES[name].got=false;trash.push(name);
+  World.files=World.files.filter(x=>x!==name);
+  FILES[name].got=false;World.trash.push(name);
   renderFiles();renderTrash();persist();sfx.pop();
   return true;
 }
@@ -402,7 +416,7 @@ function cmdRm(name){
   else if(name){tprint('rm: '+esc(name)+': not in vault','err-lite');sfx.err();}
 }
 async function cmdNmap(){
-  if(S.scanned){tprint('nmap: scan complete — راجع النتائج أعلاه أو خريطة NET','dim');return;}
+  if(World.scanDone){tprint('nmap: scan complete — راجع النتائج أعلاه أو خريطة NET','dim');return;}
   await ttype('Starting Nmap 7.94 ( https://nmap.org )','dim');
   await tprogress('scanning 10.0.44.0/24',1600);
   for(const [ip,label,tag] of [['10.0.44.1','ISP-GATEWAY','carrier'],['10.0.44.23','NET-BRIDGE-23','acl-locked'],['10.0.44.77','HWY16-CAM','secure']]){
@@ -413,11 +427,11 @@ async function cmdNmap(){
   await sleep(250);
   tprint('PORT     STATE  SERVICE   VERSION\n22/tcp   open   ssh       OpenSSH 7.9 <span class="am">(auth: password — weak)</span>\n80/tcp   open   http      <span class="am">HWY-CAM 2.1</span> <span class="rd">(known CVEs — check msfconsole)</span>','dim');
   tprint('Nmap done: 3 hosts up','ok');
-  S.scanned=true;persist();
+  World.scanDone=true;persist();
 }
 async function cmdHydra(arg){
   if(arg.includes('192.168.88.1')){
-    if(S.flags.routerCracked){tprint('hydra: الراوتر مكسور مسبقاً — admin : <span class="gr">RT88-default</span>','dim');return;}
+    if(World.flags.routerCracked){tprint('hydra: الراوتر مكسور مسبقاً — admin : <span class="gr">RT88-default</span>','dim');return;}
     await ttype('Hydra v9.5 — RT-88 admin panel @ 192.168.88.1','dim');
     for(const pw of ['admin','1234','password','rt88','RT88-default']){
       await sleep(rnd(140,300));
@@ -426,7 +440,7 @@ async function cmdHydra(arg){
     await sleep(400);
     tprint('[80][http] 192.168.88.1   login: admin   password: <span class="gr">RT88-default</span>');
     tprint('Router admin CRACKED — عد لصفحة الراوتر واضغط hijack.','gr');
-    sfx.ok();S.flags.routerCracked=1;persist();
+    sfx.ok();World.flags.routerCracked=1;persist();
     toast('hydra','كلمة سر الراوتر: RT88-default','good');
     if($('#brBody')&&wins.browser&&wins.browser.style.display!=='none'&&$('#brUrl').value==='mohannad-home.net')brGo('mohannad-home.net',false);
     return;
@@ -435,25 +449,25 @@ async function cmdHydra(arg){
     tprint('hydra: استخدم الهدف الصحيح — مثال:','err-lite');
     tprint('hydra -l admin -P rockyou.txt ssh://10.0.44.77','dim');sfx.err();return;
   }
-  if(!S.scanned){tprint('hydra: no known host — شغّل <span class="am">nmap</span> أولاً','err-lite');sfx.err();return;}
-  if(S.flags.hydraDone){tprint('hydra: كُسرت سابقاً — admin : <span class="gr">orion2024</span>','dim');return;}
+  if(!World.scanDone){tprint('hydra: no known host — شغّل <span class="am">nmap</span> أولاً','err-lite');sfx.err();return;}
+  if(World.flags.hydraDone){tprint('hydra: كُسرت سابقاً — admin : <span class="gr">orion2024</span>','dim');return;}
   await ttype('Hydra v9.5 starting — 1 target, 16 threads','dim');
   const tries=['123456','admin','orion','letmein','qwerty','camera','111111','dragon','orion123'];
   for(const pw of tries){await sleep(rnd(140,320));tprint('[ATTEMPT] target ssh://10.0.44.77 - login "<span class="am">admin</span>" - pass "<span class="dim">'+pw+'</span>"');sfx.tick();}
   await sleep(500);
   tprint('[22][ssh] host: 10.0.44.77   login: admin   password: <span class="gr">orion2024</span>');
   tprint('1 of 1 target successfully completed.','gr');
-  sfx.ok();S.flags.hydraDone=1;persist();
+  sfx.ok();World.flags.hydraDone=1;persist();
   toast('hydra','كلمة المرور: orion2024','good');
   emit('cracked',{target:'hwy'});
 }
 async function cmdHashcat(tool){
   if(!FILES['hwy16_log.log'].got){tprint(tool+': لا بصمة في الخزنة بعد — البصمة التي في السجل مُقفلة على ملف لم يصل إلينا بعد.','err-lite');sfx.err();return;}
-  if(S.flags.hash){tprint(tool+': البصمة مكسورة سابقاً → <span class="gr">password</span>','dim');return;}
+  if(World.flags.hash){tprint(tool+': البصمة مكسورة سابقاً → <span class="gr">password</span>','dim');return;}
   await ttype((tool==='hashcat'?'hashcat (v6.2.6) single-hash mode':'john the ripper — Raw MD5'),'dim');
   await tprogress('cracking',1900);
   tprint('<span class="gr">5f4dcc3b5aa765d61d8327deb882cf99:password</span>');
-  sfx.ok();S.flags.hash=1;persist();
+  sfx.ok();World.flags.hash=1;persist();
   toast(tool,'البصمة = password — احتفظ بها، ستحتاجها حين يصل ملفها.','good');
 }
 async function cmdConnect(ip,user,pass){
@@ -463,9 +477,9 @@ async function cmdConnect(ip,user,pass){
   if(!NET.known.has(ip)){tprint('no route to host '+esc(ip)+' — شغّل <span class="am">nmap</span> أولاً','err-lite');sfx.err();penalizeTrace();return;}
   const d=NET.data[ip];
   if(d.locked){tprint(ip+' <span class="am">'+d.label+'</span>: <span class="rd">'+d.reason+'</span>','err-lite');sfx.err();toast('عقدة محصّنة',d.reason,'bad');return;}
-  if(!S.flags.hydraDone){
+  if(!World.flags.hydraDone){
     if(user&&pass&&user.toLowerCase()==='admin'&&pass==='orion2024'){
-      S.flags.hydraDone=1;persist();tprint('ssh creds accepted for '+ip,'ok');
+      World.flags.hydraDone=1;persist();tprint('ssh creds accepted for '+ip,'ok');
     }else{
       tprint(ip+': ssh password required — شغّل <span class="am">hydra</span> أولاً','err-lite');sfx.err();return;
     }
@@ -479,14 +493,14 @@ async function cmdConnect(ip,user,pass){
   const nh=$('#nmHost');if(nh)nh.textContent=ip+' :: '+d.label;
   netSetActive(ip);startTrace();
   tprint('<span class="rd">traceback active</span> — كل خطأ يرفعهم إليك. disconnect للانسحاب.','dim');
-  if(!S.flags.camShown){
-    S.flags.camShown=1;persist();
+  if(!World.flags.camShown){
+    World.flags.camShown=1;persist();
     setTimeout(()=>showPhoto('CAM-04 — بث مُعترَض · الطريق 16',camMedia(),'نقطة تفتيش 3 · 2024-05-15 14:32 UTC — سيارة زرقاء، اللوحة HX-4471'),350);
   }
   emit('connect',{ip:ip});
 }
 function cmdMsfStart(T){
-  if(!S.scanned){tprint('msfconsole: لا أهداف معروفة — شغّل <span class="am">nmap</span> أولاً','err-lite');sfx.err();return;}
+  if(!World.scanDone){tprint('msfconsole: لا أهداف معروفة — شغّل <span class="am">nmap</span> أولاً','err-lite');sfx.err();return;}
   T.msf=true;
   if(T.prompt)T.prompt.textContent='msf6 >';
   tprint('       =[ metasploit v6.4 — 2418 exploits\n+ -- --=[ 1289 payloads / 47 encoders\n       =[ مستعد — اكتب <span class="am">search hwycam</span>','dim');
@@ -509,7 +523,7 @@ async function runMsf(line,T){
       await sleep(400);glitch(1);sfx.unlock();
       tprint('<span class="gr">[+] Meterpreter session 1 opened — uid=0(root)</span>');
       tprint('<span class="gr">[+] root shell obtained — الملفات المحمية متاحة الآن</span>');
-      if(!S.flags.rootEv){S.flags.rootEv=1;persist();bumpTrace(15);toast('metasploit','جلسة root مفتوحة — الجذر لك.','good');emit('root',{});}
+      if(!World.flags.rootDone){World.flags.rootDone=true;persist();bumpTrace(15);toast('metasploit','جلسة root مفتوحة — الجذر لك.','good');emit('root',{});}
       return;
     }
     if(p==='info'){tprint('Name: HWY-CAM Unauthenticated RCE\nCVE: 2024-1337 — HWY-CAM 2.1','dim');return;}
@@ -525,10 +539,10 @@ function cmdTrace(){
   tprint('traceback: <span class="'+(S.trace.pct>70?'rd':'am')+'">'+Math.round(S.trace.pct)+'%</span> — disconnect لتصفيره.');
 }
 async function cmdSend(){
-  if(goalDone('sent')){tprint('report already sent.','dim');return;}
+  if(goalDone('g_sent')){tprint('report already sent.','dim');return;}
   if(!canSendNow()){
     tprint('حزمة التقرير غير مكتملة. المتبقي: '+missingForSend(),'err-lite');sfx.err();
-    if(S.flags.live)storyHint();
+    if(World.flags.live)storyHint();
     return;
   }
   await doSend('');
@@ -538,7 +552,7 @@ async function doSend(bundle){
   await tprogress('upload to CH-07',1300);
   tprint('<span class="gr">REPORT DELIVERED</span>'+(bundle?' — '+bundle:' — case items attached.'));
   emit('sent',{});
-  if(S.flags.live)finishNight();
+  if(World.flags.live)finishNight();
 }
 async function cmdPing(ip){
   ip=(ip||'').trim();
@@ -547,33 +561,14 @@ async function cmdPing(ip){
   for(let i=0;i<4;i++){await sleep(300);tprint('64 bytes from '+esc(ip)+': icmp_seq='+(i+1)+' ttl=61 time='+(Math.random()*8+1).toFixed(1)+' ms');}
   tprint('--- 4 packets transmitted, 4 received, 0% loss','dim');
 }
-function beat(name){
-  try{
-    const b=(typeof ST_BEATS!=='undefined')&&ST_BEATS['n'+night];
-    if(b&&typeof b[name]==='function')return b[name]();
-  }catch(e){console.error('[NEXUS story beat error]',e);}
-  return null;
+async function uiCmd(text){
+  if(!termActive)openApp('terminal');
+  tprint('<span class="usr">'+ID.name+'@nexus-7:~$</span> '+esc(text),'echo');
+  if(termActive&&termActive.busy){sfx.err();return;}
+  await runCmd(text,termActive);
 }
-function storyHint(){
-  const d=nightDef();if(!d||!S.flags.live)return;
-  const o=(d.goals||[]).find(g=>!g.done);
-  if(!o)return;
-  say('توجيه: '+((d.hints&&d.hints[o.id])||'اتبع سجل المهمة.'));
-}
-function missingForSend(){
-  const d=nightDef();if(!d)return'—';
-  const m=(d.goals||[]).filter(g=>!g.done).map(g=>(d.hints&&d.hints[g.id])?d.hints[g.id].split('—')[0].split('.')[0]:g.id);
-  return m.length?m.join(' · '):'—';
-}
-function canSendNow(){
-  const d=nightDef();if(!d||!d.goals)return false;
-  return d.goals.every(g=>g.done);
-}
-function goalById(id){const d=nightDef();return d&&d.goals?d.goals.find(g=>g.id===id):null;}
-function goalDone(id){const g=goalById(id);return !!(g&&g.done);}
-function nightDef(){return (typeof NIGHTS!=='undefined')&&NIGHTS['n'+night];}
 
-/* ============ الملفات ============ */
+/* ============ 9. الملفات ============ */
 const KEY_PLAIN='== UNIT-7 CASE FILE 4471-A ==\nSUSPECT :: HUSSEINI, MOHANNAD K.\nWARRANT :: HOMICIDE - ACTIVE\nLAST PING :: HWY-16 / EXIT 9\nCLEARED BY :: DESK KAMEL';
 const KEY_SHIFT=9;
 function caesar(t,s){const A='ABCDEFGHIJKLMNOPQRSTUVWXYZ';return t.replace(/[A-Z]/g,ch=>A[(A.indexOf(ch)+s+26)%26]);}
@@ -583,7 +578,7 @@ const CK_SHIFT=13;
 const COOKIES_CIPHER=caesar(COOKIES_PLAIN,CK_SHIFT);
 const BAD_HASH='5f4dcc3b5aa765d61d8327deb882cf99';
 const FILES={
-  'README.txt':{where:'local',kb:1,kind:'text',body:'NEXUS-7 :: INTEL WORKSTATION — BUILD 9.1\n----------------------------------------\nمحطة مشغّل في وحدة الاستخبارات.\n\nالأدوات:\n  TERM (نوافذ متعددة + Tab) · NET · FILES · EVIDENCE\n  MIRQAB (ليلة 2+) · LYNX (ليلة 3+) · DECRYPT · DB · BROWSER · NOTES'},
+  'README.txt':{where:'local',kb:1,kind:'text',body:'NEXUS-7 :: INTEL WORKSTATION — BUILD 10.0\n----------------------------------------\nمحطة مشغّل في وحدة الاستخبارات.\n\nالأدوات:\n  TERM (نوافذ متعددة + Tab) · NET · FILES · EVIDENCE\n  MIRQAB (ليلة 2+) · LYNX (ليلة 3+) · DECRYPT · DB · BROWSER · NOTES\n\nبعد إنهاء مهمة ليلة: شاشة 24 ساعة ثم الليلة التالية تلقائياً.\nإغلاق/تحديث أثناء مهمة: كل تقدمك محفوظ.'},
   'admin_note.txt':{where:'10.0.44.77',kb:2,kind:'text',body:'=== NOTE TO SELF — sysop/hwy16 ===\n* rotate the admin password WEEKLY (nobody does)\n* someone pulls checkpoint logs past 03:00. not me.\n* ANPR cameras log EVERYTHING. wipe nothing.\n* unit-7 asked for exit-9 footage. twice. tell no one.\n* DO NOT answer extension 44. ever.'},
   'hwy16_log.log':{where:'10.0.44.77',kb:12,kind:'log',body:'[03:07:44] CHK-3 :: VEHICLE PASS :: HWY-16 NORTH\n[03:11:02] CHK-3 :: PLATE READ :: HX-4471\n[03:12:39] CHK-5 :: SPEED 142 :: LANE 2\n[03:13:01] CHK-5 :: PLATE READ :: HX-4471\n[03:14:02] AUTH-FAIL :: sysop :: md5 :: '+BAD_HASH+'\n[03:16:44] CHK-9 :: VEHICLE PASS :: NO PLATE READ\n[04:59:59] DAILY ARCHIVE :: UPLOAD FAILED :: RETRY'},
   'cam04_frame.jpg':{where:'10.0.44.77',kb:8,kind:'photo',body:''},
@@ -591,8 +586,6 @@ const FILES={
   'case_file.txt':{where:'local',kb:1,kind:'key',body:KEY_PLAIN,hidden:true},
   'session_cookies.enc':{where:'local',kb:4,kind:'enc',body:COOKIES_PLAIN,hidden:false}
 };
-let localFiles=['README.txt'];
-let trash=[];
 function fIcon(kind){
   if(kind==='enc')return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
   if(kind==='log')return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="16" y2="12"/><line x1="4" y1="18" x2="18" y2="18"/></svg>';
@@ -606,17 +599,17 @@ function fitem(n,f){
 function renderFiles(){
   const L=$('#fileList');if(!L)return;
   let h='<div class="fl-sec"><h4>الخزنة المحلية — اسحب ملفاً لسلة المهملات</h4>';
-  localFiles.forEach(n=>{if(FILES[n])h+=fitem(n,FILES[n]);});
+  World.files.forEach(n=>{if(FILES[n])h+=fitem(n,FILES[n]);});
   h+='</div>';
   if(S.host){h+='<div class="fl-sec"><h4>المضيف: '+NET.data[S.host].label+'</h4>';NET.data[S.host].files.forEach(n=>h+=fitem(n,FILES[n]));h+='</div>';}
   L.innerHTML=h;
 }
 function renderTrash(){
   const L=$('#trashList');if(!L)return;
-  if(!trash.length){L.innerHTML='<div class="tr-empty">السلة فارغة</div>';return;}
-  L.innerHTML=trash.map((n,i)=>'<div class="tr-item">'+fIcon(FILES[n]?FILES[n].kind:'text')+'<b>'+n+'</b><button data-i="'+i+'">استعادة</button></div>').join('');
+  if(!World.trash.length){L.innerHTML='<div class="tr-empty">السلة فارغة</div>';return;}
+  L.innerHTML=World.trash.map((n,i)=>'<div class="tr-item">'+fIcon(FILES[n]?FILES[n].kind:'text')+'<b>'+n+'</b><button data-i="'+i+'">استعادة</button></div>').join('');
   L.querySelectorAll('button').forEach(b=>{
-    b.onclick=()=>{const n=trash.splice(+b.dataset.i,1)[0];localFiles.push(n);FILES[n].got=true;renderTrash();renderFiles();persist();sfx.pop();};
+    b.onclick=()=>{const n=World.trash.splice(+b.dataset.i,1)[0];World.files.push(n);FILES[n].got=true;renderTrash();renderFiles();persist();sfx.pop();};
   });
 }
 let fvToken=0;
@@ -654,11 +647,11 @@ function buildFiles(host){
 }
 function buildTrash(host){
   host.innerHTML='<div class="t-trash"><div class="tr-head"><b>سلة المهملات</b><button id="trEmpty">إفراغ السلة</button></div><div id="trashList"></div></div>';
-  host.querySelector('#trEmpty').onclick=()=>{if(trash.length){trash=[];renderTrash();sfx.pop();toast('السلة','أُفرغت السلة.','good');}};
+  host.querySelector('#trEmpty').onclick=()=>{if(World.trash.length){World.trash=[];renderTrash();sfx.pop();toast('السلة','أُفرغت السلة.','good');}};
   renderTrash();
 }
 
-/* ============ الخريطة ============ */
+/* ============ 10. الخريطة ============ */
 const NET={
   data:{
     'SELF':{x:400,y:452,label:'NEXUS-7',self:true},
@@ -712,7 +705,7 @@ function buildNet(host){
   renderNet();
 }
 
-/* ============ التتبع ============ */
+/* ============ 11. التتبع ============ */
 function startTrace(){
   S.trace.on=true;S.trace.pct=0;
   $('#tracePill').hidden=false;updTrace();
@@ -744,9 +737,9 @@ function hostDown(){
   renderFiles();
 }
 
-/* ============ فك التشفير — مصدران ============ */
+/* ============ 12. فك التشفير — مصدران ============ */
 function decSource(){
-  const cReady=(typeof NIGHTS!=='undefined')&&night>=3&&FILES['session_cookies.enc'].got;
+  const cReady=(typeof NIGHTS!=='undefined')&&World.night>=3&&FILES['session_cookies.enc'].got;
   return cReady?'cookies':'case';
 }
 function decSrc(){
@@ -772,18 +765,18 @@ function initDecrypt(){
   const e=$('#decEmpty'),w=$('#decWork');if(!e||!w)return;
   const src=decSrc();
   const cookiesReady=src.which==='cookies';
-  const caseReady=src.which==='case'&&!goalDone('key')&&FILES['case_file.enc'].got;
+  const caseReady=src.which==='case'&&!goalDone('g_key')&&FILES['case_file.enc'].got;
   const ready=cookiesReady||caseReady;
   e.hidden=ready;w.hidden=!ready;
   if(!ready)return;
   $('#decCipher').textContent=src.c;
-  if(src.which==='cookies'&&goalDone('crack')){
+  if(src.which==='cookies'&&goalDone('g_crack')){
     const p=$('#decPlain');p.textContent=src.p;p.classList.add('resolved');
     $('#decBar').style.width='100%';$('#decPct').textContent='100%';
     $('#decStatus').textContent='COOKIES DECRYPTED — البيانات أمامك';
     $('#decLock').disabled=true;return;
   }
-  if(src.which==='case'&&goalDone('key')){
+  if(src.which==='case'&&goalDone('g_key')){
     const p=$('#decPlain');p.textContent=src.p;p.classList.add('resolved');
     $('#decBar').style.width='100%';$('#decPct').textContent='100%';
     $('#decStatus').textContent='FILE STABILIZED';
@@ -817,13 +810,14 @@ async function finalizeDecrypt(){
     p.innerHTML=esc(src.p).replace(/(m_hussein77|@m_hussein77)/g,'<span class="am" style="color:var(--amber)">$1</span>');
     $('#decStatus').textContent='COOKIES DECRYPTED — بيانات الدخول أمامك';
     toast('فك التشفير','username: m_hussein77 · password: @m_hussein77','good');
+    World.flags.cookiesDecrypted=true;persist();
     emit('decrypt',{what:'cookies'});
   }else{
     p.innerHTML=esc(src.p).replace(/(SUSPECT :: [^\n]+)/,'<span class="am" style="color:var(--amber)">$1</span>');
     $('#decStatus').textContent='FILE STABILIZED — أُضيف case_file.txt إلى الخزنة';
-    S.flags.key=1;persist();
+    World.flags.caseDecrypted=true;persist();
     const cf=FILES['case_file.txt'];cf.hidden=false;cf.got=true;
-    if(!localFiles.includes('case_file.txt'))localFiles.push('case_file.txt');
+    if(!World.files.includes('case_file.txt'))World.files.push('case_file.txt');
     renderFiles();
     toast('فك التشفير','ملف القضية 4471-A فُتح.','good');
     emit('decrypt',{what:'case'});
@@ -845,7 +839,7 @@ async function resolveText(el,final){
   el.textContent=final;
 }
 
-/* ============ قاعدة البيانات ============ */
+/* ============ 13. قاعدة البيانات ============ */
 const DB=[
   {plate:'HX-4471',name:'مهند كريم الحسني',phone:'055-2277-491',nid:'2-04-1177-092',job:'محاسب — مجموعة المرصد القابضة',addr:'شارع الملك فيصل، بناية 14 — حي الظاهر',note:'مطلوب للتحقيق — جريمة قتل (ملف 4471-A)',seed:17,hot:true},
   {plate:'JY-9032',name:'سلمى عبد الرحمن',phone:'056-3310-204',nid:'2-05-2204-113',job:'طبيبة أسنان',addr:'طريق المطار، 3 — حي النخيل',note:'—',seed:42,hot:false},
@@ -896,7 +890,7 @@ async function doSearch(){
     const res=DB.filter(r=>[r.plate,r.name,r.phone,r.nid].some(v=>String(v).toLowerCase().includes(q.toLowerCase())));
     if(!res.length){$('#dbRes').innerHTML='<div class="db-none">لا سجلات مطابقة.</div>';sfx.err();return;}
     tone(700,.07,'triangle',.04);
-    if(res.some(r=>r.plate==='HX-4471')&&!goalDone('plate'))
+    if(res.some(r=>r.plate==='HX-4471')&&!goalDone('g_plate'))
       toast('سجلات مدنية','اضغط على صف HX-4471 نفسه لفتح بطاقة المالك.');
     $('#dbRes').innerHTML=res.map(r=>'<div class="db-row" data-p="'+r.plate+'"><span class="ltr">'+r.plate+'</span><span>'+r.name+'</span><span class="ltr">'+r.phone+'</span><span>'+(r.hot?'<i class="hot-flag">مطلوب</i>':'عادي')+'</span></div>').join('');
     $$('#dbRes .db-row').forEach(el=>el.onclick=()=>showCard(el.dataset.p));
@@ -922,36 +916,34 @@ function showCard(plate){
   const ph=card.querySelector('#dcPhoto');
   if(ph)ph.onclick=()=>showPhoto('المشتبه به — اللوحة '+r.plate,driverMedia(),'مهند كريم الحسني');
   if(plate==='HX-4471'){
-    if(!S.flags.driverShown){
-      S.flags.driverShown=1;persist();
+    if(!World.flags.driverShown){
+      World.flags.driverShown=1;persist();
       setTimeout(()=>showPhoto('المشتبه به — اللوحة HX-4471',driverMedia(),'مطابق لبطاقة السجل: مهند كريم الحسني'),300);
     }
     emit('dbcard',{plate:plate});
   }
 }
 
-/* ============ لوحة الأدلة — معزولة لكل ليلة ============ */
+/* ============ 14. لوحة الأدلة — معزولة لكل ليلة ============ */
 function clueDefs(){
   const d=nightDef();
   return (d&&d.clues)?d.clues:[];
 }
 let boardNight=1;
-let boardState={clues:[],pos:{},links:[]};
 let selClue=null;
 function boardKey(){return 'nexus7_board_n'+boardNight;}
-function loadBoard(){
-  try{
-    const bs=JSON.parse(localStorage.getItem(boardKey())||'null');
-    boardState=(bs&&bs.clues)?bs:{clues:[],pos:{},links:[]};
-  }catch(e){boardState={clues:[],pos:{},links:[]};}
-  selClue=null;
+function curBoard(){
+  if(!World.board[boardNight])World.board[boardNight]={clues:[],pos:{},links:[]};
+  return World.board[boardNight];
 }
-function persistBoard(){try{localStorage.setItem(boardKey(),JSON.stringify(boardState));}catch(e){}}
+function loadBoard(){boardNight=World.night;selClue=null;}
+function persistBoard(){try{localStorage.setItem('nexus7_boards',JSON.stringify(World.board));}catch(e){}}
 function addClue(id){
   const cl=clueDefs().find(c=>c.id===id);
   if(!cl)return;
-  const already=boardState.clues.includes(id);
-  boardState.clues.push(id);
+  const B=curBoard();
+  const already=B.clues.includes(id);
+  B.clues.push(id);
   persistBoard();
   if(!already){
     toast('لوحة الأدلة','دليل جديد: '+cl.t,'good');
@@ -973,30 +965,32 @@ function buildBoard(host){
 function renderBoardCards(){
   const c=$('#bdCanvas');if(!c)return;
   c.querySelectorAll('.clue').forEach(x=>x.remove());
+  const B=curBoard();
   clueDefs().forEach(cl=>{
-    if(!boardState.clues.includes(cl.id))return;
-    if(!boardState.pos[cl.id]){
-      const i=boardState.clues.indexOf(cl.id);
-      boardState.pos[cl.id]={x:24+(i%4)*170,y:26+Math.floor(i/4)*158};
+    if(!B.clues.includes(cl.id))return;
+    if(!B.pos[cl.id]){
+      const i=B.clues.indexOf(cl.id);
+      B.pos[cl.id]={x:24+(i%4)*170,y:26+Math.floor(i/4)*158};
     }
     const el=document.createElement('div');
     el.className='clue'+(selClue===cl.id?' sel':'');
     el.dataset.c=cl.id;
-    el.style.left=boardState.pos[cl.id].x+'px';
-    el.style.top=boardState.pos[cl.id].y+'px';
+    el.style.left=B.pos[cl.id].x+'px';
+    el.style.top=B.pos[cl.id].y+'px';
     el.innerHTML='<b>'+cl.icon+cl.t+'</b><span>'+cl.sub+'</span>';
     c.appendChild(el);
     bindClueDrag(el);
   });
   renderBoardLinks();
   const btn=$('#bdAttach');
-  if(btn)btn.disabled=goalDone('sent');
+  if(btn)btn.disabled=goalDone('g_sent');
 }
 function renderBoardLinks(){
   const svg=$('#bdLinks');if(!svg)return;
+  const B=curBoard();
   let h='';
-  boardState.links.forEach((lk,i)=>{
-    const a=boardState.pos[lk[0]],b=boardState.pos[lk[1]];
+  B.links.forEach((lk,i)=>{
+    const a=B.pos[lk[0]],b=B.pos[lk[1]];
     if(!a||!b)return;
     const x1=a.x+75,y1=a.y+30,x2=b.x+75,y2=b.y+30;
     const mx=(x1+x2)/2,my=(y1+y2)/2-26;
@@ -1008,17 +1002,18 @@ function renderBoardLinks(){
   svg.innerHTML=h;
   svg.querySelectorAll('.hit').forEach(p=>{
     p.onclick=()=>{
-      boardState.links.splice(+p.dataset.i,1);
+      B.links.splice(+p.dataset.i,1);
       persistBoard();renderBoardLinks();sfx.pop();
-      emit('board',{links:boardState.links.length});
+      emit('board',{links:B.links.length});
     };
   });
 }
 function bindClueDrag(el){
   let sx,sy,ox,oy,drag=false,pid=null;
+  const B=curBoard();
   el.addEventListener('pointerdown',e=>{
     pid=e.pointerId;sx=e.clientX;sy=e.clientY;
-    ox=boardState.pos[el.dataset.c].x;oy=boardState.pos[el.dataset.c].y;
+    ox=B.pos[el.dataset.c].x;oy=B.pos[el.dataset.c].y;
     drag=false;
     try{el.setPointerCapture(pid);}catch(_){}
   });
@@ -1030,7 +1025,7 @@ function bindClueDrag(el){
       const cv=$('#bdCanvas');
       const nx=Math.max(2,Math.min(cv.clientWidth-158,ox+dx));
       const ny=Math.max(2,Math.min(cv.clientHeight-86,oy+dy));
-      boardState.pos[el.dataset.c]={x:nx,y:ny};
+      B.pos[el.dataset.c]={x:nx,y:ny};
       el.style.left=nx+'px';el.style.top=ny+'px';
       renderBoardLinks();
     }
@@ -1045,28 +1040,29 @@ function bindClueDrag(el){
     if(selClue===id){selClue=null;el.classList.remove('sel');return;}
     const a=selClue;selClue=null;
     $$('.clue.sel').forEach(x=>x.classList.remove('sel'));
-    if(!boardState.links.some(l=>(l[0]===a&&l[1]===id)||(l[0]===id&&l[1]===a))){
-      boardState.links.push([a,id]);
+    if(!B.links.some(l=>(l[0]===a&&l[1]===id)||(l[0]===id&&l[1]===a))){
+      B.links.push([a,id]);
       persistBoard();renderBoardLinks();sfx.pop();
-      emit('board',{links:boardState.links.length});
+      emit('board',{links:B.links.length});
     }else{
       toast('لوحة الأدلة','هذا الرابط موجود بالفعل.');
     }
   });
 }
 async function attachEvidence(){
-  if(goalDone('sent')){toast('التقرير','أُرسل مسبقاً.','good');return;}
+  if(goalDone('g_sent')){toast('التقرير','أُرسل مسبقاً.','good');return;}
   if(!canSendNow()){
     toast('ناقص للإرسال','متبقٍ: '+missingForSend(),'bad');
-    if(S.flags.live)storyHint();
+    if(World.flags.live)storyHint();
     return;
   }
-  const n=boardState.clues.length,l=boardState.links.length;
+  const B=curBoard();
+  const n=B.clues.length,l=B.links.length;
   meSay('أرفقت لوحة الأدلة يا مشرف: '+n+' أدلة و'+l+' رابط بينها.');
   await doSend('evidence bundle: '+n+' clues / '+l+' links');
 }
 
-/* ============ مِرقاب ============ */
+/* ============ 15. مِرقاب ============ */
 const MQ={active:false,tune:0,target:88.4,grabbed:{}};
 const MQ_TARGETS={
   mohannad:{freq:88.4,label:'MOHANNAD-H',reveal:'device near HWY-16 / DEAD-ZONE-K9'},
@@ -1093,8 +1089,8 @@ function mqAudioLevel(v){
 }
 function mqNoise(x,t){return Math.sin(x*.12+t*.06)*18+Math.sin(x*.031+t*.021)*30;}
 function mqTargetForNight(){
-  if(night===2)return 'mohannad';
-  if(night>=3)return 'moh44';
+  if(World.night===2)return 'mohannad';
+  if(World.night>=3)return 'moh44';
   return 'layth';
 }
 function drawMq(){
@@ -1146,7 +1142,7 @@ function onTune(){
   }
 }
 function buildMirqab(host){
-  if(night<2){
+  if(World.night<2){
     host.innerHTML='<div class="t-mrq"><div class="db-none" style="margin:40px 20px">لا يوجد جهاز بهذا الاسم موصولاً بهذه المحطة.<br><span class="mono ltr" style="font-size:10px">PROBE MIRQAB :: connection refused</span></div></div>';
     return;
   }
@@ -1199,7 +1195,7 @@ function mqLog(html){
   l.appendChild(d);l.scrollTop=l.scrollHeight;
 }
 
-/* ============ lynx — ليلة 3 ============ */
+/* ============ 16. lynx — ليلة 3 ============ */
 const LYNX_DB={
   'مهند الحسني':[
     {t:'مهند كريم الحسني',s:'محاسب — مجموعة المرصد القابضة · مطلوب (4471-A) · مزاعم مالية مع الشركة',deep:'social'},
@@ -1212,7 +1208,7 @@ const LYNX_DB={
   ]
 };
 function buildLynx(host){
-  if(night<3){
+  if(World.night<3){
     host.innerHTML='<div class="t-lynx"><div class="db-none" style="margin:40px 20px">LYNX — لم يُرخص لهذه المحطة بعد.<br><span class="mono ltr" style="font-size:10px">license check :: pending — unit 7</span></div></div>';
     return;
   }
@@ -1264,7 +1260,7 @@ async function doLynx(q){
   if(isLayth){emit('lynx',{subject:'layth'});addClue('thorn');}
 }
 
-/* ============ المتصفح + صفحات الليلة 3 ============ */
+/* ============ 17. المتصفح + صفحات الليلة 3 ============ */
 const PAGES={
   'nexus://home':()=>'<h1>NEXUS INTERNAL WEB</h1><p>شبكتك الداخلية — بلا رقيب تقريباً.</p>'+
     '<span class="wlink" data-u="0day-souq.onion">0day-souq.onion</span>'+
@@ -1285,7 +1281,7 @@ const PAGES={
     '<span class="wlink" data-u="__open_db">افتح أداة DB الآن</span>',
   'nexus://about':()=>'<h1>NEXUS-7 — ABOUT</h1>'+
     '<p>محطة مشغّل في وحدة الاستخبارات. كل ليلة مهمة واحدة، وكل مهمة تُنسى عند الفجر.</p>'+
-    '<p style="color:var(--amberDim);font-size:12px">الليلة '+String(night).padStart(2,'0')+'</p>',
+    '<p style="color:var(--amberDim);font-size:12px">الليلة '+String(World.night).padStart(2,'0')+'</p>',
   'social.mohannad':()=>'<h1>@m_hussein77 — الحساب الاجتماعي</h1>'+
     '<p>الحساب <b>مجمّد</b> منذ «الوفاة» المعلنة… لكن آخر نشاط: <span style="color:var(--amber)">متابعة جديدة — بعد الوفاة بثلاثة أيام.</span></p>'+
     '<p>الميت لا يتابع. والحساب المجمد لا يستقبل متابعين… إلا من يملك مفاتيحه.</p>'+
@@ -1305,7 +1301,7 @@ const PAGES={
   'mohannad-home.net':()=>'<h1>RT-88 :: لوحة إدارة الراوتر</h1>'+
     '<p><span style="color:var(--red)">PROBE: RT-88 firmware 2.4 — CVE-2024-8812 (Unauthenticated RCE)</span></p>'+
     '<p>شبكة MOHANNAD-HOME. الثغرة تفتح الباب… لكن الجلسة الكاملة تحتاج كلمة سر الإدارة.</p>'+
-    (S.flags.routerCracked
+    (World.flags.routerCracked
       ?'<span class="wlink" data-u="__hijack">hijack — سيطرة على جهازه وسرقة الجلسة</span>'
       :'<span class="wlink" data-u="__hydra_router">كسر إدارة الراوتر — hydra</span><p style="color:var(--muted);font-size:12px">بعد كسر الإدارة سيظهر خيار hijack هنا.</p>'),
   'thorn.trace':()=>'<h1>@thorn — بصمة متبقية</h1>'+
@@ -1318,7 +1314,7 @@ function attachLoginIfPresent(){
   const b=$('#lgIn');if(!b)return;
   b.onclick=()=>{
     const u=$('#lgU'),p=$('#lgP'),err=$('#lgErr');
-    if(!goalDone('crack')){err.textContent='أدخل بيانات صحيحة.';sfx.err();return;}
+    if(!goalDone('g_crack')){err.textContent='أدخل بيانات صحيحة.';sfx.err();return;}
     if(u.value.trim()==='m_hussein77'&&p.value==='@m_hussein77'){
       err.style.color='var(--green)';err.textContent='✓ تم الدخول — @m_hussein77';
       sfx.unlock();glitch(1);
@@ -1334,12 +1330,12 @@ function attachLoginIfPresent(){
 function pageAction(act){
   if(act==='__open_db'){openApp('db');return;}
   if(act==='__hydra_router'){
-    if(S.flags.routerCracked){toast('الراوتر','مخترق مسبقاً — استخدم hijack.');return;}
+    if(World.flags.routerCracked){toast('الراوتر','مخترق مسبقاً — استخدم hijack.');return;}
     uiCmd('hydra -l admin -P rockyou.txt ssh://192.168.88.1');
     return;
   }
   if(act==='__hijack'){
-    if(!S.flags.routerCracked){toast('مقفل','اكسر إدارة الراوتر أولاً (hydra).');return;}
+    if(!World.flags.routerCracked){toast('مقفل','اكسر إدارة الراوتر أولاً (hydra).');return;}
     hijackAnim();
     return;
   }
@@ -1365,7 +1361,7 @@ function hijackAnim(){
       clearInterval(iv);
       st.textContent='اكتمل — الملف في الخزنة';
       FILES['session_cookies.enc'].got=true;
-      if(!localFiles.includes('session_cookies.enc'))localFiles.push('session_cookies.enc');
+      if(!World.files.includes('session_cookies.enc'))World.files.push('session_cookies.enc');
       persist();renderFiles();
       toast('hijack','جلسة مهند مسروقة — الكوكيز في الخزنة (مشفرة).','good');
       emit('hijack',{});
@@ -1398,7 +1394,7 @@ function buildBrowser(host){
   brHist=['nexus://home'];brGo('nexus://home',false);
 }
 
-/* ============ المفكرة ============ */
+/* ============ 18. المفكرة ============ */
 function buildNotes(host){
   host.innerHTML='<div class="t-notes"><div class="nt-head"><b>المفكرة — private_notes.txt</b><span class="mono ltr">autosave</span></div>'+
     '<textarea id="notesTa" placeholder="اكتب ملاحظاتك…&#10;ملاحظاتك تبقى محفوظة دائماً."></textarea>'+
@@ -1425,7 +1421,7 @@ function buildNotes(host){
   };
 }
 
-/* ============ راديو NEXUS ============ */
+/* ============ 19. راديو NEXUS ============ */
 const MUSIC={
   tracks:[
     {id:'QI68giYtnXs',title:'MIDNIGHT SIGNAL — راديو الطريق',len:'YouTube'},
@@ -1524,7 +1520,7 @@ function buildMusic(host){
   muUpd();
 }
 
-/* ============ معلومات ============ */
+/* ============ 20. معلومات ============ */
 function buildInfo(host){
   host.innerHTML='<div class="t-info"><h3>NEXUS-7 — محطة المشغّل</h3>'+
   '<p><b>المشغّل:</b> <code class="ltr">'+esc(ID.name)+'</code> — الرمز: «راصد» · <b>المشرف:</b> كمال (كامل)</p>'+
@@ -1533,7 +1529,7 @@ function buildInfo(host){
   '<p><b>ليلة 3:</b> LYNX (مهند الحسني + ليث) ← عمّق البطاقة ← mohannad-home.net ← hydra الراوتر ← hijack ← decrypt الكوكيز (13) ← دخول social.mohannad ← أرسل</p></div>';
 }
 
-/* ============ الأيقونات والتطبيقات ============ */
+/* ============ 21. الأيقونات والتطبيقات ============ */
 const IC={
   term:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>',
   term2:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/><circle cx="19" cy="6" r="2.4" fill="var(--amber)" stroke="none"/></svg>',
@@ -1574,7 +1570,7 @@ const APPS={
   info:{title:'عن النظام',w:560,h:420,icon:IC.info,build:buildInfo}
 };
 
-/* ============ الهاتف ============ */
+/* ============ 22. الهاتف — القناة ============ */
 function setPhoneView(name){
   $$('.ph-view').forEach(v=>v.classList.remove('on'));
   const el={idle:'phIdle',call:'phCall',chat:'phChat',mission:'phMission'}[name];
@@ -1596,17 +1592,17 @@ function resetPhoneIdle(){
  $('#tabChat').onclick=()=>{
   $('#tabChat').classList.add('on');$('#tabMission').classList.remove('on');
   if(ringIv||$('#phone').classList.contains('ringing'))setPhoneView('call');
-  else setPhoneView(S.flags.live?'chat':'idle');
+  else setPhoneView(World.flags.live?'chat':'idle');
 };
  $('#tabMission').onclick=()=>{$('#tabMission').classList.add('on');$('#tabChat').classList.remove('on');renderObj();setPhoneView('mission');};
 function phScroll(){const c=$('#phChatLog');c.scrollTop=c.scrollHeight;}
 async function say(text,who){
-  if(!S.flags.live)return;
+  if(!World.flags.live)return;
   setPhoneView('chat');
   $('#tabChat').classList.add('on');$('#tabMission').classList.remove('on');
   const ind=document.createElement('div');
   ind.className='pmsg typing';
-  ind.innerHTML='<span style="font-size:10px;color:var(--muted)">'+(who||'كامل')+'</span><i></i><i></i><i></i>';
+  ind.innerHTML='<span style="font-size:10px;color:var(--muted)">'+(who||STORY_META.boss)+'</span><i></i><i></i><i></i>';
   $('#phChatLog').appendChild(ind);phScroll();
   await sleep(450+Math.min(1300,text.length*12));
   ind.remove();
@@ -1614,6 +1610,7 @@ async function say(text,who){
   m.className='pmsg them';m.textContent=text;
   $('#phChatLog').appendChild(m);sfx.msg();phScroll();
 }
+async function sayLines(lines,who){for(const L of lines||[])await say(L,who);}
 function sysSay(html){
   const m=document.createElement('div');m.className='pmsg sys';m.innerHTML=html;
   $('#phChatLog').appendChild(m);phScroll();
@@ -1624,18 +1621,19 @@ function meSay(text){
 }
 function refreshQuick(){
   const q=$('#phChips');if(!q)return;q.innerHTML='';
-  if(!S.flags.live)return;
+  if(!World.flags.live)return;
   const b1=document.createElement('button');
   b1.className='pchip';b1.textContent='أحتاج توجيه';
-  b1.onclick=()=>{if(S.flags.live)storyHint();};
+  b1.onclick=()=>{if(World.flags.live)storyHint();};
   q.appendChild(b1);
-  if(!goalDone('sent')&&boardState.clues.length>=2){
+  const B=World.board[World.night];
+  if(!goalDone('g_sent')&&B&&B.clues.length>=2){
     const b3=document.createElement('button');
     b3.className='pchip';b3.textContent='افتح لوحة الأدلة';
     b3.onclick=()=>openApp('board');
     q.appendChild(b3);
   }
-  if(canSendNow()&&!goalDone('sent')){
+  if(canSendNow()&&!goalDone('g_sent')){
     const b2=document.createElement('button');
     b2.className='pchip send';b2.textContent='أرسل التقرير الآن';
     b2.onclick=()=>{meSay('أرسلت الحزمة كاملة.');uiCmd('send');};
@@ -1644,8 +1642,9 @@ function refreshQuick(){
 }
 let ringIv=null;
 function incomingCall(){
-  if(night===3&&!S.flags.n3ring){
-    S.flags.n3ring=1;persist();
+  /* ليلة 3: رنّة واحدة تنقطع — ثم رسالة نصية تفتح المهمة */
+  if(World.night===3&&!World.flags.n3ring){
+    World.flags.n3ring=1;persist();
     const p=$('#phone');
     p.classList.add('ringing');phoneUnfold();
     setPhoneView('call');sfx.ring();
@@ -1654,20 +1653,19 @@ function incomingCall(){
       setPhoneView('idle');
       toast('انقطع الاتصال','رنّة واحدة… ثم صمت.');
       setTimeout(async()=>{
-        S.flags.live=true;
+        World.flags.live=true;
         renderObj();refreshQuick();
         sysSay('ليلة 3 — «lynx» · رسالة نصية مجهولة المصدر');
-        await say('راصد. الرنّة التي وصلتك ليست مني… ولا من ليث. تنصت لنا شخص ثالث، ولا وقت للأسئلة.');
-        await say('اعتراضك لليلة الماضية أعطانا تردد مهند — لكن الإشارة وحدها لا تدين أحداً. نحتاج حياته الرقمية كاملة.');
-        await say('أداة جديدة وصلت محطتك: LYNX — تجمع كل ما يُعرف عن أي اسم من الشبكة المفتوحة. افتحها وابحث: مهند الحسني. ثم ابحث: ليث.');
+        const d=nightDef();
+        await sayLines((ST_TEXT.n3&&ST_TEXT.n3.ringMsg)||[]);
         setPhoneView('chat');
       },1500);
     },6000);
     return;
   }
-  if(S.flags.nightDone||!(typeof NIGHTS!=='undefined'&&NIGHTS['n'+night])){
-    if(S.flags.nightDone){
-      toast('لا مهمات مجدولة','الليلة '+night+' مكتملة — أعد تشغيل الجهاز لليلة التالية، أو ابقَ واستكشف بحرية.');
+  if(World.flags.nightDone||!(typeof NIGHTS!=='undefined'&&NIGHTS['n'+World.night])){
+    if(World.flags.nightDone){
+      toast('لا مهمات مجدولة','الليلة '+World.night+' مكتملة — أعد تشغيل الجهاز لليلة التالية، أو ابقَ واستكشف بحرية.');
     }
     return;
   }
@@ -1683,42 +1681,35 @@ function stopRing(){
 }
  $('#phAccept').onclick=()=>{
   stopRing();setPhoneView('chat');sfx.conn();glitch(1);
-  sysSay('قبول الاتصال — CH-07');
+  sysSay('قبول الاتصال — '+STORY_META.channel);
   try{beat('start');}
-  catch(e){console.error('[NEXUS story start error]',e);S.flags.live=true;renderObj();refreshQuick();setPhoneView('chat');}
+  catch(e){console.error('[NEXUS story start error]',e);World.flags.live=true;renderObj();refreshQuick();setPhoneView('chat');}
 };
  $('#phDecline').onclick=()=>{
   stopRing();setPhoneView('idle');
-  toast('قناة CH-07','رفضت اتصال المشرف.');
-  S.flags.declined++;
-  if(S.flags.declined===1)setTimeout(()=>{if(S.flags.live)beat('decline');},1800);
-  setTimeout(()=>{toast('قناة CH-07','اتصال وارد من جديد…');incomingCall();},4200);
+  toast('قناة '+STORY_META.channel,'رفضت اتصال المشرف.');
+  World.flags.declined++;
+  if(World.flags.declined===1)setTimeout(()=>{if(World.flags.live)beat('decline');},1800);
+  setTimeout(()=>{toast('قناة '+STORY_META.channel,'اتصال وارد من جديد…');incomingCall();},4200);
 };
-async function uiCmd(text){
-  if(!termActive)openApp('terminal');
-  tprint('<span class="usr">'+ID.name+'@nexus-7:~$</span> '+esc(text),'echo');
-  if(termActive&&termActive.busy){sfx.err();return;}
-  await runCmd(text,termActive);
-}
+
+/* ============ 23. نهاية الليلة → 24 ساعة → التالية ============ */
 function beat(name){
-  try{
-    const b=(typeof ST_BEATS!=='undefined')&&ST_BEATS['n'+night];
-    if(b&&typeof b[name]==='function')return b[name]();
-  }catch(e){console.error('[NEXUS story beat error]',e);}
+  const key='n'+World.night;
+  const b=ST_BEATS[key];
+  if(b&&typeof b[name]==='function')return b[name]();
   return null;
 }
-
-/* ============ نهاية الليلة → 24 ساعة → التالية ============ */
 async function finishNight(){
-  if(S.flags.live){
+  if(World.flags.live){
     await beat('finish');
     sysSay('المشرف أغلق القناة');
   }
   if(S.host){hostDown();tprint('connection closed by remote host','dim');}
-  S.flags.live=false;
-  S.flags.nightDone=1;persist();
+  World.flags.live=false;
+  World.flags.nightDone=1;persist();
   refreshQuick();
-  toast('المهمة مكتملة','الليلة '+night+' — العمل انتهى…','good');
+  toast('المهمة مكتملة','الليلة '+World.night+' — العمل انتهى…','good');
   setTimeout(nightTransitionFlow,3000);
 }
 async function nightTransition(){
@@ -1756,58 +1747,70 @@ function shipmentAnim(done){
   },4300);
 }
 async function nightTransitionFlow(){
-  if(S._transitioning)return;S._transitioning=true;
-  if(S.flags.nightDone!==1){S._transitioning=false;return;}
-  S.flags.nightDone=2;persist();
+  if(World._transitioning)return;World._transitioning=true;
+  if(World.flags.nightDone!==1){World._transitioning=false;return;}
+  World.flags.nightDone=2;persist();
   await nightTransition();
   resetAll(true);
   const d=$('#desktop');
   d.classList.remove('boot-in');void d.offsetWidth;
   d.classList.add('boot-in');
   sfx.conn();
-  const has=(typeof NIGHTS!=='undefined')&&!!NIGHTS['n'+night];
-  if(has&&night===2&&!S.flags.shipmentShown){
-    S.flags.shipmentShown=1;persist();
+  const has=(typeof NIGHTS!=='undefined')&&!!NIGHTS['n'+World.night];
+  if(has&&World.night===2&&!World.flags.shipmentShown){
+    World.flags.shipmentShown=1;persist();
     setTimeout(()=>shipmentAnim(()=>incomingCall()),900);
   }else{
     setTimeout(incomingCall,has?3500:2500);
     if(!has)setTimeout(()=>toast('لا مهمات مجدولة','أنجزت كل الليلات المتاحة — لعب حر حتى تصل ليلة جديدة.'),3200);
   }
-  S._transitioning=false;
+  World._transitioning=false;
 }
 
-/* ============ الحفظ والاستعادة ============ */
+/* ============ 24. الحفظ والاستعادة — نقاط محددة فقط ============ */
 function persist(){
   try{
+    const done=[];
+    const d=nightDef();
+    if(d&&d.goals)d.goals.forEach(g=>{if(g.done)done.push(g.id);});
     localStorage.setItem('nexus7',JSON.stringify({
-      flags:{live:0,nightDone:S.flags.nightDone,shipmentShown:S.flags.shipmentShown,
-             camShown:S.flags.camShown,driverShown:S.flags.driverShown,
-             declined:S.flags.declined,routerCracked:S.flags.routerCracked,
-             n3ring:S.flags.n3ring,hash:S.flags.hash,hydraDone:S.flags.hydraDone,rootEv:S.flags.rootEv},
-      scanned:S.scanned,night,
-      known:[...NET.known],files:localFiles,
+      night:World.night,
+      files:World.files,
+      trash:World.trash,
       got:Object.keys(FILES).filter(k=>FILES[k].got),
-      done:(function(){const d=nightDef();return d&&d.goals?d.goals.filter(g=>g.done).map(g=>g.id):[];})()
+      scanDone:World.scanDone,
+      host:S.host,
+      board:World.board,
+      flags:{live:0,nightDone:World.flags.nightDone,shipmentShown:World.flags.shipmentShown,
+             camShown:World.flags.camShown,driverShown:World.flags.driverShown,
+             declined:World.flags.declined,routerCracked:World.flags.routerCracked,
+             n3ring:World.flags.n3ring,hash:World.flags.hash,
+             hydraDone:World.flags.hydraDone,rootDone:World.flags.rootDone,
+             caseDecrypted:World.flags.caseDecrypted,cookiesDecrypted:World.flags.cookiesDecrypted},
+      done:done
     }));
-  }catch(e){}
+  }catch(e){console.error('[persist]',e);}
 }
 function restoreGame(){
   let sv=null;
   try{sv=JSON.parse(localStorage.getItem('nexus7')||'null');}catch(e){}
   if(!sv)return;
-  Object.keys(S.flags).forEach(k=>{if(sv.flags&&sv.flags[k]!==undefined)S.flags[k]=sv.flags[k];});
-  S.flags.live=false;
-  if(sv.scanned)S.scanned=true;
-  if(sv.night)night=sv.night;
-  (sv.known||[]).forEach(ip=>{if(NET.data[ip])NET.known.add(ip);});
+  if(sv.night)World.night=sv.night;
+  if(sv.files&&sv.files.length)World.files=sv.files.filter(n=>FILES[n]);
+  if(sv.trash)World.trash=sv.trash.filter(n=>FILES[n]);
   (sv.got||[]).forEach(n=>{if(FILES[n])FILES[n].got=true;});
-  if(sv.files&&sv.files.length)localFiles=sv.files.filter(n=>FILES[n]);
+  if(sv.scanDone)World.scanDone=true;
+  if(sv.board&&typeof sv.board==='object')World.board=sv.board;
+  if(sv.flags)Object.keys(World.flags).forEach(k=>{if(sv.flags[k]!==undefined)World.flags[k]=sv.flags[k];});
+  World.flags.live=false;
   (sv.done||[]).forEach(id=>{const g=goalById(id);if(g)g.done=true;});
-  $('#smNight').textContent='الليلة '+String(night).padStart(2,'0');
+  $('#smNight').textContent='الليلة '+String(World.night).padStart(2,'0');
+  /* إعادة مزامنة الملفات المحلية مع got */
+  World.files=['README.txt'].concat((sv.files||World.files).filter(n=>FILES[n]&&FILES[n].got&&n!=='README.txt'));
 }
 addEventListener('beforeunload',persist);
 
-/* ============ الهوية ============ */
+/* ============ 25. الهوية ============ */
 const ID={name:'operator',hash:''};
 function hashStr(t){
   let h=5381;
@@ -1825,8 +1828,7 @@ function idWipe(){
     localStorage.removeItem('nexus7_icons');
     localStorage.removeItem('nexus7_notes');
     localStorage.removeItem('nexus7_music');
-    for(let i=1;i<10;i++)localStorage.removeItem('nexus7_board_n'+i);
-    localStorage.removeItem('nexus7_board');
+    localStorage.removeItem('nexus7_boards');
     sessionStorage.removeItem('nexus7_intro');
   }catch(e){}
 }
@@ -1875,18 +1877,16 @@ function loginStart(saved){
   };
 }
 
-/* ============ الطاقة — الحفظ محترم دائماً ============ */
+/* ============ 26. الطاقة — قاعدة: إغلاق/تحديث/إعادة تشغيل أثناء مهمة = استعادة، والمسح فقط بعد الإنهاء ============ */
 function resetAll(advanceNight){
   try{localStorage.removeItem('nexus7');}catch(e){}
   stopRing();stopTrace();mqAudioLevel(0);
-  S.host=null;S.scanned=false;
-  Object.keys(S.flags).forEach(k=>S.flags[k]=0);
-  if(advanceNight)night++;
-  $('#smNight').textContent='الليلة '+String(night).padStart(2,'0');
-  boardNight=night;loadBoard();
+  S.host=null;World.scanDone=false;
+  World.flags={live:false,nightDone:0,shipmentShown:0,n3ring:0,camShown:0,driverShown:0,declined:0,routerCracked:0,hash:0,hydraDone:0,rootDone:false,caseDecrypted:false,cookiesDecrypted:false};
+  World.files=['README.txt'];World.trash=[];
   Object.values(FILES).forEach(f=>{f.got=false;});
   FILES['case_file.txt'].hidden=true;
-  localFiles=['README.txt'];trash=[];
+  World.board={};persistBoard();
   NET.known=new Set(['SELF','10.0.44.1']);NET.active=null;NET_ALPHA.clear();
   closeAllWins();
   $('#photoModal').hidden=true;
@@ -1894,57 +1894,58 @@ function resetAll(advanceNight){
   const dc=$('#dbCard');if(dc)dc.hidden=true;
   brHist=['nexus://home'];
   MQ.grabbed={};MQ.active=false;
+  if(advanceNight)World.night++;
+  $('#smNight').textContent='الليلة '+String(World.night).padStart(2,'0');
+  loadBoard();
   renderObj();resetPhoneIdle();
   renderFiles();renderTrash();refreshQuick();
   renderIcons();renderStart();syncMirqabUI();syncLynxUI();
 }
-function closeAllWins(){
-  for(const k of Object.keys(wins)){wins[k].remove();delete wins[k];}
-  for(const k of Object.keys(bodies)){delete bodies[k];}
-  Object.keys(APPS).filter(k=>/^terminal\d+$/.test(k)).forEach(k=>delete APPS[k]);
-  TERMS.length=0;termActive=null;termCounter=0;
-}
 function resetVisualOnly(){
   stopRing();stopTrace();mqAudioLevel(0);
-  S.host=null;S.msf=false;
+  S.host=null;termActive=null;
   closeAllWins();
   $('#photoModal').hidden=true;
   resetPhoneIdle();
 }
 async function rebootSeq(){
-  const advance=(S.flags.nightDone===1);
+  const advance=(World.flags.nightDone===1);
   sfx.shutdown();
   const d=$('#desktop');
   d.classList.add('off');
   await sleep(780);
   d.classList.remove('off');
-  if(advance)resetAll(true);
-  else{
+  if(advance){
+    resetAll(true);
+  }else{
     resetVisualOnly();
     persist();
   }
   d.classList.remove('boot-in');void d.offsetWidth;
   d.classList.add('boot-in');
   sfx.conn();
-  const has=(typeof NIGHTS!=='undefined')&&NIGHTS['n'+night];
-  setTimeout(()=>toast('الليلة '+String(night).padStart(2,'0'),advance?(has?'مهمة جديدة بانتظارك.':'لا مهمات مجدولة — ليلة حرة.'):'مرحباً بعودتك — مهمتك بحالتها المحفوظة.'),600);
-  if(advance&&has&&night===2&&!S.flags.shipmentShown){
-    S.flags.shipmentShown=1;persist();
+  const has=(typeof NIGHTS!=='undefined')&&NIGHTS['n'+World.night];
+  setTimeout(()=>toast('الليلة '+String(World.night).padStart(2,'0'),advance?(has?'مهمة جديدة بانتظارك.':'لا مهمات مجدولة — ليلة حرة.'):'مرحباً بعودتك — مهمتك بحالتها المحفوظة.'),600);
+  if(advance&&has&&World.night===2&&!World.flags.shipmentShown){
+    World.flags.shipmentShown=1;persist();
     setTimeout(()=>shipmentAnim(()=>incomingCall()),900);
   }else{
+    setTimeout(()=>{bootSeqDone();},200);
     setTimeout(incomingCall,advance&&has?5000:4000);
   }
 }
+function bootSeqDone(){}
  $('#powerOnBtn').onclick=()=>{
   audioInit();
   $('#powerScreen').hidden=true;
   const d=$('#desktop');d.hidden=false;
-  if(S.flags.nightDone===1)resetAll(true);
+  if(World.flags.nightDone===1){resetAll(true);}
+  else{resetVisualOnly();persist();}
   d.classList.remove('boot-in');void d.offsetWidth;
   d.classList.add('boot-in');
   sfx.conn();
-  setTimeout(()=>toast('الليلة '+String(night).padStart(2,'0'),'المحطة تعمل.'),800);
-  bootSeq().then(()=>{setTimeout(incomingCall,3000);});
+  setTimeout(()=>toast('الليلة '+String(World.night).padStart(2,'0'),'المحطة تعمل.'),800);
+  setTimeout(incomingCall,4000);
 };
  $('#tbPower').onclick=()=>{$('#powerDlg').hidden=false;};
  $('#pdCancel').onclick=()=>{$('#powerDlg').hidden=true;};
@@ -1963,11 +1964,11 @@ function shutdownSeq(){
   },780);
 }
 
-/* ============ سطح المكتب — أيقونات بلا تصادم ============ */
+/* ============ 27. سطح المكتب — أيقونات بلا تصادم ============ */
 const ICON_BASE=['terminal','files','browser','notes','music','lynx','netmap','db','board','mirqab','decrypt','trash'];
 function iconOrderNow(){
   return ICON_BASE.filter(id=>
-    (id!=='mirqab'||night>=2)&&(id!=='lynx'||night>=3));
+    (id!=='mirqab'||World.night>=2)&&(id!=='lynx'||World.night>=3));
 }
 function clampPos(p){
   return {x:Math.max(4,Math.min(innerWidth-110,p.x)), y:Math.max(4,Math.min(innerHeight-190,p.y))};
@@ -1977,11 +1978,11 @@ try{iconPos=JSON.parse(localStorage.getItem('nexus7_icons')||'{}');}catch(e){ico
 function persistIcons(){try{localStorage.setItem('nexus7_icons',JSON.stringify(iconPos));}catch(e){}}
 function syncMirqabUI(){
   const b=document.querySelector('#taskbar .launch[data-app="mirqab"]');
-  if(b)b.style.display=(night>=2)?'':'none';
+  if(b)b.style.display=(World.night>=2)?'':'none';
 }
 function syncLynxUI(){
   const b=document.querySelector('#taskbar .launch[data-app="lynx"]');
-  if(b)b.style.display=(night>=3)?'':'none';
+  if(b)b.style.display=(World.night>=3)?'':'none';
 }
 function renderIcons(){
   const order=iconOrderNow();
@@ -2018,7 +2019,7 @@ function renderIcons(){
     tEl.addEventListener('drop',e=>{
       e.preventDefault();tEl.classList.remove('droptarget');
       const name=e.dataTransfer.getData('text/nexus-file');
-      if(name&&localFiles.includes(name)){
+      if(name&&World.files.includes(name)){
         if(trashFile(name))toast('سلة المهملات','نُقل إلى السلة: '+name);
       }
     });
@@ -2106,7 +2107,13 @@ document.addEventListener('click',e=>{
 });
  $$('.launch').forEach(b=>b.onclick=()=>openApp(b.dataset.app));
 
-/* ============ الانترو + الدخول ============ */
+/* ============ 28. الصور المدمجة (بديل عند غياب assests) ============ */
+const CAR_SVG=`<svg viewBox="0 0 480 300" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="c-vig" cx="50%" cy="45%" r="78%"><stop offset="55%" stop-color="rgba(0,0,0,0)"/><stop offset="100%" stop-color="rgba(0,0,0,.55)"/></radialGradient><filter id="c-noise"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2"/><feColorMatrix type="matrix" values="0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 .07 0"/></filter></defs><rect width="480" height="300" fill="#c6caca"/><rect x="0" y="144" width="480" height="156" fill="#4c514d"/><ellipse cx="240" cy="268" rx="128" ry="12" fill="rgba(0,0,0,.35)"/><rect x="140" y="192" width="200" height="62" rx="14" fill="#2e4a7a"/><path d="M172 194 L186 160 Q190 154 200 154 L280 154 Q290 154 294 160 L308 194 Z" fill="#27406b"/><path d="M196 166 L284 166 L296 190 L184 190 Z" fill="#1c2937"/><rect x="146" y="196" width="36" height="11" rx="4" fill="#a8282a"/><rect x="298" y="196" width="36" height="11" rx="4" fill="#a8282a"/><rect x="142" y="228" width="196" height="22" rx="9" fill="#263d66"/><rect x="214" y="226" width="52" height="17" rx="3" fill="#e6c437" stroke="#8a7a20"/><text x="240" y="239" text-anchor="middle" font-family="monospace" font-size="10" font-weight="bold" fill="#1c1c14">HX-4471</text><rect x="152" y="248" width="40" height="15" rx="6" fill="#17130f"/><rect x="288" y="248" width="40" height="15" rx="6" fill="#17130f"/><rect width="480" height="300" fill="url(#c-vig)"/><rect width="480" height="300" filter="url(#c-noise)"/><g font-family="monospace" font-size="13" fill="#f1f2ec"><text x="14" y="26">2024-05-15 14:32:01 UTC</text><text x="466" y="26" text-anchor="end">CAM-04/CHK-3 HWY-16</text><text x="14" y="286">CAM-04/CHK-3 HWY-16</text></g><circle cx="430" cy="282" r="5" fill="#ff4136"><animate attributeName="opacity" values="1;.15;1" dur="1.2s" repeatCount="indefinite"/></circle><text x="444" y="287" font-family="monospace" font-size="12" fill="#ff6b60">REC</text></svg>`;
+const DRIVER_SVG=`<svg viewBox="0 0 460 300" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="d-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#cdd2d4"/><stop offset="1" stop-color="#aab1b4"/></linearGradient><radialGradient id="d-vig" cx="50%" cy="45%" r="80%"><stop offset="60%" stop-color="rgba(0,0,0,0)"/><stop offset="100%" stop-color="rgba(0,0,0,.45)"/></radialGradient><filter id="d-noise"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2"/><feColorMatrix type="matrix" values="0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 .06 0"/></filter></defs><rect width="460" height="300" fill="url(#d-sky)"/><rect x="0" y="58" width="460" height="124" fill="#9aa1a5"/><rect x="6" y="10" width="448" height="240" rx="18" fill="none" stroke="#12161a" stroke-width="14"/><path d="M336 70 Q396 66 402 120 L402 300 L330 300 L326 140 Q326 92 336 70 Z" fill="#191d21"/><path d="M110 300 Q118 232 168 214 Q196 202 210 196 L268 196 Q330 214 352 300 Z" fill="#39482f"/><rect x="222" y="168" width="36" height="26" rx="10" fill="#c99a76"/><ellipse cx="240" cy="130" rx="47" ry="55" fill="#d8a884"/><ellipse cx="284" cy="136" rx="9" ry="14" fill="#c99a76"/><path d="M193 118 Q196 70 240 66 Q284 70 287 118 Q288 96 274 84 Q240 74 206 84 Q192 96 193 118 Z" fill="#4a3a2c"/><line x1="212" y1="118" x2="232" y2="116" stroke="#3c2f24" stroke-width="4" stroke-linecap="round"/><line x1="246" y1="116" x2="264" y2="118" stroke="#3c2f24" stroke-width="4" stroke-linecap="round"/><ellipse cx="222" cy="130" rx="7" ry="6" fill="#2c241d"/><ellipse cx="254" cy="130" rx="7" ry="6" fill="#2c241d"/><path d="M236 132 Q232 144 236 150 Q240 153 244 150" fill="none" stroke="#b98a67" stroke-width="3" stroke-linecap="round"/><path d="M203 142 Q206 176 226 186 Q240 192 254 186 Q274 176 277 142 Q276 168 262 178 Q240 190 218 178 Q204 168 203 142 Z" fill="#4e3d2c"/><path d="M206 146 Q210 172 228 181 Q240 186 252 181 Q270 172 274 146 Q272 164 258 173 Q240 182 222 173 Q208 164 206 146 Z" fill="#5b4935"/><path d="M228 166 Q240 172 252 166" stroke="#3a2d20" stroke-width="3" fill="none" stroke-linecap="round"/><rect x="0" y="244" width="460" height="56" fill="#14181c"/><rect x="0" y="240" width="460" height="8" rx="4" fill="#1d2227"/><rect width="460" height="300" fill="url(#d-vig)"/><rect width="460" height="300" filter="url(#d-noise)"/></svg>`;
+const camMedia=()=>IMG.camCar?'<img src="'+IMG.camCar+'" alt="CAM-04">':CAR_SVG;
+const driverMedia=()=>IMG.driver?'<img src="'+IMG.driver+'" alt="driver">':DRIVER_SVG;
+
+/* ============ 29. الانترو + الدخول ============ */
 const INTRO_URL='https://res.cloudinary.com/rr0h5xww/video/upload/v1788782718/intro.mp4';
 function initIntro(){
   const scr=$('#introScreen'), vid=$('#introVideo'),
@@ -2138,12 +2145,12 @@ function afterIntro(){
   else setupStart();
 }
 
-/* ============ الإقلاع ============ */
+/* ============ 30. الإقلاع ============ */
 const BOOT_LINES=['NEXUS-7 SECURE SHELL — BIOS v4.12','MEM CHECK .................... 64K OK','PHOSPHOR DRIVER .............. OK','CRYPTO MODULE ................ OK','TRACE SPOOFER ................ OK','MOUNTING /dev/vault .......... OK','UPLINK ....................... 10.0.44.1','OPERATOR INTERFACE ........... READY'];
 async function bootSeq(){
   restoreGame();
-  boardNight=night;loadBoard();
-  if(typeof NIGHTS==='undefined')console.error('[NEXUS] story.js غير محمّل!');
+  loadBoard();
+  if(typeof NIGHTS==='undefined')console.error('[NEXUS] story.js غير محمّل! ترتيب السكربتات: story.js ثم engine.js');
   const log=$('#bootLog');
   for(let i=0;i<BOOT_LINES.length;i++){
     log.innerHTML+=BOOT_LINES[i]+'\n';
@@ -2164,7 +2171,7 @@ async function bootSeq(){
 };
 function enterOS(){
   setInterval(()=>{
-    gSec=(gSec+1)%86400;
+    World.gSec=(World.gSec+1)%86400;
     const c=clockStr();
     $('#tbClock').textContent=c;
     $('#phClock').textContent=c.slice(0,5);
