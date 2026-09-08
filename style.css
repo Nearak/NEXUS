@@ -466,3 +466,10 @@ body.crt::after{content:'';position:fixed;inset:0;z-index:9995;pointer-events:no
 .hj-t{font-family:var(--mono);color:var(--amber);font-size:12px;letter-spacing:1px;margin-bottom:12px;direction:ltr;text-align:center}
 .hj-scr{background:#060907;border:1px solid var(--line);border-radius:6px;height:180px;overflow-y:auto;padding:10px;font-family:var(--mono);font-size:11px;line-height:1.9;direction:ltr;text-align:left}
 .hj-st{font-family:var(--mono);color:var(--muted);font-size:10.5px;margin-top:10px;direction:ltr;text-align:center}
+/* NET-3D */
+.t-3d{flex:1;min-height:0;display:flex;flex-direction:column}
+.t3d-head{display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid var(--line)}
+.t3d-head b{font-size:12px;color:var(--amberSoft)}
+.t3d-frame{flex:1;min-height:0;position:relative;background:#060907}
+.t3d-frame canvas{display:block;width:100%;height:100%}
+.t3d-foot{padding:7px 14px;font-size:10.5px;color:var(--muted);border-top:1px solid var(--line)}
