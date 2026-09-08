@@ -1,27 +1,25 @@
 'use strict';
 /* ============================================================
-   NEXUS-7 — story.js (v3 final)
-   الليلة 1: الطريق 16 · الليلة 2: مِرقاب · الليلة 3: lynx
+   NEXUS-7 — story.js (نظام مهام تصريحي)
+   كل هدف: when:{ev, ...شروط} — المحرك يبث الأحداث والنظام يطابق.
    ============================================================ */
-
 const STORY_META={boss:'كامل',codename:'راصد',channel:'CH-07'};
 const NIGHTS={};
 
-/* ===== الليلة 1 — الطريق 16 ===== */
 NIGHTS.n1={
   title:'الطريق 16',
-  obj:[
-    {id:'help',t:'شغّل <code>help</code>'},
-    {id:'nmap',t:'امسح شبكة الطريق 16 <code>nmap</code>'},
-    {id:'hydra',t:'اكسر SSH بـ <code>hydra</code>'},
-    {id:'conn',t:'اتصل بـ <code>HWY16-CAM</code>'},
-    {id:'log',t:'حمّل <code>hwy16_log.log</code>'},
-    {id:'plate',t:'حدد مالك اللوحة في <code>DB</code>'},
-    {id:'root',t:'جذر عبر <code>msfconsole</code>'},
-    {id:'enc',t:'حمّل <code>case_file.enc</code>'},
-    {id:'key',t:'فك التشفير في <code>DECRYPT</code>'},
-    {id:'board',t:'اربط الأدلة في لوحة <code>EVIDENCE</code>'},
-    {id:'sent',t:'أرسل التقرير إلى المشرف كامل'}
+  goals:[
+    {id:'help',t:'شغّل <code>help</code>',when:{ev:'cmd',cmd:'help'}},
+    {id:'nmap',t:'امسح شبكة الطريق 16 <code>nmap</code>',when:{ev:'cmd',cmd:'nmap'}},
+    {id:'hydra',t:'اكسر SSH بـ <code>hydra</code>',when:{ev:'cracked',target:'hwy'}},
+    {id:'conn',t:'اتصل بـ <code>HWY16-CAM</code>',when:{ev:'connect',ip:'10.0.44.77'},clue:'cam'},
+    {id:'log',t:'حمّل <code>hwy16_log.log</code>',when:{ev:'download',file:'hwy16_log.log'},clue:['log','plate']},
+    {id:'plate',t:'حدد مالك اللوحة في <code>DB</code>',when:{ev:'dbcard',plate:'HX-4471'},clue:'db'},
+    {id:'root',t:'جذر عبر <code>msfconsole</code>',when:{ev:'root'}},
+    {id:'enc',t:'حمّل <code>case_file.enc</code>',when:{ev:'download',file:'case_file.enc'}},
+    {id:'key',t:'فك التشفير في <code>DECRYPT</code>',when:{ev:'decrypt',what:'case'},clue:'dossier'},
+    {id:'board',t:'اربط الأدلة في <code>EVIDENCE</code> — رابطان',when:{ev:'board',test:d=>d.links>=2}},
+    {id:'sent',t:'أرسل التقرير إلى المشرف كامل',when:{ev:'sent'}}
   ],
   hints:{
     help:'افتح الطرفية TERM واكتب help.',
@@ -34,9 +32,8 @@ NIGHTS.n1={
     enc:'download case_file.enc — يحتاج جذر root.',
     key:'افتح DECRYPT واضبط حلقة الإزاحة حتى يوضح النص، ثم ثبّت.',
     board:'افتح EVIDENCE — انقر دليلين متتاليين لربطهما. رابطان على الأقل.',
-    sent:'زر «إرفاق الأدلة وإرسالها» في لوحة EVIDENCE، أو اكتب send في الطرفية.'
+    sent:'زر «إرفاق الأدلة وإرسالها» في اللوحة، أو send في الطرفية.'
   },
-  canSend:function(){return S.flags.log&&S.flags.plate&&S.flags.root&&S.flags.key;},
   clues:[
     {id:'cam',t:'لقطة CAM-04',sub:'سيارة زرقاء — تفتيش 3',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>'},
     {id:'log',t:'سجل HWY-16',sub:'حركات فجر الحادثة',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="16" y2="12"/><line x1="4" y1="18" x2="18" y2="18"/></svg>'},
@@ -46,50 +43,46 @@ NIGHTS.n1={
   ]
 };
 
-/* ===== الليلة 2 — مِرقاب ===== */
 NIGHTS.n2={
   title:'مِرقاب',
-  obj:[
-    {id:'open',t:'استلم شحنة <code>مِرقاب</code> وافتح الأداة'},
-    {id:'mrq1',t:'التقط إشارة <code>مهند</code> بمِرقاب'},
-    {id:'mrq2',t:'التقط الإشارة المجهولة — <code>ليث</code>'},
-    {id:'board',t:'اربط الأدلة الجديدة في <code>EVIDENCE</code>'},
-    {id:'sent',t:'أرسل تقرير الليلة إلى المشرف كامل'}
+  goals:[
+    {id:'open',t:'استلم شحنة <code>مِرقاب</code> وشغّل الماسح',when:{ev:'mqscan'}},
+    {id:'mrq1',t:'التقط إشارة <code>مهند</code> — 88.4',when:{ev:'mqgrab',key:'mohannad'},clue:'signal'},
+    {id:'mrq2',t:'التقط إشارة <code>ليث</code> — 104.2',when:{ev:'mqgrab',key:'layth'},clue:'layth'},
+    {id:'board',t:'اربط الأدلة في <code>EVIDENCE</code> — خيط واحد',when:{ev:'board',test:d=>d.links>=1}},
+    {id:'sent',t:'أرسل تقرير الليلة',when:{ev:'sent'}}
   ],
   hints:{
-    open:'افتح تطبيق MIRQAB من شريط المهام واضغط «تشغيل الماسح».',
-    mrq1:'حوّل التردد حتى تصفو الموجة ويعطيك LOCK — ثم «التقط الإشارة». التشويش يعلو كلما اقتربت!',
-    mrq2:'إشارة ثانية ظهرت على الطيف بعد الأولى — عد للتقاطها أيضاً.',
+    open:'افتح MIRQAB من شريط المهام واضغط «تشغيل الماسح».',
+    mrq1:'حوّل التردد حتى تصفو الموجة ويعطيك LOCK — ثم «التقط». التشويش يعلو كلما اقتربت!',
+    mrq2:'إشارة ثانية ظهرت بعد الأولى — عد والتقطها.',
     board:'افتح EVIDENCE واربط الدليلين بخيط واحد.',
     sent:'زر «إرفاق الأدلة وإرسالها» في اللوحة، أو send في الطرفية.'
   },
-  canSend:function(){return S.flags.mrq1&&S.flags.mrq2;},
   clues:[
     {id:'signal',t:'إشارة مهند',sub:'نقطة مهجورة قرب الطريق 16 — K9',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12a10 10 0 0 1 20 0"/><path d="M5.5 12a6.5 6.5 0 0 1 13 0"/><circle cx="12" cy="12" r="2"/></svg>'},
     {id:'layth',t:'اتصال «ليث»',sub:'جهة اتصال متكررة — غير معروفة للوحدة',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>'}
   ]
 };
 
-/* ===== الليلة 3 — lynx ===== */
 NIGHTS.n3={
   title:'lynx',
-  obj:[
-    {id:'lynx1',t:'اجمع معلومات مهند و«ليث» بـ <code>lynx</code>'},
-    {id:'social',t:'اعثر على حسابه الاجتماعي وشبكته المنزلية'},
-    {id:'router',t:'اخترق شبكته ← سيطر على جهازه ← <code>سرق الكوكيز</code>'},
-    {id:'crack',t:'فك تشفير <code>session_cookies.enc</code>'},
-    {id:'login',t:'سجّل الدخول لحسابه واعثر على الرسالة'},
-    {id:'sent',t:'أرسل التقرير — القبض'}
+  goals:[
+    {id:'lynx1',t:'اجمع معلومات مهند و«ليث» بـ <code>lynx</code>',when:{ev:'lynx',test:d=>d.mohannad&&d.layth}},
+    {id:'social',t:'اعثر على حسابه الاجتماعي وشبكته المنزلية',when:{ev:'lynxdeep',deep:'social'},clue:'lynxdossier'},
+    {id:'router',t:'اخترق شبكته ← جهازه ← <code>سرق الكوكيز</code>',when:{ev:'hijack'},clue:'cookies'},
+    {id:'crack',t:'فك تشفير <code>session_cookies.enc</code>',when:{ev:'decrypt',what:'cookies'}},
+    {id:'login',t:'سجّل الدخول لحسابه واعثر على الرسالة',when:{ev:'login'},clue:'meet'},
+    {id:'sent',t:'أرسل التقرير — القبض',when:{ev:'sent'}}
   ],
   hints:{
-    lynx1:'افتح تطبيق LYNX وابحث: مهند الحسني — ثم ابحث: ليث',
+    lynx1:'افتح LYNX وابحث: مهند الحسني — ثم ابحث: ليث',
     social:'في نتيجة lynx: انقر «عمّق ←» على بطاقة مهند — الحساب المجمد وشبكة MOHANNAD-HOME.',
-    router:'المتصفح ← mohannad-home.net ← كسر الإدارة بـ hydra -l admin -P rockyou.txt ssh://192.168.88.1 ← ثم hijack ← ثم cookiesteal.',
+    router:'المتصفح ← mohannad-home.net ← hydra على 192.168.88.1 ← ثم hijack من الصفحة.',
     crack:'افتح DECRYPT على session_cookies.enc — نفس حلقة الإزاحة القديمة.',
     login:'المتصفح ← social.mohannad ← صفحة الدخول ← أدخل ما استخرجت من الكوكيز.',
     sent:'زر «إرفاق الأدلة وإرسالها» في اللوحة، أو send في الطرفية.'
   },
-  canSend:function(){return S.flags.lynx1&&S.flags.social&&S.flags.router&&S.flags.crack&&S.flags.login;},
   clues:[
     {id:'lynxdossier',t:'بطاقة lynx — مهند',sub:'مزاعم مالية مع المرصد القابضة',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'},
     {id:'thorn',t:'خيط @thorn',sub:'ليث — فعال على شبكة داكنة',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>'},
@@ -108,8 +101,7 @@ const ST_BEATS={
       await say('أهلاً بك في الوحدة يا راصد. من اليوم أنت مشغّل مبتدئ في الاستخبارات — وأنا كامل، مشرفك المباشر.');
       await say('قبل يومين: جريمة قتل. المشتبه به اختفى — وآخر رصد له كان على الطريق السريع رقم 16. كاميرات الطريق على شبكة معزولة، ومهمتك الليلة: أخرج اسمه.');
       await say('لنبدأ بالأساس. افتح الطرفية واكتب: help — لتتعرف على عدّتك.');
-      renderObj();refreshQuick();
-      setPhoneView('chat');
+      renderObj();refreshQuick();setPhoneView('chat');
     },
     async breach(){ if(!S.flags.live)return; await sleep(600); await say('كادوا يمسكونك! الملفات المحمّلة بأمان — أعد الاتصال وأكمل المهمة.'); },
     async decline(){ if(!S.flags.live)return; await say('أعتقد أنك رفضت بالخطأ يا راصد. أعد الرد… وسننسى الموقف.'); },
@@ -122,12 +114,11 @@ const ST_BEATS={
   n2:{
     async start(){
       S.flags.live=true;
-      objDone('open');
       renderObj();refreshQuick();
       sysSay('ليلة '+String(night).padStart(2,'0')+' — «مِرقاب»');
       await say('راصد… الليلة لن أتصل كثيراً. اقرأ بسرعة.');
-      await say('الشحنة وصلت محطتك قبل قليل — جهاز يسمونه «مِرقاب». يلتقط إشارات الهواتف القريبة منك. افتحه من شريط المهام وشغّل الماسح.');
-      await say('هدفك: مهند. هاتفه ينبض كل ليلة من نقطة مهجورة قرب الطريق 16 — يلتقي أحداً هناك. حدد تردده والتقط إشارته.');
+      await say('الشحنة وصلت محطتك قبل قليل — جهاز يسمونه «مِرقاب». يلتقط إشارات الهواتف القريبة منك. افتحه وشغّل الماسح.');
+      await say('هدفك: مهند. هاتفه ينبض كل ليلة من نقطة مهجورة قرب الطريق 16. حدد تردده والتقط إشارته.');
       await say('واعذرني عن التقطيع في كلامي… القناة الليلة ليست نظيفة كأمس.');
       setPhoneView('chat');
     },
@@ -153,16 +144,9 @@ const ST_BEATS={
     }
   },
   n3:{
-    async start(){
-      S.flags.live=true;
-      objDone('lynx1_pre');
-      renderObj();refreshQuick();
-      sysSay('ليلة '+String(night).padStart(2,'0')+' — «lynx»');
-      await say('راصد. الرنّة التي وصلتك ليست مني… ولا من ليث. تنصت لنا شخص ثالث، ولا وقت للأسئلة.');
-      await say('اعتراضك لليلة الماضية أعطانا تردد مهند — لكن الإشارة وحدها لا تدين أحداً أمام المحكمة. نحتاج حياته الرقمية: حساباته، علاقاته، خططه.');
-      await say('أداة جديدة وصلت محطتك: LYNX — تجمع كل ما يُعرف عن أي اسم من الشبكة المفتوحة. افتحها من شريط المهام وابحث: مهند الحسني. ثم ابحث: ليث.');
-      setPhoneView('chat');
-    },
+    async start(){ /* ليلة 3 تفتح بالرنّة الواحدة — لا start */ },
+    async breach(){ if(!S.flags.live)return; await sleep(600); await say('اقطع الاتصال فوراً! أكمل… بحذر.'); },
+    async decline(){ if(!S.flags.live)return; await say('راصد. لا وقت للتجاهل الآن.'); },
     async dossiers(){
       if(!S.flags.live)return;
       await sleep(400);
@@ -172,13 +156,12 @@ const ST_BEATS={
     async router(){
       if(!S.flags.live)return;
       await sleep(400);
-      await say('شبكته المنزلية MOHANNAD-HOME على راوتر RT-88 — الثغرة موثقة في 0day-souq. اخترق الراوتر… ثم جهازه… ثم خذ كل ما يجري عليه.');
-      await say('وسلّمني الجلسة كاملة. كوكيزه تعني حسابه مفتوحاً أمامك — دون كلمة سر حتى.');
+      await say('جلسة كاملة من جهازه… هذا ما نحتاجه بالضبط. الكوكيز مشفرة بنمط الوحدة القديم — حلقة الإزاحة التي تعرفها.');
     },
     async cookies(){
       if(!S.flags.live)return;
       await sleep(400);
-      await say('الكوكيز مشفرة بنمط الوحدة القديم — نفس حلقة الإزاحة التي كسرتها أول ليلة. افتح DECRYPT واستخرج بيانات الدخول.');
+      await say('استخرجت بيانات الدخول… ادخل حسابه واقرأ كل شيء. خصوصاً الأخير في التاريخ.');
     },
     async login(){
       if(!S.flags.live)return;
