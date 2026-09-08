@@ -395,7 +395,7 @@ async function cmdHydra(arg){
     await sleep(400);
     tprint('[80][http] 192.168.88.1   login: admin   password: <span class="gr">RT88-default</span>');
     tprint('Router admin CRACKED — عد لمتصفح mohannad-home.net واضغط hijack.','gr');
-    sfx.ok();persist();
+    sfx.ok();S.flags.routerCracked=1;persist();
     toast('hydra','كلمة سر الراوتر: RT88-default','good');
     /* ★ إعادة رسم صفحة الراوتر إن كانت مفتوحة — ليظهر hijack فوراً */
     if($('#brBody')&&wins.browser&&wins.browser.style.display!=='none'&&$('#brUrl').value==='mohannad-home.net'){
@@ -1348,8 +1348,9 @@ const PAGES={
   'mohannad-home.net':()=>'<h1>RT-88 :: لوحة إدارة الراوتر</h1>'+
     '<p><span style="color:var(--red)">PROBE: RT-88 firmware 2.4 — CVE-2024-8812 (Unauthenticated RCE)</span></p>'+
     '<p>شبكة MOHANNAD-HOME. الثغرة تفتح الباب… لكن الجلسة الكاملة تحتاج كلمة سر الإدارة.</p>'+
-    '<span class="wlink" data-u="__hydra_router">كسر إدارة الراوتر — hydra</span>'+
-    (S.flags.router?'<span class="wlink" data-u="__hijack">hijack — سيطرة على جهازه وسرقة الجلسة</span>':'<p style="color:var(--muted);font-size:12px">بعد كسر الإدارة سيظهر خيار hijack هنا.</p>'),
+    (S.flags.router||S.flags.routerCracked
+      ?'<span class="wlink" data-u="__hijack">hijack — سيطرة على جهازه وسرقة الجلسة</span>'
+      :'<span class="wlink" data-u="__hydra_router">كسر إدارة الراوتر — hydra</span><p style="color:var(--muted);font-size:12px">بعد كسر الإدارة سيظهر خيار hijack هنا.</p>'),
   'thorn.trace':()=>'<h1>@thorn — بصمة متبقية</h1>'+
     '<p>حساب محذوف منذ 40 يوماً. من الكاش تبقّى:</p>'+
     '<div class="post"><div class="pmeta">cached fragment</div>'+
@@ -1377,7 +1378,7 @@ function attachLoginIfPresent(){
 function pageAction(act){
   if(act==='__open_db'){openApp('db');return;}
   if(act==='__hydra_router'){
-    if(S.flags.router){toast('الراوتر','مخترق مسبقاً.');return;}
+    if(S.flags.router||S.flags.routerCracked){toast('الراوتر','مخترق مسبقاً — استخدم hijack.');return;}
     uiCmd('hydra -l admin -P rockyou.txt ssh://192.168.88.1');
     return;
   }
