@@ -1554,7 +1554,122 @@ function buildInfo(host){
   '<p><b>ليلة 2:</b> MIRQAB ← التقط 88.4 ثم 104.2 ← اربط الدليلين ← أرسل</p>'+
   '<p><b>ليلة 3:</b> LYNX (مهند الحسني + ليث) ← عمّق البطاقة ← mohannad-home.net ← hydra الراوتر ← hijack ← decrypt الكوكيز (13) ← دخول social.mohannad ← أرسل</p></div>';
 }
+/* ============================================================
+   3D NET — طبقة WebGL (Three.js) — شبكة العقد ثلاثية الأبعاد
+   ============================================================ */
+let td3={scene:null,cam:null,ren:null,nodes:[],links:[],ray:null,mouse:new THREE.Vector2(),picked:null,anim:true};
 
+function buildNet3D(host){
+  host.innerHTML='<div class="t-3d"><div class="t3d-head"><b>NET-3D — شبكة العقد المجسمة</b><span class="mono ltr" style="font-size:9.5px;color:var(--muted)">drag=rotate · wheel=zoom · click=node</span></div>'+
+    '<div class="t3d-frame" id="td3Frame"></div>'+
+    '<div class="t3d-foot">انقر عقدة للاتصال بها — العقد الداكنة غير مكتشفة بعد</div></div>';
+  if(typeof THREE==='undefined'){
+    host.querySelector('#td3Frame').innerHTML='<div class="fv-empty">مكتبة Three.js لم تُحمَّل — تحقق من الإنترنت</div>';
+    return;
+  }
+  init3D(host.querySelector('#td3Frame'));
+}
+function init3D(frame){
+  const W=frame.clientWidth||600, H=frame.clientHeight||400;
+  td3.scene=new THREE.Scene();
+  td3.scene.background=new THREE.Color(0x060907);
+  td3.scene.fog=new THREE.Fog(0x060907,120,320);
+  td3.cam=new THREE.PerspectiveCamera(55,W/H,0.1,1000);
+  td3.cam.position.set(0,20,120);
+  td3.ren=new THREE.WebGLRenderer({antialias:true});
+  td3.ren.setSize(W,H);
+  td3.ren.setPixelRatio(Math.min(devicePixelRatio,2));
+  frame.appendChild(td3.ren.domElement);
+  // إضاءة نيون
+  td3.scene.add(new THREE.AmbientLight(0x334038,1.2));
+  const key=new THREE.PointLight(0xffb000,2.2,300);key.position.set(40,60,60);td3.scene.add(key);
+  const rim=new THREE.PointLight(0x4fd6c2,1.4,300);rim.position.set(-60,-30,-50);td3.scene.add(rim);
+  // أرضية شبكية
+  const grid=new THREE.GridHelper(400,40,0x1d2822,0x121a15);
+  grid.position.y=-45;td3.scene.add(grid);
+  // بناء العقد من بيانات الشبكة الحقيقية
+  td3.nodes=[];td3.links=[];
+  const posMap={
+    'SELF':[0,0,0],'10.0.44.1':[0,10,-70],'10.0.44.23':[-55,25,-30],'10.0.44.77':[55,30,-35]
+  };
+  Object.keys(NET.data).forEach((ip,i)=>{
+    const d=NET.data[ip];
+    const known=NET.known.has(ip);
+    const p=posMap[ip]||[(i%2?60:-60)*(1+i*0.3),20+i*12,-60-i*15];
+    const knownP=known?p:[p[0]+15,p[1]+8,p[2]+20]; // غير المكتشفة منزاحة
+    const geo=new THREE.SphereGeometry(d.self?6:4.5,24,24);
+    const col=known?(d.self?0x4fd6c2:(d.locked?0x8a6f2e:0xffb000)):0x2c3b31;
+    const mat=new THREE.MeshStandardMaterial({color:col,emissive:col,emissiveIntensity:d.self?0.9:0.45,roughness:.35,metalness:.2});
+    const mesh=new THREE.Mesh(geo,mat);
+    mesh.position.set(knownP[0],knownP[1],knownP[2]);
+    mesh.userData={ip:ip,label:d.label,known:known,locked:d.locked};
+    td3.scene.add(mesh);td3.nodes.push(mesh);
+  });
+  // وصلات بين SELF والبقية
+  const self=td3.nodes.find(n=>n.userData.ip==='SELF');
+  td3.nodes.forEach(n=>{
+    if(n===self)return;
+    const g=new THREE.BufferGeometry().setFromPoints([self.position,n.position]);
+    const mat=new THREE.LineBasicMaterial({color:NET.active===n.userData.ip?0xffb000:0x24332a,transparent:true,opacity:.7});
+    const line=new THREE.Line(g,mat);
+    td3.scene.add(line);td3.links.push(line);
+  });
+  // تفاعل: سحب للتدوير + عجلة للتقريب + نقر للعقد
+  let isDown=false,px=0,py=0,rotY=0,rotX=0,zoom=120;
+  const dom=td3.ren.domElement;
+  dom.style.cursor='grab';
+  dom.addEventListener('pointerdown',e=>{isDown=true;px=e.clientX;py=e.clientY;dom.style.cursor='grabbing';});
+  addEventListener('pointerup',()=>{isDown=false;dom.style.cursor='grab';});
+  addEventListener('pointermove',e=>{
+    if(isDown){
+      rotY+=(e.clientX-px)*0.005;rotX+=(e.clientY-py)*0.005;
+      rotX=Math.max(-0.9,Math.min(0.9,rotX));
+      px=e.clientX;py=e.clientY;
+    }
+    // Raycast لتحديد العقدة تحت المؤشر
+    const r=dom.getBoundingClientRect();
+    td3.mouse.x=((e.clientX-r.left)/r.width)*2-1;
+    td3.mouse.y=-((e.clientY-r.top)/r.height)*2+1;
+  });
+  dom.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.max(50,Math.min(220,zoom+e.deltaY*0.15));},{passive:false});
+  td3.ray=new THREE.Raycaster();
+  dom.addEventListener('click',()=>{
+    td3.ray.setFromCamera(td3.mouse,td3.cam);
+    const hits=td3.ray.intersectObjects(td3.nodes);
+    if(hits.length){
+      const n=hits[0].object;
+      if(!n.userData.known){toast('NET-3D','عقدة غير مكتشفة — شغّل nmap أولاً.','bad');sfx.err();return;}
+      if(n.userData.locked){toast('NET-3D','عقدة محصّنة — اتصال مرفوض.','bad');sfx.err();return;}
+      uiCmd('connect '+n.userData.ip);
+    }
+  });
+  // حلقة الرسم + تدوير كاميرا مداري
+  (function loop(){
+    requestAnimationFrame(loop);
+    if(!wins.netmap||wins.netmap.style.display==='none')return;
+    const cx=0,cy=8,cz=zoom;
+    td3.cam.position.set(
+      cx*Math.cos(rotY)*Math.cos(rotX)+cy*Math.sin(rotX)*0,
+      cy+cz*Math.sin(rotX),
+      cz*Math.cos(rotX)*Math.sin(rotY)
+    );
+    td3.cam.lookAt(0,5,-40);
+    // نبض العقد النشطة
+    const act=td3.nodes.find(n=>n.userData.ip===NET.active);
+    td3.nodes.forEach(n=>{
+      const s=n.userData.self?1:(n===act?1.15+Math.sin(Date.now()/180)*0.12:1);
+      n.scale.setScalar(s);
+    });
+    td3.ren.render(td3.scene,td3.cam);
+  })();
+  // تكيف الحجم
+  addEventListener('resize',()=>{
+    if(!frame.clientWidth)return;
+    td3.cam.aspect=frame.clientWidth/frame.clientHeight;
+    td3.cam.updateProjectionMatrix();
+    td3.ren.setSize(frame.clientWidth,frame.clientHeight);
+  });
+}
 /* ============ الأيقونات والتطبيقات ============ */
 const IC={
   term:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>',
