@@ -1,10 +1,8 @@
 'use strict';
 /* ============================================================
-   NEXUS-7 — game.js (المحرك v8.1)
-   القصة في story.js. الليلات 1-3 كاملة: TERM متعدد النوافذ
-   +Tab، nmap/hydra/msf، مِرقاب (ليلتان)، lynx (ليلة 3)،
-   متصفح بصفحات ليلة 3، hijack/كوكيز، DECRYPT مصدرين،
-   لوحة أدلة لكل ليلة، ليلة حرة، انتقال 24 ساعة، راديو.
+   NEXUS-7 — game.js (المحرك v8.4 FINAL)
+   ليلات 1-3 كاملة · TERM متعدد النوافذ + Tab · lynx بالبحث
+   المرن · راوتر/هيجاك/كوكيز · لوحة معزولة · ليلة حرة · راديو
    ============================================================ */
 
 const IMG={camCar:'assests/car1p.png',driver:'assests/person1p.png'};
@@ -44,7 +42,7 @@ const sfx={
 
 /* ============ الحالة ============ */
 const S={host:null,scanned:false,msf:false,
-  flags:{live:false,help:0,nmap:0,hydra:0,conn:0,log:0,hash:0,plate:0,root:0,enc:0,key:0,sent:0,declined:0,camShown:0,driverShown:0,mrq1:0,mrq2:0,nightDone:0,shipmentShown:0,n3ring:0,lynx1:0,social:0,router:0,crack:0,login:0},
+  flags:{live:false,help:0,nmap:0,hydra:0,conn:0,log:0,hash:0,plate:0,root:0,enc:0,key:0,sent:0,declined:0,camShown:0,driverShown:0,mrq1:0,mrq2:0,nightDone:0,shipmentShown:0,n3ring:0,lynx1:0,social:0,router:0,crack:0,login:0,thorn:0},
   trace:{on:false,pct:0,timer:null}};
 let night=1;
 let gSec=2*3600+58*60;
@@ -237,7 +235,7 @@ async function tprogress(label,dur=1400){
 function buildTerm(host){
   const t=mkTermSession(host,'sh-1');
   TERMS.push(t);termActive=t;
-  tprintTo(t,'NEXUS-7 secure shell — build 8.2','dim');
+  tprintTo(t,'NEXUS-7 secure shell — build 8.5','dim');
   tprintTo(t,'أهلاً <span class="am">'+esc(ID.name)+'</span> — رمزك «راصد». اكتب <span class="am">help</span>.','dim');
   tprintTo(t,'<span class="am">tip:</span> زر «+ نافذة» يفتح طرفية مستقلة · Tab يكمل الأوامر.','dim');
 }
@@ -386,7 +384,7 @@ async function cmdNmap(){
   objDone('nmap');
 }
 async function cmdHydra(arg){
-  /* هدف الراوتر — ليلة 3 */
+  /* فرع الراوتر — ليلة 3 */
   if(arg.includes('192.168.88.1')){
     if(S.flags.router){tprint('hydra: الراوتر مكسور مسبقاً — admin : <span class="gr">RT88-default</span>','dim');return;}
     await ttype('Hydra v9.5 — RT-88 admin panel @ 192.168.88.1','dim');
@@ -399,6 +397,10 @@ async function cmdHydra(arg){
     tprint('Router admin CRACKED — عد لمتصفح mohannad-home.net واضغط hijack.','gr');
     sfx.ok();persist();
     toast('hydra','كلمة سر الراوتر: RT88-default','good');
+    /* ★ إعادة رسم صفحة الراوتر إن كانت مفتوحة — ليظهر hijack فوراً */
+    if($('#brBody')&&wins.browser&&wins.browser.style.display!=='none'&&$('#brUrl').value==='mohannad-home.net'){
+      brGo('mohannad-home.net',false);
+    }
     return;
   }
   if(!arg.includes('10.0.44.77')){
@@ -556,11 +558,11 @@ function missingForSend(){
     if(!S.flags.mrq1)m.push('التقاط إشارة مهند بمِرقاب (88.4 MHz)');
     if(!S.flags.mrq2)m.push('التقاط إشارة «ليث» بمِرقاب (104.2 MHz)');
   }else{
-    if(!S.flags.lynx1)m.push('جمع المعلومات بـ lynx');
-    if(!S.flags.social)m.push('العثور على الحساب الاجتماعي وشبكته');
-    if(!S.flags.router)m.push('اختراق الشبكة وسرقة الكوكيز');
-    if(!S.flags.crack)m.push('فك تشفير الكوكيز');
-    if(!S.flags.login)m.push('تسجيل الدخول والرسالة');
+    if(!S.flags.lynx1)m.push('جمع المعلومات بـ lynx (مهند الحسني + ليث)');
+    if(!S.flags.social)m.push('العثور على الحساب الاجتماعي وشبكته (عمّق بطاقة مهند)');
+    if(!S.flags.router)m.push('اختراق الراوتر ← hijack ← سرقة الكوكيز');
+    if(!S.flags.crack)m.push('فك تشفير session_cookies.enc (إزاحة 13)');
+    if(!S.flags.login)m.push('تسجيل الدخول بـ m_hussein77 / @m_hussein77');
   }
   return m.length?m.join(' · '):'شرط غير معروف';
 }
@@ -584,7 +586,7 @@ const COOKIES_CIPHER=caesar(COOKIES_PLAIN,CK_SHIFT);
 const ENC_HEX='A3F1 0C77 9B2E D440 118F 6A22\nF90C 77B1 32D4 EA05 8871 0C4E';
 const BAD_HASH='5f4dcc3b5aa765d61d8327deb882cf99';
 const FILES={
-  'README.txt':{where:'local',kb:1,kind:'text',body:'NEXUS-7 :: INTEL WORKSTATION — BUILD 8.3\n----------------------------------------\nمحطة مشغّل في وحدة الاستخبارات.\n\nالأدوات:\n  TERM (نوافذ متعددة + Tab) · NET · FILES · EVIDENCE\n  MIRQAB (ليلتان+) · LYNX (ليلة 3+) · DECRYPT · DB · BROWSER · NOTES\n\nبعد إنهاء مهمة ليلة: شاشة 24 ساعة ثم الليلة التالية تلقائياً.'},
+  'README.txt':{where:'local',kb:1,kind:'text',body:'NEXUS-7 :: INTEL WORKSTATION — BUILD 8.5\n----------------------------------------\nمحطة مشغّل في وحدة الاستخبارات.\n\nالأدوات:\n  TERM (نوافذ متعددة + Tab) · NET · FILES · EVIDENCE\n  MIRQAB (ليلة 2+) · LYNX (ليلة 3+) · DECRYPT · DB · BROWSER · NOTES\n\nبعد إنهاء مهمة ليلة: شاشة 24 ساعة ثم الليلة التالية تلقائياً.'},
   'admin_note.txt':{where:'10.0.44.77',kb:2,kind:'text',body:'=== NOTE TO SELF — sysop/hwy16 ===\n* rotate the admin password WEEKLY (nobody does)\n* someone pulls checkpoint logs past 03:00. not me.\n* ANPR cameras log EVERYTHING. wipe nothing.\n* unit-7 asked for exit-9 footage. twice. tell no one.\n* DO NOT answer extension 44. ever.'},
   'hwy16_log.log':{where:'10.0.44.77',kb:12,kind:'log',body:'[03:07:44] CHK-3 :: VEHICLE PASS :: HWY-16 NORTH\n[03:11:02] CHK-3 :: PLATE READ :: HX-4471\n[03:12:39] CHK-5 :: SPEED 142 :: LANE 2\n[03:13:01] CHK-5 :: PLATE READ :: HX-4471\n[03:14:02] AUTH-FAIL :: sysop :: md5 :: '+BAD_HASH+'\n[03:16:44] CHK-9 :: VEHICLE PASS :: NO PLATE READ\n[04:59:59] DAILY ARCHIVE :: UPLOAD FAILED :: RETRY'},
   'cam04_frame.jpg':{where:'10.0.44.77',kb:8,kind:'photo',body:''},
@@ -806,8 +808,8 @@ function onShift(){
 async function finalizeDecrypt(){
   const which=decSource();
   const src=which==='cookies'
-    ?{p:COOKIES_PLAIN,s:CK_SHIFT}
-    :{p:KEY_PLAIN,s:KEY_SHIFT};
+    ?{p:COOKIES_PLAIN}
+    :{p:KEY_PLAIN};
   const btn=$('#decLock');
   btn.disabled=true;btn.textContent='جارٍ التثبيت…';
   sfx.unlock();glitch(1);
@@ -1213,7 +1215,6 @@ function buildMirqab(host){
       if(k==='mohannad')beat('grab1');
       if(k==='layth')beat('grab2');
     }
-    /* سلسلة الأهداف: بعد كل التقاط، التالي يظهر */
     const chain=['mohannad','layth','moh44','shadow'];
     const next=chain[chain.indexOf(k)+1];
     if(next&&MQ_TARGETS[next]){MQ.target=MQ_TARGETS[next].freq;onTune();}
@@ -1228,7 +1229,7 @@ function mqLog(html){
   l.appendChild(d);l.scrollTop=l.scrollHeight;
 }
 
-/* ============ lynx — تجميع المعلومات (ليلة 3) ============ */
+/* ============ lynx — تجميع المعلومات (ليلة 3) — بحث مرن ============ */
 const LYNX_DB={
   'مهند الحسني':[
     {t:'مهند كريم الحسني',s:'محاسب — مجموعة المرصد القابضة · مطلوب (4471-A) · مزاعم مالية مع الشركة',deep:'social'},
@@ -1247,7 +1248,7 @@ function buildLynx(host){
   }
   host.innerHTML='<div class="t-lynx">'+
     '<div class="lx-head"><b>LYNX — تجميع المعلومات المفتوحة</b><span class="mono ltr" style="font-size:9.5px;color:var(--muted)">OSINT v1.2</span></div>'+
-    '<form id="lxForm"><input id="lxQ" placeholder="اسم، مستعار، لوحة…"><button type="submit">تجميع</button></form>'+
+    '<form id="lxForm"><input id="lxQ" placeholder="اسم، مستعار، لوحة… مثال: مهند الحسني"><button type="submit">تجميع</button></form>'+
     '<div id="lxRes"></div>'+
   '</div>';
   host.querySelector('#lxForm').addEventListener('submit',e=>{
@@ -1257,14 +1258,23 @@ function buildLynx(host){
 }
 async function doLynx(q){
   const res=$('#lxRes');if(!res)return;
+  if(!q){res.innerHTML='<div class="db-none">اكتب اسماً للبحث — مثال: «مهند الحسني».</div>';sfx.err();return;}
   res.innerHTML='<div class="lx-scan">جارٍ تجميع البصمة الرقمية… </div>';
   for(let i=0;i<14;i++){
     res.firstChild.textContent+='█';
     sfx.tick();
     await sleep(70);
   }
-  const hits=LYNX_DB[q];
-  if(!hits){res.innerHTML='<div class="db-none">لا بصمة رقمية لهذا الاسم — جرّب: «مهند الحسني» أو «ليث».</div>';sfx.err();return;}
+  /* بحث مرن: كافٍ أن يحتوي السطر كلمة «مهند» و«الحسني» بأي ترتيب */
+  const isMohannad=q.includes('مهند')&&q.includes('الحسني');
+  const isLayth=q.includes('ليث');
+  const hits=isMohannad?LYNX_DB['مهند الحسني']:(isLayth?LYNX_DB['ليث']:null);
+  if(!hits){
+    let msg='لا بصمة رقمية لهذا الاسم — جرّب: «مهند الحسني» أو «ليث».';
+    if(q.includes('مهند')&&!q.includes('الحسني'))msg='اكتب الاسم الكامل: «مهند الحسني» — ليس «مهند» وحدها.';
+    res.innerHTML='<div class="db-none">'+esc(msg)+'</div>';sfx.err();
+    return;
+  }
   res.innerHTML=hits.map((h,i)=>
     '<div class="lx-item" data-i="'+i+'"><b>'+h.t+'</b><span>'+h.s+'</span>'+
     (h.deep?'<em>عمّق ←</em>':'')+'</div>').join('');
@@ -1282,12 +1292,12 @@ async function doLynx(q){
       if(h.deep==='thorn'){addClue('thorn');brGo('thorn.trace');openApp('browser');}
     };
   });
-  if(q==='مهند الحسни'&&!S.flags.lynx1){
+  if(isMohannad&&!S.flags.lynx1){
     S.flags.lynx1=1;persist();
     objDone('lynx1');addClue('lynxdossier');
     if(S.flags.live)beat('dossiers');
   }
-  if(q==='ليث'&&!S.flags.thorn){
+  if(isLayth&&!S.flags.thorn){
     S.flags.thorn=1;persist();
     addClue('thorn');
     toast('lynx','بصمة @thorn أُضيفت للوحة.','good');
@@ -1305,7 +1315,7 @@ const PAGES={
     '<div class="post"><div class="pmeta">thread #4471 · 2 days ago</div><h3>HWY-CAM 2.1 — Unauthenticated RCE</h3>'+
     '<p>CVE-2024-1337. <code>connect</code> أولاً ثم <code>msfconsole → search hwycam → use 0 → set RHOSTS → exploit</code>.</p></div>'+
     '<div class="post"><div class="pmeta">thread #4418 · 1 day ago</div><h3>RT-88 — CVE-2024-8812</h3>'+
-    '<p>راوتر منزلي بثغرة وصول كامل. hydra على الإدارة ثم دخول اللوحة. كسل الشركات المصنّعة… نعمة على المخترقين.</p></div>'+
+    '<p>راوتر منزلي بثغرة وصول كامل. hydra على الإدارة ثم دخول اللوحة.</p></div>'+
     '<div class="post"><div class="pmeta">thread #4402 · 5 days ago</div><h3>rockyou.txt mirror</h3>'+
     '<p>نسخة كاملة على كل محطة NEXUS.</p></div>'+
     '<div class="post"><div class="pmeta">thread #4390 · 1 week ago</div><h3>[RUMOR] «مِرقاب»</h3>'+
@@ -1566,7 +1576,7 @@ function buildInfo(host){
   '<p><b>المشغّل:</b> <code class="ltr">'+esc(ID.name)+'</code> — الرمز: «راصد» · <b>المشرف:</b> كمال (كامل)</p>'+
   '<p><b>ليلة 1:</b> help ← nmap ← hydra ← connect ← download ← DB (انقر الصف) ← msfconsole ← decrypt ← EVIDENCE ← send</p>'+
   '<p><b>ليلة 2:</b> MIRQAB ← التقط 88.4 ثم 104.2 ← اربط الدليلين ← أرسل</p>'+
-  '<p><b>ليلة 3:</b> LYNX (مهند + ليث) ← عمّق البطاقة ← mohannad-home.net ← hydra الراوتر ← hijack ← decrypt الكوكيز ← دخول social.mohannad ← أرسل</p></div>';
+  '<p><b>ليلة 3:</b> LYNX (مهند الحسني + ليث) ← عمّق البطاقة ← mohannad-home.net ← hydra الراوتر ← hijack ← decrypt الكوكيز (13) ← دخول social.mohannad ← أرسل</p></div>';
 }
 
 /* ============ الأيقونات والتطبيقات ============ */
@@ -1631,6 +1641,10 @@ function objDone(id){
   const dn=pool.filter(x=>x.done).length;
   toast('هدف مكتمل','سجل المهمة: '+dn+'/'+pool.length,'good');
   refreshQuick();
+  /* صفحات المتصفح الديناميكية: أعد رسمها إن كانت معروضة */
+  if($('#brBody')&&wins.browser&&wins.browser.style.display!=='none'&&$('#brUrl').value){
+    brGo($('#brUrl').value,false);
+  }
 }
 
 /* ============ الهاتف ============ */
@@ -1715,12 +1729,11 @@ function incomingCall(){
       toast('انقطع الاتصال','رنّة واحدة… ثم صمت.');
       setTimeout(async()=>{
         S.flags.live=true;
-        objDone('lynx1_pre');
         renderObj();refreshQuick();
         sysSay('ليلة 3 — «lynx» · رسالة نصية مجهولة المصدر');
         await say('راصد. الرنّة التي وصلتك ليست مني… ولا من ليث. تنصت لنا شخص ثالث، ولا وقت للأسئلة.');
         await say('اعتراضك لليلة الماضية أعطانا تردد مهند — لكن الإشارة وحدها لا تدين أحداً. نحتاج حياته الرقمية كاملة.');
-        await say('أداة جديدة وصلت محطتك: LYNX — تجمع كل ما يُعرف عن أي اسم من الشبكة المفتوحة. افتحها وابحث: مهند الحسني. ثم: ليث.');
+        await say('أداة جديدة وصلت محطتك: LYNX — تجمع كل ما يُعرف عن أي اسم من الشبكة المفتوحة. افتحها وابحث: مهند الحسني. ثم ابحث: ليث.');
         setPhoneView('chat');
       },1500);
     },6000);
@@ -1737,7 +1750,12 @@ function incomingCall(){
   setPhoneView('call');sfx.ring();
   ringIv=setInterval(()=>sfx.ring(),2100);
 }
-function stopRing(){clearInterval(ringIv);ringIv=null;clearTimeout(ringIv);ringIv=null;$('#phone').classList.remove('ringing');}
+function stopRing(){
+  clearInterval(ringIv);
+  clearTimeout(ringIv);
+  ringIv=null;
+  $('#phone').classList.remove('ringing');
+}
  $('#phAccept').onclick=()=>{
   stopRing();setPhoneView('chat');sfx.conn();glitch(1);
   sysSay('قبول الاتصال — CH-07');
