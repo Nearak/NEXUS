@@ -1,15 +1,15 @@
 'use strict';
 /* ============================================================
-   NEXUS-7 — story.js (v11 — نظام قاعدة الحقائق)
-   قاعدة صارمة: بيانات نقية فقط. لا دوال.
-   كل هدف: need = {factName: expectedValue}
-   المحرك يفحص دورياً: هل كل حقائق الهدف محققة؟
+   NEXUS-7 — story.js (v12 — بيانات نقية بلا أي دوال)
+   نظام قاعدة الحقائق: need = {fact: expectedValue}
+   الفحص في المحرك: فوري بعد كل كتابة + دوري 400ms
    ============================================================ */
 
 const STORY_META={boss:'كامل',bossFull:'كمال الأنباري',codename:'راصد',channel:'CH-07'};
 
 const NIGHTS={};
 
+/* ===== الليلة 1 — الطريق 16 ===== */
 NIGHTS.n1={
   title:'الطريق 16',
   goals:[
@@ -22,7 +22,7 @@ NIGHTS.n1={
     {id:'g_root', t:'جذر عبر <code>msfconsole</code>',              need:{rootAchieved:true}},
     {id:'g_enc',  t:'حمّل <code>case_file.enc</code>',              need:{encDownloaded:true}},
     {id:'g_key',  t:'فك التشفير في <code>DECRYPT</code>',           need:{caseDecrypted:true},clues:['dossier']},
-    {id:'g_board',t:'اربط الأدلة في <code>EVIDENCE</code> — رابطان',need:{boardLinks:2}, min:true},
+    {id:'g_board',t:'اربط الأدلة في <code>EVIDENCE</code> — رابطان',need:{boardLinks:2},min:true},
     {id:'g_sent', t:'أرسل التقرير إلى المشرف كامل',                 need:{reportSent:true}}
   ],
   hints:{
@@ -47,13 +47,14 @@ NIGHTS.n1={
   ]
 };
 
+/* ===== الليلة 2 — مِرقاب ===== */
 NIGHTS.n2={
   title:'مِرقاب',
   goals:[
     {id:'g_open', t:'استلم شحنة <code>مِرقاب</code> وشغّل الماسح',when:{mirqabScanned:true}},
     {id:'g_mrq1', t:'التقط إشارة <code>مهند</code> — 88.4',      need:{mqMohannad:true},clues:['signal']},
     {id:'g_mrq2', t:'التقط إشارة <code>ليث</code> — 104.2',       need:{mqLayth:true},clues:['layth']},
-    {id:'g_board',t:'اربط الأدلة في <code>EVIDENCE</code> — خيط', when:{boardLinks:1}, min:true},
+    {id:'g_board',t:'اربط الأدلة في <code>EVIDENCE</code> — خيط', when:{boardLinks:1},min:true},
     {id:'g_sent', t:'أرسل تقرير الليلة',                          need:{reportSent:true}}
   ],
   hints:{
@@ -69,6 +70,7 @@ NIGHTS.n2={
   ]
 };
 
+/* ===== الليلة 3 — lynx ===== */
 NIGHTS.n3={
   title:'lynx',
   goals:[
@@ -96,7 +98,7 @@ NIGHTS.n3={
   ]
 };
 
-/* ===== نصوص القصة (كل نص مربوط بمستوى ولحظة) ===== */
+/* ===== نصوص القصة ===== */
 const ST_TEXT={
   n1:{
     start:[
